@@ -27,7 +27,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 0: Projektsteuerung
 
-- [~] **T001** Anforderungs-Traceability erstellen ([Details](./00-ausfuehrungsregeln.md#t001---anforderungs-traceability-erstellen))
+- [x] **T001** Anforderungs-Traceability erstellen (`5b739c5`) ([Details](./00-ausfuehrungsregeln.md#t001---anforderungs-traceability-erstellen))
 - [ ] **T002** Hardware- und Produktentscheidungen erfassen ([Details](./00-ausfuehrungsregeln.md#t002---hardware--und-produktentscheidungen-erfassen))
 - [ ] **T003** Reproduzierbaren Ist-Zustand dokumentieren ([Details](./00-ausfuehrungsregeln.md#t003---reproduzierbaren-ist-zustand-dokumentieren))
 
