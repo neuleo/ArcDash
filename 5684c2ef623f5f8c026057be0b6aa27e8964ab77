@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter flutter build apk --debug; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. Debug APK built successfully; 70 tests passed. T049/T050 are modeled with fail-closed versioned messages and exact MacroDroid action; runtime Android/MacroDroid acceptance remains pending.
