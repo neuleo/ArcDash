@@ -40,6 +40,7 @@ class DongleService implements BleTransport {
   bool _writeWithoutResponse = true;
   StreamSubscription? _notifySubscription;
   StreamSubscription? _deviceStateSubscription;
+  StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
 
   final _connectionStateController =
       StreamController<DongleConnectionState>.broadcast();
@@ -151,6 +152,9 @@ class DongleService implements BleTransport {
           _handleDisconnect();
         }
       });
+      _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
+        if (state == BluetoothAdapterState.off) _handleDisconnect();
+      });
 
       // Discover services
       final services = await dongle.device.discoverServices();
@@ -261,6 +265,8 @@ class DongleService implements BleTransport {
     _notifySubscription = null;
     await _deviceStateSubscription?.cancel();
     _deviceStateSubscription = null;
+    await _adapterStateSubscription?.cancel();
+    _adapterStateSubscription = null;
 
     if (_connectedDevice != null) {
       try {
@@ -276,6 +282,8 @@ class DongleService implements BleTransport {
   void _handleDisconnect() {
     _notifySubscription?.cancel();
     _notifySubscription = null;
+    _adapterStateSubscription?.cancel();
+    _adapterStateSubscription = null;
     _writeChar = null;
     _writeWithoutResponse = true;
     _connectedDevice = null;
@@ -285,6 +293,7 @@ class DongleService implements BleTransport {
   void dispose() {
     _notifySubscription?.cancel();
     _deviceStateSubscription?.cancel();
+    _adapterStateSubscription?.cancel();
     _connectionStateController.close();
     _rawDataController.close();
     _scanResultsController.close();

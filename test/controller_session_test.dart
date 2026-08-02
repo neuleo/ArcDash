@@ -5,11 +5,14 @@ import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/services/controller_session.dart';
 import 'package:arcdash/utils/crc_calculator.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class _SessionTransport implements BleTransport {
   final states = StreamController<DongleConnectionState>.broadcast();
   final bytes = StreamController<List<int>>.broadcast();
   final scans = StreamController<List<DiscoveredDongle>>.broadcast();
+  final connectResults = <bool>[];
+  int connectCalls = 0;
 
   @override
   Stream<DongleConnectionState> get connectionStateStream => states.stream;
@@ -27,7 +30,11 @@ class _SessionTransport implements BleTransport {
   @override
   Future<void> stopScan() async {}
   @override
-  Future<bool> connect(DiscoveredDongle dongle) async => true;
+  Future<bool> connect(DiscoveredDongle dongle) async {
+    connectCalls++;
+    return connectResults.isEmpty ? true : connectResults.removeAt(0);
+  }
+
   @override
   Future<bool> write(List<int> data) async => true;
   @override
@@ -43,6 +50,12 @@ class _SessionTransport implements BleTransport {
     scans.close();
   }
 }
+
+DiscoveredDongle _device() => DiscoveredDongle(
+      device: BluetoothDevice.fromId('test-device'),
+      name: 'CONTROLDMC88',
+      rssi: -40,
+    );
 
 List<int> _statusPacket() {
   final packet = List<int>.filled(16, 0);
@@ -84,6 +97,59 @@ void main() {
     await session.dispose();
     await session.dispose();
     expect(session.current.state, ControllerSessionState.disconnected);
+    transport.dispose();
+  });
+
+  test('reconnects the last confirmed device with bounded exponential backoff',
+      () async {
+    final transport = _SessionTransport()
+      ..connectResults.addAll([true, false, true]);
+    final waits = <Duration>[];
+    final session = ControllerSession(
+      transport,
+      delay: (duration) async => waits.add(duration),
+      baseReconnectDelay: const Duration(seconds: 1),
+      maxReconnectDelay: const Duration(seconds: 3),
+      jitter: (duration, _) => duration,
+    );
+    final device = _device();
+
+    expect(await session.connect(device), isTrue);
+    transport.states.add(DongleConnectionState.disconnected);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(transport.connectCalls, 3);
+    expect(waits, [
+      const Duration(seconds: 1),
+      const Duration(seconds: 2),
+    ]);
+    expect(session.current.state, ControllerSessionState.connected);
+    await session.dispose();
+    transport.dispose();
+  });
+
+  test('multiple disconnects create one reconnect loop and cancel stops it',
+      () async {
+    final transport = _SessionTransport()..connectResults.add(true);
+    var releaseDelay = Completer<void>();
+    final session = ControllerSession(
+      transport,
+      delay: (_) => releaseDelay.future,
+    );
+    final device = _device();
+    await session.connect(device);
+    transport.states
+      ..add(DongleConnectionState.disconnected)
+      ..add(DongleConnectionState.disconnected);
+    await Future<void>.delayed(Duration.zero);
+    session.cancelReconnect();
+    releaseDelay.complete();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(transport.connectCalls, 1);
+    expect(session.current.state, ControllerSessionState.disconnected);
+    await session.dispose();
     transport.dispose();
   });
 }
