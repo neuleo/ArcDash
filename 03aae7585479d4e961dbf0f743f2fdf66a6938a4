@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/services/profile_tools.dart test/profile_tools_test.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. Profile validation, critical diff classification, and versioned JSON codec are covered; hardware bounds remain fail-closed.
