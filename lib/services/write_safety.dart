@@ -152,8 +152,9 @@ class SafetyEvaluator {
     for (final sample in samples) {
       if (sample.rpm != 0) rejections.add(SafetyRejection.moving);
       if (sample.motorRunning) rejections.add(SafetyRejection.motorRunning);
-      if (!sample.directionKnown)
+      if (!sample.directionKnown) {
         rejections.add(SafetyRejection.directionUnknown);
+      }
       if (sample.brakeActive) rejections.add(SafetyRejection.brakeActive);
       if (!sample.throttleZero) rejections.add(SafetyRejection.throttleNotZero);
     }
