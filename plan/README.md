@@ -29,7 +29,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 - [x] **T001** Anforderungs-Traceability erstellen (`5b739c5`) ([Details](./00-ausfuehrungsregeln.md#t001---anforderungs-traceability-erstellen))
 - [x] **T002** Hardware- und Produktentscheidungen erfassen (`ec2db1c`) ([Details](./00-ausfuehrungsregeln.md#t002---hardware--und-produktentscheidungen-erfassen))
-- [ ] **T003** Reproduzierbaren Ist-Zustand dokumentieren ([Details](./00-ausfuehrungsregeln.md#t003---reproduzierbaren-ist-zustand-dokumentieren))
+- [~] **T003** Reproduzierbaren Ist-Zustand dokumentieren ([Details](./00-ausfuehrungsregeln.md#t003---reproduzierbaren-ist-zustand-dokumentieren))
 
 ## Phase 1: Grundlage und Build
 
