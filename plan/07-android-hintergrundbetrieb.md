@@ -1,4 +1,4 @@
-# Phase 7: Android-Hintergrundbetrieb
+# Phase 6: Android-Hintergrundbetrieb
 
 ## Phasenziel
 

@@ -1,4 +1,8 @@
-# Phase 5: Sichere Schreibengine
+# Phase 1.5: Sichere Schreibengine (zurueckgestellt)
+
+Diese Phase ist bis zum Abschluss der Read-only-Version deaktiviert. Ihre
+Implementierung, Write-Abnahme und hardwareabhängigen Tests werden aktuell
+nicht ausgeführt.
 
 ## Phasenziel
 

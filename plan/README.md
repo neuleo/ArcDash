@@ -39,6 +39,22 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T007** Abhaengigkeiten und Lints bereinigen (`251b0f2`) ([Details](./01-grundlage-und-build.md#t007---abhaengigkeiten-und-lints-bereinigen))
 - [x] **T008** Build- und Test-Baseline stabilisieren (`0e4b1a6`) ([Details](./01-grundlage-und-build.md#t008---build--und-test-baseline-stabilisieren))
 
+## Phase 1.5: Sichere Schreibengine (zurueckgestellt)
+
+Diese optionale Phase wird erst nach der Read-only-Version aktiviert. Bis dahin
+werden keine Write-Features, Write-Abnahmen oder hardwareabhängigen Write-Tests
+bearbeitet. Die vorhandenen Safety-Modelle bleiben als fail-closed Grundlagen
+erhalten.
+
+- [!] **T030** Parameterkatalog und Hardwaregrenzen erstellen (ZURUECKGESTELLT: finale Controller-, Motor-, Batterie- und BMS-Grenzen fehlen) ([Details](./05-sichere-schreibengine.md#t030---parameterkatalog-und-hardwaregrenzen-erstellen))
+- [!] **T031** Fail-closed Safety-Evaluator bauen (ZURUECKGESTELLT: Write-Track nicht aktiv) ([Details](./05-sichere-schreibengine.md#t031---fail-closed-safety-evaluator-bauen))
+- [!] **T032** Optionales Schreiben beim Ausrollen modellieren (ZURUECKGESTELLT: Hardware-Freigabe fehlt) ([Details](./05-sichere-schreibengine.md#t032---optionales-schreiben-beim-ausrollen-modellieren))
+- [!] **T033** Diff und Read-modify-write implementieren (ZURUECKGESTELLT: Write-Track nicht aktiv) ([Details](./05-sichere-schreibengine.md#t033---diff-und-read-modify-write-implementieren))
+- [!] **T034** Transaktionales Schreiben mit Read-back bauen (ZURUECKGESTELLT: reale ACK-/Read-back-Abnahme fehlt) ([Details](./05-sichere-schreibengine.md#t034---transaktionales-schreiben-mit-read-back-bauen))
+- [!] **T035** Teilfehler und Rollback behandeln (ZURUECKGESTELLT: reale verifizierte Rollback-Parameter fehlen) ([Details](./05-sichere-schreibengine.md#t035---teilfehler-und-rollback-behandeln))
+- [!] **T036** Write-Lock, Idempotenz und Audit-Log ergaenzen (ZURUECKGESTELLT: Write-Track nicht aktiv) ([Details](./05-sichere-schreibengine.md#t036---write-lock-idempotenz-und-audit-log-ergaenzen))
+- [!] **T037** Safety-UX und Hardware-Testplan fertigstellen (ZURUECKGESTELLT: Read-only-Version zuerst) ([Details](./05-sichere-schreibengine.md#t037---safety-ux-und-hardware-testplan-fertigstellen))
+
 ## Phase 2: Protokoll und Parameter
 
 - [x] **T009** Protokoll-Belegmatrix erstellen (`e41a7d1`) ([Details](./02-protokoll-und-parameter.md#t009---protokoll-belegmatrix-erstellen))
@@ -69,18 +85,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T028** Backup-Import und -Export implementieren (`7872fba`) ([Details](./04-backup-und-snapshots.md#t028---backup-import-und--export-implementieren))
 - [x] **T029** Sicheren Restore-Ablauf vorbereiten (`8f27871`) ([Details](./04-backup-und-snapshots.md#t029---sicheren-restore-ablauf-vorbereiten))
 
-## Phase 5: Sichere Schreibengine
-
-- [!] **T030** Parameterkatalog und Hardwaregrenzen erstellen (BLOCKIERT: finale Controller-, Motor-, Batterie- und BMS-Grenzen fehlen) ([Details](./05-sichere-schreibengine.md#t030---parameterkatalog-und-hardwaregrenzen-erstellen))
-- [x] **T031** Fail-closed Safety-Evaluator bauen (`ef46d4c`) ([Details](./05-sichere-schreibengine.md#t031---fail-closed-safety-evaluator-bauen))
-- [!] **T032** Optionales Schreiben beim Ausrollen modellieren (BLOCKIERT: Hardware-Freigabe und sichere Gas-/Motorfelder fehlen) ([Details](./05-sichere-schreibengine.md#t032---optionales-schreiben-beim-ausrollen-modellieren))
-- [x] **T033** Diff und Read-modify-write implementieren (`ef46d4c`) ([Details](./05-sichere-schreibengine.md#t033---diff-und-read-modify-write-implementieren))
-- [!] **T034** Transaktionales Schreiben mit Read-back bauen (BLOCKIERT: reale ACK-/Read-back-Abnahme fehlt) ([Details](./05-sichere-schreibengine.md#t034---transaktionales-schreiben-mit-read-back-bauen))
-- [!] **T035** Teilfehler und Rollback behandeln (BLOCKIERT: reale verifizierte Rollback-Parameter fehlen) ([Details](./05-sichere-schreibengine.md#t035---teilfehler-und-rollback-behandeln))
-- [x] **T036** Write-Lock, Idempotenz und Audit-Log ergaenzen (`ef46d4c`) ([Details](./05-sichere-schreibengine.md#t036---write-lock-idempotenz-und-audit-log-ergaenzen))
-- [!] **T037** Safety-UX und Hardware-Testplan fertigstellen (WRITE-ABHAENGIG: Read-only-V1 ohne reale Schreibabnahme) ([Details](./05-sichere-schreibengine.md#t037---safety-ux-und-hardware-testplan-fertigstellen))
-
-## Phase 6: Profilsystem
+## Phase 5: Profilsystem
 
 - [x] **T038** Versioniertes Profilmodell implementieren (`54de30a`) ([Details](./06-profilsystem.md#t038---versioniertes-profilmodell-implementieren))
 - [!] **T039** Integrierte Profile definieren (BLOCKIERT: verifiziertes Stock-Backup und Hardwaregrenzen fehlen) ([Details](./06-profilsystem.md#t039---integrierte-profile-definieren))
@@ -91,7 +96,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [!] **T044** Profile verifiziert anwenden (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./06-profilsystem.md#t044---profile-verifiziert-anwenden))
 - [!] **T045** Street-Legal-Fast-Path optimieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./06-profilsystem.md#t045---street-legal-fast-path-optimieren))
 
-## Phase 7: Android-Hintergrundbetrieb
+## Phase 6: Android-Hintergrundbetrieb
 
 - [x] **T046** Foreground-Service-Architektur festlegen (`95ef4ea`) ([Details](./07-android-hintergrundbetrieb.md#t046---foreground-service-architektur-festlegen))
 - [~] **T047** Android-Service und Berechtigungen konfigurieren ([Details](./07-android-hintergrundbetrieb.md#t047---android-service-und-berechtigungen-konfigurieren))
@@ -102,7 +107,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [!] **T052** Hintergrund-Feedback implementieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t052---hintergrund-feedback-implementieren))
 - [!] **T053** Android-Lifecycle-Matrix validieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t053---android-lifecycle-matrix-validieren))
 
-## Phase 8: Dashboard und Telemetrie
+## Phase 7: Dashboard und Telemetrie
 
 - [ ] **T054** Designsystem, Navigation und Lokalisierung aufbauen ([Details](./08-dashboard-und-telemetrie.md#t054---designsystem-navigation-und-lokalisierung-aufbauen))
 - [ ] **T055** Telemetriequalitaet und Stale-State implementieren ([Details](./08-dashboard-und-telemetrie.md#t055---telemetriequalitaet-und-stale-state-implementieren))
@@ -112,7 +117,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [ ] **T059** Einheiten und Accessibility umsetzen ([Details](./08-dashboard-und-telemetrie.md#t059---einheiten-und-accessibility-umsetzen))
 - [ ] **T060** Verbindungs-UX vereinheitlichen ([Details](./08-dashboard-und-telemetrie.md#t060---verbindungs-ux-vereinheitlichen))
 
-## Phase 9: Reichweitenprognose
+## Phase 8: Reichweitenprognose
 
 - [x] **T061** Reichweiten-Domainmodell definieren (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t061---reichweiten-domainmodell-definieren))
 - [x] **T062** GPS-Distanz filtern (`f2c07ce`) ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
@@ -124,7 +129,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [ ] **T068** Lernzustand persistieren ([Details](./09-reichweitenprognose.md#t068---lernzustand-persistieren))
 - [ ] **T069** Simulation und Dashboard-Integration abschliessen ([Details](./09-reichweitenprognose.md#t069---simulation-und-dashboard-integration-abschliessen))
 
-## Phase 10: Sessions, Fehler und Einstellungen
+## Phase 9: Sessions, Fehler und Einstellungen
 
 - [ ] **T070** Serviceweiten Session-Lifecycle implementieren ([Details](./10-sessions-fehler-einstellungen.md#t070---serviceweiten-session-lifecycle-implementieren))
 - [ ] **T071** Sessionmetriken aggregieren ([Details](./10-sessions-fehler-einstellungen.md#t071---sessionmetriken-aggregieren))
@@ -133,7 +138,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [ ] **T074** Fehlerkatalog und Fehlerhistorie bauen ([Details](./10-sessions-fehler-einstellungen.md#t074---fehlerkatalog-und-fehlerhistorie-bauen))
 - [ ] **T075** Einstellungen und Datenverwaltung konsolidieren ([Details](./10-sessions-fehler-einstellungen.md#t075---einstellungen-und-datenverwaltung-konsolidieren))
 
-## Phase 11: Qualitaet und Release
+## Phase 10: Qualitaet und Release
 
 - [ ] **T076** Kernmodule auf mehr als 80 Prozent Coverage bringen ([Details](./11-qualitaet-und-release.md#t076---kernmodule-auf-mehr-als-80-prozent-coverage-bringen))
 - [ ] **T077** Widget-, Golden- und Accessibility-Tests ergaenzen ([Details](./11-qualitaet-und-release.md#t077---widget--golden--und-accessibility-tests-ergaenzen))
@@ -144,7 +149,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [ ] **T082** Release-Sicherheit fertigstellen ([Details](./11-qualitaet-und-release.md#t082---release-sicherheit-fertigstellen))
 - [ ] **T083** CI und Version-1-Abnahme einrichten ([Details](./11-qualitaet-und-release.md#t083---ci-und-version-1-abnahme-einrichten))
 
-## Phase 12: Version 2 vorbereiten
+## Phase 11: Version 2 vorbereiten
 
 - [ ] **T084** Navigation hinter stabilen Schnittstellen vorbereiten ([Details](./12-version-2-vorbereitung.md#t084---navigation-hinter-stabilen-schnittstellen-vorbereiten))
 - [ ] **T085** Version-2-Backlog konkretisieren ([Details](./12-version-2-vorbereitung.md#t085---version-2-backlog-konkretisieren))
@@ -159,9 +164,9 @@ wurde. Fuer sicherheitskritische Phasen gelten zusaetzlich diese Gates:
   Controller-Fixtures und bestaetigten Registerdefinitionen vorliegen.
 - Nach Phase 4 darf nur ein vollstaendiges, identitaetsgebundenes Backup als
   Stock-Backup angeboten werden.
-- Nach Phase 5 darf kein Write bei unbekanntem, veraltetem oder bewegtem
-  Fahrzeugzustand moeglich sein.
-- Nach Phase 6 gilt ein Profil erst nach erfolgreichem Read-back als aktiv.
-- Nach Phase 7 muss der Street-Legal-Wechsel ohne sichtbare App und ohne
+- Bei spaeterer Aktivierung von Phase 1.5 darf kein Write bei unbekanntem,
+  veraltetem oder bewegtem Fahrzeugzustand moeglich sein.
+- Nach Phase 5 gilt ein Profil erst nach erfolgreichem Read-back als aktiv.
+- Nach Phase 6 muss der Street-Legal-Wechsel ohne sichtbare App und ohne
   Einschalten des Bildschirms funktionieren.
 - Version 1 ist erst nach T083 abgeschlossen.

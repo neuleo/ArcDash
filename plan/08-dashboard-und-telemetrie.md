@@ -1,4 +1,4 @@
-# Phase 8: Dashboard und Telemetrie
+# Phase 7: Dashboard und Telemetrie
 
 ## Phasenziel
 

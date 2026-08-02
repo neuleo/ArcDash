@@ -1,4 +1,4 @@
-# Phase 12: Version 2 vorbereiten
+# Phase 11: Version 2 vorbereiten
 
 ## Phasenziel
 

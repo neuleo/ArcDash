@@ -121,7 +121,7 @@ nicht als Stock-Backup weiterverwendet.
 
 - Fremde, kaputte oder unvollstaendige Backups erzeugen keinen Write-Plan.
 - Ein identischer Snapshot erzeugt einen leeren Plan.
-- Vor Abschluss von Phase 5 existiert keine Umgehung zur realen Ausfuehrung.
+- Vor Aktivierung von Phase 1.5 existiert keine Umgehung zur realen Ausfuehrung.
 
 ## Phasen-Gate
 

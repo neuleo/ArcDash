@@ -14,6 +14,11 @@
 7. Dokumentiere Abweichungen, Risiken und manuelle Hardwaretests.
 8. Markiere den Task erst nach erfuellter Abnahme als `[x]`.
 
+Tasks aus der zurueckgestellten Phase 1.5 werden im aktuellen Read-only-Durchlauf
+nicht aktiviert. Dazu gehoeren auch Write-, ACK-, Read-back-, Rollback- und
+hardwareabhaengige Write-Tests; sie werden erst bei ausdruecklicher Aktivierung
+dieser Phase ausgefuehrt.
+
 Es wird nie stillschweigend am Controller geschrieben. Ohne bestaetigte reale
 Fixtures laufen Protokoll- und Schreibtests nur gegen Fakes oder gespeicherte
 Testdaten.
