@@ -1,0 +1,1 @@
+T013 FarDriver-Speichermodell abbilden. Addr12Block und Addr18Block modellieren 12-Byte-Rohbloecke mit little-endian signed/unsigned Feldern, unveraenderten unbekannten Bytes und bytegenauem Roundtrip. ThrottleResponse aendert nur Bits 2-3 und bewahrt FollowConfig, WeakA und RXD. Boundary-/Format-/Bitnachbar-Tests bestehen.
