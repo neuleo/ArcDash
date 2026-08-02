@@ -24,9 +24,12 @@ class ProfileValidator {
   const ProfileValidator();
 
   ProfileValidation validate(VersionedProfile profile) {
+    return validateParameters(profile.parameters);
+  }
+
+  ProfileValidation validateParameters(Map<String, Object?> parameters) {
     final issues = <ProfileIssue>{};
-    if (profile.name.trim().isEmpty) issues.add(ProfileIssue.invalidName);
-    for (final entry in profile.parameters.entries) {
+    for (final entry in parameters.entries) {
       final definition = _definitionFor(entry.key);
       if (definition == null) {
         issues.add(ProfileIssue.unknownParameter);

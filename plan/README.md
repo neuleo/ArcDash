@@ -85,7 +85,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T038** Versioniertes Profilmodell implementieren (`54de30a`) ([Details](./06-profilsystem.md#t038---versioniertes-profilmodell-implementieren))
 - [!] **T039** Integrierte Profile definieren (BLOCKIERT: verifiziertes Stock-Backup und Hardwaregrenzen fehlen) ([Details](./06-profilsystem.md#t039---integrierte-profile-definieren))
 - [x] **T040** Profilverwaltung implementieren (`c1239ca`) ([Details](./06-profilsystem.md#t040---profilverwaltung-implementieren))
-- [~] **T041** Sicheren Profileditor bauen ([Details](./06-profilsystem.md#t041---sicheren-profileditor-bauen))
+- [!] **T041** Sicheren Profileditor bauen (BLOCKIERT: kein Parameter mit bestaetigten Schreibgrenzen freigegeben) ([Details](./06-profilsystem.md#t041---sicheren-profileditor-bauen))
 - [x] **T042** Profil-Diff und Kompatibilitaet anzeigen (`03aae75`) ([Details](./06-profilsystem.md#t042---profil-diff-und-kompatibilitaet-anzeigen))
 - [x] **T043** JSON-Import und -Export implementieren (`03aae75`) ([Details](./06-profilsystem.md#t043---json-import-und--export-implementieren))
 - [ ] **T044** Profile verifiziert anwenden ([Details](./06-profilsystem.md#t044---profile-verifiziert-anwenden))
