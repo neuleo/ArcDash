@@ -114,9 +114,9 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 9: Reichweitenprognose
 
-- [~] **T061** Reichweiten-Domainmodell definieren ([Details](./09-reichweitenprognose.md#t061---reichweiten-domainmodell-definieren))
-- [!] **T062** GPS-Distanz filtern (READ-ONLY-BASIS: GPS-Integration noch nicht angeschlossen) ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
-- [~] **T063** Energie und Ladung integrieren ([Details](./09-reichweitenprognose.md#t063---energie-und-ladung-integrieren))
+- [x] **T061** Reichweiten-Domainmodell definieren (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t061---reichweiten-domainmodell-definieren))
+- [~] **T062** GPS-Distanz filtern ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
+- [x] **T063** Energie und Ladung integrieren (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t063---energie-und-ladung-integrieren))
 - [ ] **T064** Spannungsbasierten SOC-Filter bauen ([Details](./09-reichweitenprognose.md#t064---spannungsbasierten-soc-filter-bauen))
 - [ ] **T065** Nutzbare Kapazitaet lernen ([Details](./09-reichweitenprognose.md#t065---nutzbare-kapazitaet-lernen))
 - [ ] **T066** Verbrauchsfenster und Fahrstil modellieren ([Details](./09-reichweitenprognose.md#t066---verbrauchsfenster-und-fahrstil-modellieren))
