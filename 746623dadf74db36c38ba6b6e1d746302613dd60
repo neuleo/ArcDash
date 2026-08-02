@@ -1,0 +1,1 @@
+T017 Testbare Transport-Schnittstelle einfuehren. BleTransport kapselt Scan, Connect, Disconnect, Write, Zustands-, Scan- und Raw-Data-Streams; DongleService implementiert weiterhin den flutter_blue_plus-Adapter. Deterministischer Fake steuert Scanstatus, Bluetooth, Write-/Connect-Ergebnis und Dispose. ControllerNotifier haengt nun am Interface. Fake-Test besteht.
