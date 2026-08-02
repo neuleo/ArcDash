@@ -8,6 +8,7 @@ import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/utils/unit_converter.dart';
 import 'package:arcdash/widgets/battery_indicator.dart';
+import 'package:arcdash/models/range_model.dart';
 import 'package:arcdash/widgets/connection_status_bar.dart';
 import 'package:arcdash/widgets/data_tile.dart';
 import 'package:arcdash/widgets/ride_mode_card.dart';
@@ -434,10 +435,6 @@ class _DashTab extends StatelessWidget {
   final double sessionTopSpeed;
   final ValueChanged<RideMode> onModeSelected;
 
-  // Rough constant for display purposes (will be refined from controller data)
-  static const double _avgConsumptionWhPerKm = 25.0;
-  static const double _battCapacityWh = 1000.0;
-
   const _DashTab({
     required this.controllerState,
     required this.isConnected,
@@ -453,10 +450,10 @@ class _DashTab extends StatelessWidget {
         ? UnitConverter.kphToMph(100.0)
         : UnitConverter.kphToMph(80.0);
 
-    final estimatedRange = UnitConverter.estimatedRangeKm(
-      batteryPercent: controllerState.batteryPercent,
-      battCapacityWh: _battCapacityWh,
-      avgConsumptionWhPerKm: _avgConsumptionWhPerKm,
+    final range = RangeEstimate.estimate(
+      socPercent: controllerState.batteryPercent,
+      usableCapacityWh: null,
+      consumptionWhPerKm: null,
     );
 
     return SingleChildScrollView(
@@ -491,7 +488,8 @@ class _DashTab extends StatelessWidget {
             child: BatteryIndicator(
               percentage: controllerState.batteryPercent,
               voltageV: controllerState.voltageV,
-              estimatedRangeKm: estimatedRange > 0 ? estimatedRange : null,
+              estimatedRangeKm: range.kilometers,
+              rangeStatus: range.status,
               useMph: true,
             ),
           ),

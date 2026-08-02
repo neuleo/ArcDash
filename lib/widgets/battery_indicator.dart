@@ -4,6 +4,7 @@ class BatteryIndicator extends StatelessWidget {
   final double percentage; // 0–100
   final double voltageV;
   final double? estimatedRangeKm;
+  final String? rangeStatus;
   final bool useMph;
 
   const BatteryIndicator({
@@ -11,6 +12,7 @@ class BatteryIndicator extends StatelessWidget {
     required this.percentage,
     required this.voltageV,
     this.estimatedRangeKm,
+    this.rangeStatus,
     this.useMph = false,
   });
 
@@ -99,6 +101,15 @@ class BatteryIndicator extends StatelessWidget {
                   color: Color(0xFF8899AA),
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
+                ),
+              ),
+            ] else if (rangeStatus != null) ...[
+              const SizedBox(width: 12),
+              Text(
+                rangeStatus!,
+                style: const TextStyle(
+                  color: Color(0xFF4A5568),
+                  fontSize: 12,
                 ),
               ),
             ],

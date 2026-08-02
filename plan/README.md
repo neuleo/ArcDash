@@ -78,7 +78,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [!] **T034** Transaktionales Schreiben mit Read-back bauen (BLOCKIERT: reale ACK-/Read-back-Abnahme fehlt) ([Details](./05-sichere-schreibengine.md#t034---transaktionales-schreiben-mit-read-back-bauen))
 - [!] **T035** Teilfehler und Rollback behandeln (BLOCKIERT: reale verifizierte Rollback-Parameter fehlen) ([Details](./05-sichere-schreibengine.md#t035---teilfehler-und-rollback-behandeln))
 - [x] **T036** Write-Lock, Idempotenz und Audit-Log ergaenzen (`ef46d4c`) ([Details](./05-sichere-schreibengine.md#t036---write-lock-idempotenz-und-audit-log-ergaenzen))
-- [!] **T037** Safety-UX und Hardware-Testplan fertigstellen (BLOCKIERT: Hardwaregrenzen und Read-back-Abnahme fehlen) ([Details](./05-sichere-schreibengine.md#t037---safety-ux-und-hardware-testplan-fertigstellen))
+- [!] **T037** Safety-UX und Hardware-Testplan fertigstellen (WRITE-ABHAENGIG: Read-only-V1 ohne reale Schreibabnahme) ([Details](./05-sichere-schreibengine.md#t037---safety-ux-und-hardware-testplan-fertigstellen))
 
 ## Phase 6: Profilsystem
 
@@ -88,8 +88,8 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [!] **T041** Sicheren Profileditor bauen (BLOCKIERT: kein Parameter mit bestaetigten Schreibgrenzen freigegeben) ([Details](./06-profilsystem.md#t041---sicheren-profileditor-bauen))
 - [x] **T042** Profil-Diff und Kompatibilitaet anzeigen (`03aae75`) ([Details](./06-profilsystem.md#t042---profil-diff-und-kompatibilitaet-anzeigen))
 - [x] **T043** JSON-Import und -Export implementieren (`03aae75`) ([Details](./06-profilsystem.md#t043---json-import-und--export-implementieren))
-- [ ] **T044** Profile verifiziert anwenden ([Details](./06-profilsystem.md#t044---profile-verifiziert-anwenden))
-- [ ] **T045** Street-Legal-Fast-Path optimieren ([Details](./06-profilsystem.md#t045---street-legal-fast-path-optimieren))
+- [!] **T044** Profile verifiziert anwenden (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./06-profilsystem.md#t044---profile-verifiziert-anwenden))
+- [!] **T045** Street-Legal-Fast-Path optimieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./06-profilsystem.md#t045---street-legal-fast-path-optimieren))
 
 ## Phase 7: Android-Hintergrundbetrieb
 
@@ -98,9 +98,9 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [ ] **T048** BLE-Session in den Service integrieren ([Details](./07-android-hintergrundbetrieb.md#t048---ble-session-in-den-service-integrieren))
 - [~] **T049** Native Flutter-Kommandobruecke bauen ([Details](./07-android-hintergrundbetrieb.md#t049---native-flutter-kommandobruecke-bauen))
 - [~] **T050** Sicheren MacroDroid-Vertrag definieren ([Details](./07-android-hintergrundbetrieb.md#t050---sicheren-macrodroid-vertrag-definieren))
-- [ ] **T051** Street Legal bei ausgeschaltetem Bildschirm anwenden ([Details](./07-android-hintergrundbetrieb.md#t051---street-legal-bei-ausgeschaltetem-bildschirm-anwenden))
-- [ ] **T052** Hintergrund-Feedback implementieren ([Details](./07-android-hintergrundbetrieb.md#t052---hintergrund-feedback-implementieren))
-- [ ] **T053** Android-Lifecycle-Matrix validieren ([Details](./07-android-hintergrundbetrieb.md#t053---android-lifecycle-matrix-validieren))
+- [!] **T051** Street Legal bei ausgeschaltetem Bildschirm anwenden (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t051---street-legal-bei-ausgeschaltetem-bildschirm-anwenden))
+- [!] **T052** Hintergrund-Feedback implementieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t052---hintergrund-feedback-implementieren))
+- [!] **T053** Android-Lifecycle-Matrix validieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t053---android-lifecycle-matrix-validieren))
 
 ## Phase 8: Dashboard und Telemetrie
 
@@ -114,9 +114,9 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 9: Reichweitenprognose
 
-- [ ] **T061** Reichweiten-Domainmodell definieren ([Details](./09-reichweitenprognose.md#t061---reichweiten-domainmodell-definieren))
-- [ ] **T062** GPS-Distanz filtern ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
-- [ ] **T063** Energie und Ladung integrieren ([Details](./09-reichweitenprognose.md#t063---energie-und-ladung-integrieren))
+- [~] **T061** Reichweiten-Domainmodell definieren ([Details](./09-reichweitenprognose.md#t061---reichweiten-domainmodell-definieren))
+- [!] **T062** GPS-Distanz filtern (READ-ONLY-BASIS: GPS-Integration noch nicht angeschlossen) ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
+- [~] **T063** Energie und Ladung integrieren ([Details](./09-reichweitenprognose.md#t063---energie-und-ladung-integrieren))
 - [ ] **T064** Spannungsbasierten SOC-Filter bauen ([Details](./09-reichweitenprognose.md#t064---spannungsbasierten-soc-filter-bauen))
 - [ ] **T065** Nutzbare Kapazitaet lernen ([Details](./09-reichweitenprognose.md#t065---nutzbare-kapazitaet-lernen))
 - [ ] **T066** Verbrauchsfenster und Fahrstil modellieren ([Details](./09-reichweitenprognose.md#t066---verbrauchsfenster-und-fahrstil-modellieren))
