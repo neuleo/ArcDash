@@ -37,7 +37,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T005** Android-Gradle-Konfiguration reparieren (`b1be29e`) ([Details](./01-grundlage-und-build.md#t005---android-gradle-konfiguration-reparieren))
 - [x] **T006** BikeTunes vollstaendig zu ArcDash umbenennen (`496858f`) ([Details](./01-grundlage-und-build.md#t006---projekt-zu-arcdash-umbenennen))
 - [x] **T007** Abhaengigkeiten und Lints bereinigen (`251b0f2`) ([Details](./01-grundlage-und-build.md#t007---abhaengigkeiten-und-lints-bereinigen))
-- [ ] **T008** Build- und Test-Baseline stabilisieren ([Details](./01-grundlage-und-build.md#t008---build--und-test-baseline-stabilisieren))
+- [~] **T008** Build- und Test-Baseline stabilisieren ([Details](./01-grundlage-und-build.md#t008---build--und-test-baseline-stabilisieren))
 
 ## Phase 2: Protokoll und Parameter
 

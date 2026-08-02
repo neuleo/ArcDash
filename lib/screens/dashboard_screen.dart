@@ -159,10 +159,16 @@ class _ConnectTabState extends ConsumerState<_ConnectTab> {
 
   Future<void> _startScan() async {
     setState(() => _isScanning = true);
-    final adapterState = await FlutterBluePlus.adapterState
-        .firstWhere((s) => s != BluetoothAdapterState.unknown)
-        .timeout(const Duration(seconds: 5),
-            onTimeout: () => BluetoothAdapterState.unavailable);
+    final BluetoothAdapterState adapterState;
+    try {
+      adapterState = await FlutterBluePlus.adapterState
+          .firstWhere((s) => s != BluetoothAdapterState.unknown)
+          .timeout(const Duration(seconds: 5),
+              onTimeout: () => BluetoothAdapterState.unavailable);
+    } on UnsupportedError {
+      if (mounted) setState(() => _isScanning = false);
+      return;
+    }
     if (adapterState != BluetoothAdapterState.on) {
       if (mounted) setState(() => _isScanning = false);
       return;

@@ -1,6 +1,6 @@
 # ArcDash Baseline
 
-Stand: `2026-08-02`  
+Stand: `2026-08-02`
 Arbeitsbaum bei Beginn: sauberer Anwendungscode; eine bereits vorhandene,
 nicht von T003 erzeugte unversionierte Datei `reference/gedankengang.md` blieb
 unangetastet.
@@ -94,3 +94,25 @@ Fehler werden den nachfolgenden Tasks zugeordnet:
 - Backup: T024-T029
 - Background/GPS: T046-T056 und T061-T069
 - Testabdeckung und Release: T076-T083
+
+## T008 Gruene Baseline
+
+Stand: `2026-08-02`
+Die Placeholder-Pruefung wurde durch vier hardwarefreie Tests in
+`test/widget_test.dart` ersetzt: App-Start auf Dashboard, CRC-Erfolg und
+-Mutation, Paketparser mit Kurzpaketfehler sowie zentrale Einheiten-/Grenzwert-
+Konvertierungen. Die aktuelle Docker-Pruefkette ist gruen:
+
+```text
+docker compose run --rm flutter dart format --set-exit-if-changed lib test -> 0
+docker compose run --rm flutter flutter analyze --no-fatal-infos -> 0
+docker compose run --rm flutter flutter test -> 0 (4 Tests)
+docker compose run --rm flutter flutter build apk --debug -> 0
+```
+
+Der Analyzer meldet weiterhin 111 `info`-Hinweise aus dem bestehenden UI-Code;
+mit `--no-fatal-infos` sind sie sichtbar, blockieren aber den Baseline-Check
+nicht. Upstream-Dart-Code wird ueber `analysis_options.yaml` ausgeschlossen.
+Der Host dieses Baseline-Laufs stellt `make` nicht bereit; die Makefile-Targets
+entsprechen den oben ausgefuehrten Docker-Kommandos und werden in einer CI mit
+GNU Make aufgerufen.
