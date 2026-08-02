@@ -58,7 +58,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T020** Scan, Pairing und Service-Erkennung haerten (`164dbd4`) ([Details](./03-ble-und-controller-session.md#t020---scan-pairing-und-service-erkennung-haerten))
 - [x] **T021** Automatisches Wiederverbinden implementieren (`b8ef6d7`) ([Details](./03-ble-und-controller-session.md#t021---automatisches-wiederverbinden-implementieren))
 - [x] **T022** Command-Queue und Protokollzugriff serialisieren (`ab63b52`) ([Details](./03-ble-und-controller-session.md#t022---command-queue-und-protokollzugriff-serialisieren))
-- [ ] **T023** Diagnose-Logging und Export ergaenzen ([Details](./03-ble-und-controller-session.md#t023---diagnose-logging-und-export-ergaenzen))
+- [x] **T023** Diagnose-Logging und Export ergaenzen (`8fea1a8`) ([Details](./03-ble-und-controller-session.md#t023---diagnose-logging-und-export-ergaenzen))
 
 ## Phase 4: Backup und Snapshots
 
