@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/services/write_safety.dart test/write_safety_test.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. Safety tests pass. Hardware bounds remain intentionally unwritable until controller, motor, battery, and BMS limits are confirmed.
