@@ -1,0 +1,1 @@
+T009 Protokoll-Belegmatrix erstellen. plan/protokoll-belegmatrix.md erfasst Status-/Write-Frame, CRC, 55er Adressrotation, aktuelle Decoder- und Writer-Adressen, Skalierungen, Quellen, Widersprueche zu HEB, Save-Kommando, Motionsignalen und Throttle-Bitfeld. Nicht belegte Schreibdefinitionen sind GESPERRT; reale Controllerdaten aus T002/T010/T016 bleiben erforderlich.
