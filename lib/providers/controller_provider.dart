@@ -7,6 +7,7 @@ import 'package:arcdash/services/bluetooth_service.dart'
 import 'package:arcdash/services/protocol_service.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/utils/packet_parser.dart';
+import 'package:arcdash/utils/packet_framer.dart';
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   throw UnimplementedError('Override in ProviderScope');
@@ -19,8 +20,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   StreamSubscription? _dataSub;
   StreamSubscription? _connSub;
 
-  // Rolling byte buffer for packet extraction
-  final List<int> _buffer = [];
+  final PacketFramer _framer = PacketFramer();
 
   // Keep a list of raw packets for the debug screen
   final List<String> _debugPackets = [];
@@ -42,7 +42,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     } else if (cs == DongleConnectionState.disconnected) {
       _dataSub?.cancel();
       _dataSub = null;
-      _buffer.clear();
+      _framer.reset();
     }
   }
 
@@ -56,28 +56,10 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   }
 
   void _onRawData(List<int> chunk) {
-    _buffer.addAll(chunk);
-
-    // Keep buffer bounded
-    if (_buffer.length > 512) {
-      _buffer.removeRange(0, _buffer.length - 512);
+    for (final packet in _framer.add(chunk)) {
+      final parsed = PacketParser.parseStatusPacket(packet);
+      if (parsed != null) _processPacket(parsed, packet);
     }
-
-    // Extract complete 16-byte packets
-    int i = 0;
-    while (i <= _buffer.length - 16) {
-      if (_buffer[i] == 0xAA) {
-        final candidate = _buffer.sublist(i, i + 16);
-        if (PacketParser.parseStatusPacket(candidate) != null) {
-          final parsed = PacketParser.parseStatusPacket(candidate)!;
-          _processPacket(parsed, candidate);
-          i += 16;
-          continue;
-        }
-      }
-      i++;
-    }
-    if (i > 0) _buffer.removeRange(0, i.clamp(0, _buffer.length));
   }
 
   void _processPacket(ParsedPacket parsed, List<int> raw) {
