@@ -94,10 +94,10 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 ## Phase 7: Android-Hintergrundbetrieb
 
 - [x] **T046** Foreground-Service-Architektur festlegen (`95ef4ea`) ([Details](./07-android-hintergrundbetrieb.md#t046---foreground-service-architektur-festlegen))
-- [ ] **T047** Android-Service und Berechtigungen konfigurieren ([Details](./07-android-hintergrundbetrieb.md#t047---android-service-und-berechtigungen-konfigurieren))
+- [~] **T047** Android-Service und Berechtigungen konfigurieren ([Details](./07-android-hintergrundbetrieb.md#t047---android-service-und-berechtigungen-konfigurieren))
 - [ ] **T048** BLE-Session in den Service integrieren ([Details](./07-android-hintergrundbetrieb.md#t048---ble-session-in-den-service-integrieren))
-- [ ] **T049** Native Flutter-Kommandobruecke bauen ([Details](./07-android-hintergrundbetrieb.md#t049---native-flutter-kommandobruecke-bauen))
-- [ ] **T050** Sicheren MacroDroid-Vertrag definieren ([Details](./07-android-hintergrundbetrieb.md#t050---sicheren-macrodroid-vertrag-definieren))
+- [~] **T049** Native Flutter-Kommandobruecke bauen ([Details](./07-android-hintergrundbetrieb.md#t049---native-flutter-kommandobruecke-bauen))
+- [~] **T050** Sicheren MacroDroid-Vertrag definieren ([Details](./07-android-hintergrundbetrieb.md#t050---sicheren-macrodroid-vertrag-definieren))
 - [ ] **T051** Street Legal bei ausgeschaltetem Bildschirm anwenden ([Details](./07-android-hintergrundbetrieb.md#t051---street-legal-bei-ausgeschaltetem-bildschirm-anwenden))
 - [ ] **T052** Hintergrund-Feedback implementieren ([Details](./07-android-hintergrundbetrieb.md#t052---hintergrund-feedback-implementieren))
 - [ ] **T053** Android-Lifecycle-Matrix validieren ([Details](./07-android-hintergrundbetrieb.md#t053---android-lifecycle-matrix-validieren))
