@@ -25,7 +25,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - Technik: [`conductor/tech-stack.md`](../conductor/tech-stack.md)
 - Workflow: [`conductor/workflow.md`](../conductor/workflow.md)
 
-## Phase 0: Projektsteuerung
+## Phase 0: Projektsteuerung [checkpoint: b02f99d]
 
 - [x] **T001** Anforderungs-Traceability erstellen (`5b739c5`) ([Details](./00-ausfuehrungsregeln.md#t001---anforderungs-traceability-erstellen))
 - [x] **T002** Hardware- und Produktentscheidungen erfassen (`ec2db1c`) ([Details](./00-ausfuehrungsregeln.md#t002---hardware--und-produktentscheidungen-erfassen))
