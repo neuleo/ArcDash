@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/services/profile_manager.dart test/profile_manager_test.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. Profile manager tests cover CRUD, duplicate names, independent IDs, and immutable profiles.
