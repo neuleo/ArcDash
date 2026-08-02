@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/services/heb_file_parser.dart test/heb_file_parser_test.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. All tests passed; parser validates the 696-byte HEB layout and preserves all 26 parameter blocks plus CAN configuration.
