@@ -1,0 +1,1 @@
+T014 Telemetrie-, Fehler- und Safety-Register decodieren. TelemetryUpdate enthaelt nun capturedAt und TelemetrySource.controllerStatus; unvollstaendige Bloecke werden verworfen. Golden-/Grenzwerttests sichern Spannung, negativen Strom/Rekuperation, DNR-/Fehlerbits und unbekannte Adressen ohne Crash ab.
