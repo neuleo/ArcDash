@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/models/gps_distance_filter.dart test/gps_distance_filter_test.dart; docker compose run --rm flutter flutter test test/gps_distance_filter_test.dart. GPS filter covers accuracy, staleness, time monotonicity, plausible movement, and teleport rejection.
