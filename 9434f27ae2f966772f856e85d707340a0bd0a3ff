@@ -1,0 +1,1 @@
+T011 CRC durch Golden-Tests absichern. Fester 16-Byte-Vektor erwartet CRC FD FC, 8-Byte-Write-Vektor wird validiert, Nutzdaten-Bitmutationen werden verworfen und kurze/ungueltige Eingaben fail-closed behandelt. Der Red-Test reproduzierte zudem einen RangeError in verifyCRC; Laengenvalidierung wurde minimal ergaenzt. Alle Tests bestehen.
