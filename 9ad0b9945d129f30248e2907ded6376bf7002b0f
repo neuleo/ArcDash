@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/services/profile_tools.dart lib/screens/tuning_screen.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. Full tests passed; editor controls are disabled while hardware bounds remain unknown.
