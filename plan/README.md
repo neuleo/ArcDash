@@ -47,7 +47,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T012** Fragmentierungsfesten Paket-Framer bauen (`6a95ff0`) ([Details](./02-protokoll-und-parameter.md#t012---fragmentierungsfesten-paket-framer-bauen))
 - [x] **T013** FarDriver-Speichermodell abbilden (`e550cf7`) ([Details](./02-protokoll-und-parameter.md#t013---fardriver-speichermodell-abbilden))
 - [x] **T014** Telemetrie-, Fehler- und Safety-Register decodieren (`981f044`) ([Details](./02-protokoll-und-parameter.md#t014---telemetrie--fehler--und-safety-register-decodieren))
-- [ ] **T015** Parameter-Snapshots aus dem Datenstrom aufbauen ([Details](./02-protokoll-und-parameter.md#t015---parameter-snapshots-aus-dem-datenstrom-aufbauen))
+- [~] **T015** Parameter-Snapshots aus dem Datenstrom aufbauen ([Details](./02-protokoll-und-parameter.md#t015---parameter-snapshots-aus-dem-datenstrom-aufbauen))
 - [ ] **T016** Schreibprotokoll, ACK und HEB validieren ([Details](./02-protokoll-und-parameter.md#t016---schreibprotokoll-ack-und-heb-validieren))
 
 ## Phase 3: BLE und Controller-Session
