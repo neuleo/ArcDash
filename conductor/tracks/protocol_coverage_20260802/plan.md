@@ -9,7 +9,7 @@ All commands run inside the Docker container (`make test`, `make codegen`, etc.)
 
 ## Phase 1: Test Infrastructure Setup
 
-- [ ] Task: Set up protocol-layer test infrastructure
+- [~] Task: Set up protocol-layer test infrastructure
     - [ ] Create `test/utils/` and `test/services/` directories with mirrored test files for `crc_calculator.dart`, `packet_parser.dart`, `protocol_service.dart`, and `unit_converter.dart`
     - [ ] Add shared test helpers (e.g., known-good packet builders / reference vectors) in `test/helpers/`
     - [ ] Verify the suite runs inside Docker via `make test`
