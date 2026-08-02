@@ -1,0 +1,1 @@
+T015 Parameter-Snapshots aus dem Datenstrom aufbauen. ParameterSnapshotBuilder sammelt erwartete 12-Byte-Bloecke mit Controllerbindung, Fortschritt, Missing-Set, Duplikat-Replacement, Timeout und Neustart bei Identitaetswechsel. Tests decken ungeordnete/unvollstaendige, doppelte, stale und gemischte Controllerdaten ab.
