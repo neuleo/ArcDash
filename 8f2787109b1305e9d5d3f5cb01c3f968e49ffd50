@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/services/restore_planner.dart test/restore_planner_test.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. Restore planning is non-executable by design and rejects incomplete or incompatible snapshots.
