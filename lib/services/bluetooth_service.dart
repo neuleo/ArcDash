@@ -5,6 +5,8 @@ import 'package:arcdash/services/ble_transport.dart';
 // BLE UART service/characteristic UUIDs for HM-10/HC-08 style dongles
 const _uartServiceUuid = '0000ffe0-0000-1000-8000-00805f9b34fb';
 const _uartCharUuid = '0000ffe1-0000-1000-8000-00805f9b34fb';
+const _targetServiceUuid = '0000ff00-0000-1000-8000-00805f9b34fb';
+const _targetCharUuid = '0000ffec-0000-1000-8000-00805f9b34fb';
 
 // Additional UUID variants some dongles use
 const _altServiceUuid = '49535343-fe7d-4ae5-8fa9-9fafd205e455';
@@ -35,6 +37,7 @@ class DiscoveredDongle {
 class DongleService implements BleTransport {
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _writeChar;
+  bool _writeWithoutResponse = true;
   StreamSubscription? _notifySubscription;
   StreamSubscription? _deviceStateSubscription;
 
@@ -69,10 +72,8 @@ class DongleService implements BleTransport {
 
   /// Starts scanning for FarDriver tuner dongles only.
   ///
-  /// Layer 1: BLE-level service UUID filter — only devices advertising the
-  /// known UART service UUIDs reach the callback (eliminates phones, headphones, etc.).
-  /// Layer 2: Name-pattern filter — catches dongles advertising those services
-  /// and validates against known FarDriver naming conventions.
+  /// Scans without an advertisement UUID restriction because some target
+  /// dongles expose their UART only after service discovery.
   Future<void> startScan(
       {Duration timeout = const Duration(seconds: 10)}) async {
     _setState(DongleConnectionState.scanning);
@@ -82,10 +83,6 @@ class DongleService implements BleTransport {
       await FlutterBluePlus.startScan(
         timeout: timeout,
         androidUsesFineLocation: true,
-        withServices: [
-          Guid(_uartServiceUuid),
-          Guid(_altServiceUuid),
-        ],
       );
 
       final sub = FlutterBluePlus.scanResults.listen((scanResults) {
@@ -97,11 +94,14 @@ class DongleService implements BleTransport {
               (name.contains('yuanq') ||
                   name.contains('foc') ||
                   name.contains('fardriver') ||
+                  name.contains('control') ||
                   name.contains('ffe0') ||
                   name.contains('nd'));
           final matchesService = r.advertisementData.serviceUuids.any((u) {
             final s = u.toString().toLowerCase();
-            return s.contains('ffe0') || s.contains('49535343');
+            return s.contains('ff00') ||
+                s.contains('ffe0') ||
+                s.contains('49535343');
           });
           if (matchesName || matchesService) {
             results[r.device.remoteId.str] = DiscoveredDongle(
@@ -155,13 +155,23 @@ class DongleService implements BleTransport {
       // Discover services
       final services = await dongle.device.discoverServices();
 
-      // Try primary UART service (FFE0/FFE1)
+      // Prefer the confirmed target UART, then retain legacy fallbacks.
       bool found = await _setupUartService(
         services,
-        _uartServiceUuid,
-        _uartCharUuid,
-        _uartCharUuid,
+        _targetServiceUuid,
+        _targetCharUuid,
+        _targetCharUuid,
       );
+
+      // Try primary UART service (FFE0/FFE1).
+      if (!found) {
+        found = await _setupUartService(
+          services,
+          _uartServiceUuid,
+          _uartCharUuid,
+          _uartCharUuid,
+        );
+      }
 
       // Fallback to alternative UART service
       if (!found) {
@@ -213,8 +223,12 @@ class DongleService implements BleTransport {
       final notifyChar = findChar(chars, notifyCharUuid);
 
       if (writeChar == null || notifyChar == null) return false;
+      final canWriteWithoutResponse = writeChar.properties.writeWithoutResponse;
+      final canWriteWithResponse = writeChar.properties.write;
+      if (!canWriteWithoutResponse && !canWriteWithResponse) return false;
 
       _writeChar = writeChar;
+      _writeWithoutResponse = canWriteWithoutResponse;
 
       await notifyChar.setNotifyValue(true);
       _notifySubscription = notifyChar.onValueReceived.listen((data) {
@@ -235,7 +249,7 @@ class DongleService implements BleTransport {
       return false;
     }
     try {
-      await _writeChar!.write(data, withoutResponse: true);
+      await _writeChar!.write(data, withoutResponse: _writeWithoutResponse);
       return true;
     } catch (_) {
       return false;
@@ -255,6 +269,7 @@ class DongleService implements BleTransport {
       _connectedDevice = null;
     }
     _writeChar = null;
+    _writeWithoutResponse = true;
     _setState(DongleConnectionState.disconnected);
   }
 
@@ -262,6 +277,7 @@ class DongleService implements BleTransport {
     _notifySubscription?.cancel();
     _notifySubscription = null;
     _writeChar = null;
+    _writeWithoutResponse = true;
     _connectedDevice = null;
     _setState(DongleConnectionState.disconnected);
   }
