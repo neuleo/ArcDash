@@ -98,9 +98,21 @@ class ProtocolService {
   }
 
   /// Verifies an 8-byte write ack packet from the controller.
-  static bool verifyWriteAck(List<int> packet) {
+  static bool verifyWriteAck(
+    List<int> packet, {
+    int? expectedAddress,
+    int? expectedValue,
+  }) {
     if (packet.length < 8) return false;
     if (packet[0] != 0xAA) return false;
-    return CrcCalculator.verifyCRC(packet, 8);
+    if (!CrcCalculator.verifyCRC(packet, 8)) return false;
+    if (expectedAddress != null && packet[2] != (expectedAddress & 0xFF)) {
+      return false;
+    }
+    if (expectedValue != null) {
+      final value = packet[4] | (packet[5] << 8);
+      if (value != (expectedValue & 0xFFFF)) return false;
+    }
+    return true;
   }
 }
