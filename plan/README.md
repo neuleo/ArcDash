@@ -52,7 +52,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 3: BLE und Controller-Session
 
-- [~] **T017** Testbare Transport-Schnittstelle einfuehren ([Details](./03-ble-und-controller-session.md#t017---testbare-transport-schnittstelle-einfuehren))
+- [x] **T017** Testbare Transport-Schnittstelle einfuehren (`746623d`) ([Details](./03-ble-und-controller-session.md#t017---testbare-transport-schnittstelle-einfuehren))
 - [ ] **T018** Zustandsbehaftete Controller-Session bauen ([Details](./03-ble-und-controller-session.md#t018---zustandsbehaftete-controller-session-bauen))
 - [ ] **T019** Android-Runtime-Permissions implementieren ([Details](./03-ble-und-controller-session.md#t019---android-runtime-permissions-implementieren))
 - [ ] **T020** Scan, Pairing und Service-Erkennung haerten ([Details](./03-ble-und-controller-session.md#t020---scan-pairing-und-service-erkennung-haerten))
