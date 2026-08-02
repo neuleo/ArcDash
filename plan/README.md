@@ -56,7 +56,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T018** Zustandsbehaftete Controller-Session bauen (`8be4515`) ([Details](./03-ble-und-controller-session.md#t018---zustandsbehaftete-controller-session-bauen))
 - [x] **T019** Android-Runtime-Permissions implementieren (`dbc21d5`) ([Details](./03-ble-und-controller-session.md#t019---android-runtime-permissions-implementieren))
 - [x] **T020** Scan, Pairing und Service-Erkennung haerten (`164dbd4`) ([Details](./03-ble-und-controller-session.md#t020---scan-pairing-und-service-erkennung-haerten))
-- [~] **T021** Automatisches Wiederverbinden implementieren ([Details](./03-ble-und-controller-session.md#t021---automatisches-wiederverbinden-implementieren))
+- [x] **T021** Automatisches Wiederverbinden implementieren (`b8ef6d7`) ([Details](./03-ble-und-controller-session.md#t021---automatisches-wiederverbinden-implementieren))
 - [ ] **T022** Command-Queue und Protokollzugriff serialisieren ([Details](./03-ble-und-controller-session.md#t022---command-queue-und-protokollzugriff-serialisieren))
 - [ ] **T023** Diagnose-Logging und Export ergaenzen ([Details](./03-ble-und-controller-session.md#t023---diagnose-logging-und-export-ergaenzen))
 
