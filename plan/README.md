@@ -83,11 +83,11 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 ## Phase 6: Profilsystem
 
 - [x] **T038** Versioniertes Profilmodell implementieren (`54de30a`) ([Details](./06-profilsystem.md#t038---versioniertes-profilmodell-implementieren))
-- [ ] **T039** Integrierte Profile definieren ([Details](./06-profilsystem.md#t039---integrierte-profile-definieren))
-- [~] **T040** Profilverwaltung implementieren ([Details](./06-profilsystem.md#t040---profilverwaltung-implementieren))
-- [ ] **T041** Sicheren Profileditor bauen ([Details](./06-profilsystem.md#t041---sicheren-profileditor-bauen))
-- [ ] **T042** Profil-Diff und Kompatibilitaet anzeigen ([Details](./06-profilsystem.md#t042---profil-diff-und-kompatibilitaet-anzeigen))
-- [ ] **T043** JSON-Import und -Export implementieren ([Details](./06-profilsystem.md#t043---json-import-und--export-implementieren))
+- [!] **T039** Integrierte Profile definieren (BLOCKIERT: verifiziertes Stock-Backup und Hardwaregrenzen fehlen) ([Details](./06-profilsystem.md#t039---integrierte-profile-definieren))
+- [x] **T040** Profilverwaltung implementieren (`c1239ca`) ([Details](./06-profilsystem.md#t040---profilverwaltung-implementieren))
+- [~] **T041** Sicheren Profileditor bauen ([Details](./06-profilsystem.md#t041---sicheren-profileditor-bauen))
+- [~] **T042** Profil-Diff und Kompatibilitaet anzeigen ([Details](./06-profilsystem.md#t042---profil-diff-und-kompatibilitaet-anzeigen))
+- [~] **T043** JSON-Import und -Export implementieren ([Details](./06-profilsystem.md#t043---json-import-und--export-implementieren))
 - [ ] **T044** Profile verifiziert anwenden ([Details](./06-profilsystem.md#t044---profile-verifiziert-anwenden))
 - [ ] **T045** Street-Legal-Fast-Path optimieren ([Details](./06-profilsystem.md#t045---street-legal-fast-path-optimieren))
 
