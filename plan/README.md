@@ -64,7 +64,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 - [x] **T024** Versionierte Persistenzarchitektur festlegen (`635f11e`) ([Details](./04-backup-und-snapshots.md#t024---versionierte-persistenzarchitektur-festlegen))
 - [x] **T025** Controller-Identitaet und Kompatibilitaet erfassen (`f1d8c46`) ([Details](./04-backup-und-snapshots.md#t025---controller-identitaet-und-kompatibilitaet-erfassen))
-- [~] **T026** Vollstaendige Parametersnapshots atomar speichern ([Details](./04-backup-und-snapshots.md#t026---vollstaendige-parametersnapshots-atomar-speichern))
+- [x] **T026** Vollstaendige Parametersnapshots atomar speichern (`f30b3d2`) ([Details](./04-backup-und-snapshots.md#t026---vollstaendige-parametersnapshots-atomar-speichern))
 - [ ] **T027** Verlaessliches Stock-Backup erzeugen ([Details](./04-backup-und-snapshots.md#t027---verlaessliches-stock-backup-erzeugen))
 - [ ] **T028** Backup-Import und -Export implementieren ([Details](./04-backup-und-snapshots.md#t028---backup-import-und--export-implementieren))
 - [ ] **T029** Sicheren Restore-Ablauf vorbereiten ([Details](./04-backup-und-snapshots.md#t029---sicheren-restore-ablauf-vorbereiten))
