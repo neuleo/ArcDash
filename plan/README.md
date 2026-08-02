@@ -31,7 +31,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T002** Hardware- und Produktentscheidungen erfassen (`ec2db1c`) ([Details](./00-ausfuehrungsregeln.md#t002---hardware--und-produktentscheidungen-erfassen))
 - [x] **T003** Reproduzierbaren Ist-Zustand dokumentieren (`87a0202`) ([Details](./00-ausfuehrungsregeln.md#t003---reproduzierbaren-ist-zustand-dokumentieren))
 
-## Phase 1: Grundlage und Build
+## Phase 1: Grundlage und Build [checkpoint: 9531be3]
 
 - [x] **T004** Flutter-, Dart-, Docker- und Android-Versionen festlegen (`8aad3e5`) ([Details](./01-grundlage-und-build.md#t004---toolchain-reproduzierbar-festlegen))
 - [x] **T005** Android-Gradle-Konfiguration reparieren (`b1be29e`) ([Details](./01-grundlage-und-build.md#t005---android-gradle-konfiguration-reparieren))
