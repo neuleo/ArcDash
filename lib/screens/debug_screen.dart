@@ -89,7 +89,7 @@ class DebugScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.small(
         onPressed: () {
-          final text = packets.join('\n');
+          final text = notifier.exportDiagnosticJson();
           Clipboard.setData(ClipboardData(text: text));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

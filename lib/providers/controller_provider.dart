@@ -9,6 +9,7 @@ import 'package:arcdash/services/protocol_service.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/utils/packet_parser.dart';
 import 'package:arcdash/utils/packet_framer.dart';
+import 'package:arcdash/services/diagnostic_log.dart';
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   throw UnimplementedError('Override in ProviderScope');
@@ -17,6 +18,7 @@ final storageServiceProvider = Provider<StorageService>((ref) {
 class ControllerNotifier extends StateNotifier<ControllerState> {
   final BleTransport _bluetooth;
   final StorageService _storage;
+  final DiagnosticLog _diagnostics;
 
   StreamSubscription? _dataSub;
   StreamSubscription? _connSub;
@@ -31,13 +33,23 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
   List<String> get debugPackets => List.unmodifiable(_debugPackets);
   double get packetRate => _packetRate;
+  DiagnosticLog get diagnostics => _diagnostics;
+  String exportDiagnosticJson() => _diagnostics.exportJson();
 
-  ControllerNotifier(this._bluetooth, this._storage)
-      : super(ControllerState.initial()) {
+  ControllerNotifier(this._bluetooth, this._storage,
+      {DiagnosticLog? diagnostics})
+      : _diagnostics = diagnostics ?? DiagnosticLog(),
+        super(ControllerState.initial()) {
     _connSub = _bluetooth.connectionStateStream.listen(_onConnectionState);
   }
 
   void _onConnectionState(DongleConnectionState cs) {
+    _diagnostics.add(
+      cs == DongleConnectionState.disconnected
+          ? DiagnosticEventType.reconnect
+          : DiagnosticEventType.connect,
+      details: {'state': cs.name},
+    );
     if (cs == DongleConnectionState.connected) {
       _onConnected();
     } else if (cs == DongleConnectionState.disconnected) {
@@ -59,7 +71,14 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   void _onRawData(List<int> chunk) {
     for (final packet in _framer.add(chunk)) {
       final parsed = PacketParser.parseStatusPacket(packet);
-      if (parsed != null) _processPacket(parsed, packet);
+      if (parsed != null) {
+        _processPacket(parsed, packet);
+      } else {
+        _diagnostics.add(DiagnosticEventType.parserError, details: {
+          'length': packet.length,
+          'reason': 'unsupported_frame',
+        });
+      }
     }
   }
 
@@ -68,6 +87,10 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     final hex = PacketParser.toHexString(raw);
     _debugPackets.add(
         '[0x${parsed.address.toRadixString(16).padLeft(2, '0').toUpperCase()}] $hex');
+    _diagnostics.add(
+      DiagnosticEventType.frame,
+      details: {'address': parsed.address, 'length': raw.length, 'hex': hex},
+    );
     if (_debugPackets.length > 50) _debugPackets.removeAt(0);
 
     // Packet rate calculation
@@ -164,10 +187,21 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   }
 
   Future<void> setRideMode(RideMode mode) async {
-    if (state.speedKph > 2.0) return; // Safety: no changes while moving
+    if (state.speedKph > 2.0) {
+      _diagnostics.add(DiagnosticEventType.safety, details: {
+        'outcome': 'blocked',
+        'reason': 'vehicle_moving',
+      });
+      return;
+    }
     final packet =
         ProtocolService.setThrottleResponsePacket(mode.throttleResponseValue);
-    await _bluetooth.write(packet);
+    final written = await _bluetooth.write(packet);
+    _diagnostics.add(DiagnosticEventType.command, details: {
+      'outcome': written ? 'transport_success' : 'transport_failure',
+      'command': 'set_ride_mode',
+    });
+    if (!written) return;
     state = state.copyWith(rideMode: mode, lastUpdate: DateTime.now());
   }
 
