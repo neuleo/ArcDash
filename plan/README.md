@@ -33,7 +33,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 1: Grundlage und Build
 
-- [ ] **T004** Flutter-, Dart-, Docker- und Android-Versionen festlegen ([Details](./01-grundlage-und-build.md#t004---toolchain-reproduzierbar-festlegen))
+- [~] **T004** Flutter-, Dart-, Docker- und Android-Versionen festlegen ([Details](./01-grundlage-und-build.md#t004---toolchain-reproduzierbar-festlegen))
 - [ ] **T005** Android-Gradle-Konfiguration reparieren ([Details](./01-grundlage-und-build.md#t005---android-gradle-konfiguration-reparieren))
 - [ ] **T006** BikeTunes vollstaendig zu ArcDash umbenennen ([Details](./01-grundlage-und-build.md#t006---projekt-zu-arcdash-umbenennen))
 - [ ] **T007** Abhaengigkeiten und Lints bereinigen ([Details](./01-grundlage-und-build.md#t007---abhaengigkeiten-und-lints-bereinigen))
