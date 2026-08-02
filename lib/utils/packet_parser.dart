@@ -4,14 +4,61 @@ import 'package:arcdash/utils/crc_calculator.dart';
 /// Memory address lookup table for rotating status packet IDs (0–54).
 /// id < 0x37 maps to flash_read_addr[id] from the FarDriver protocol repo.
 const List<int> flashReadAddr = [
-  0xE2, 0xE8, 0xEE, 0x00, 0x06, 0x0C, 0x12,
-  0xE2, 0xE8, 0xEE, 0x18, 0x1E, 0x24, 0x2A,
-  0xE2, 0xE8, 0xEE, 0x30, 0x5D, 0x63, 0x69,
-  0xE2, 0xE8, 0xEE, 0x7C, 0x82, 0x88, 0x8E,
-  0xE2, 0xE8, 0xEE, 0x94, 0x9A, 0xA0, 0xA6,
-  0xE2, 0xE8, 0xEE, 0xAC, 0xB2, 0xB8, 0xBE,
-  0xE2, 0xE8, 0xEE, 0xC4, 0xCA, 0xD0,
-  0xE2, 0xE8, 0xEE, 0xD6, 0xDC, 0xF4, 0xFA,
+  0xE2,
+  0xE8,
+  0xEE,
+  0x00,
+  0x06,
+  0x0C,
+  0x12,
+  0xE2,
+  0xE8,
+  0xEE,
+  0x18,
+  0x1E,
+  0x24,
+  0x2A,
+  0xE2,
+  0xE8,
+  0xEE,
+  0x30,
+  0x5D,
+  0x63,
+  0x69,
+  0xE2,
+  0xE8,
+  0xEE,
+  0x7C,
+  0x82,
+  0x88,
+  0x8E,
+  0xE2,
+  0xE8,
+  0xEE,
+  0x94,
+  0x9A,
+  0xA0,
+  0xA6,
+  0xE2,
+  0xE8,
+  0xEE,
+  0xAC,
+  0xB2,
+  0xB8,
+  0xBE,
+  0xE2,
+  0xE8,
+  0xEE,
+  0xC4,
+  0xCA,
+  0xD0,
+  0xE2,
+  0xE8,
+  0xEE,
+  0xD6,
+  0xDC,
+  0xF4,
+  0xFA,
 ];
 
 /// Result of parsing a single 16-byte status packet.
@@ -41,19 +88,19 @@ class TelemetryUpdate {
   final bool? controllerTempProtect;
 
   // From 0xE8 (AddrE8)
-  final double? voltageV;    // deci_volts / 10.0
-  final double? currentA;    // lineCurrent / 4.0
+  final double? voltageV; // deci_volts / 10.0
+  final double? currentA; // lineCurrent / 4.0
 
   // From 0xEE (AddrEE)
   final double? phaseACurrA; // 1.953125 * sqrt(raw)
   final double? phaseCCurrA;
 
   // From 0xF4 (AddrF4)
-  final double? motorTempC;  // raw int16 (degrees C)
+  final double? motorTempC; // raw int16 (degrees C)
   final int? battCapPercent; // SOC 0–100
 
   // From 0xD6 (AddrD6)
-  final double? mosTempC;    // MosTemp (controller temp, degrees C)
+  final double? mosTempC; // MosTemp (controller temp, degrees C)
 
   // From 0xD0 (AddrD0) — wheel geometry for speed calculation
   final int? wheelRadius;
@@ -157,7 +204,8 @@ class PacketParser {
 
   /// Reads 24-bit big-endian value used for phase currents.
   static double readPhaseCurrent(List<int> data, int offset) {
-    final raw = (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
+    final raw =
+        (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
     return 1.953125 * math.sqrt(raw.toDouble());
   }
 
@@ -170,7 +218,8 @@ class PacketParser {
         final stateByte = d[0];
         final errByte1 = d[2];
         final errByte2 = d[3];
-        final measureSpeed = readUint16LE(d, 6); // bytes 8-9 relative to B0 = bytes 6-7 in rawData
+        final measureSpeed = readUint16LE(
+            d, 6); // bytes 8-9 relative to B0 = bytes 6-7 in rawData
         return TelemetryUpdate(
           measureSpeed: measureSpeed,
           forward: (stateByte & 0x01) != 0,
@@ -226,7 +275,8 @@ class PacketParser {
         );
 
       case 0x12: // Addr12 — MaxSpeed
-        final maxSpeed = readUint16LE(d, 6); // bytes 8-9 of packet = 6-7 in rawData
+        final maxSpeed =
+            readUint16LE(d, 6); // bytes 8-9 of packet = 6-7 in rawData
         return TelemetryUpdate(maxSpeed: maxSpeed);
 
       case 0x18: // Addr18 — MaxLineCurr
@@ -236,7 +286,8 @@ class PacketParser {
       case 0x0C: // Addr0C — battery calibration
         final zeroBatt = readInt16LE(d, 2);
         final fullBatt = readInt16LE(d, 4);
-        return TelemetryUpdate(zeroBattCoeff: zeroBatt, fullBattCoeff: fullBatt);
+        return TelemetryUpdate(
+            zeroBattCoeff: zeroBatt, fullBattCoeff: fullBatt);
 
       default:
         return null;
@@ -245,7 +296,9 @@ class PacketParser {
 
   /// Formats a packet as hex string for debug display.
   static String toHexString(List<int> packet) {
-    return packet.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
+    return packet
+        .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
+        .join(' ');
   }
 }
 

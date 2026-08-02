@@ -56,9 +56,12 @@ class DebugScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
               child: Row(
                 children: [
-                  _LegendDot(color: const Color(0xFF00E5FF), label: 'E2/E8/EE (live data)'),
+                  _LegendDot(
+                      color: const Color(0xFF00E5FF),
+                      label: 'E2/E8/EE (live data)'),
                   const SizedBox(width: 16),
-                  _LegendDot(color: const Color(0xFF39FF14), label: 'F4/D6 (temps)'),
+                  _LegendDot(
+                      color: const Color(0xFF39FF14), label: 'F4/D6 (temps)'),
                   const SizedBox(width: 16),
                   _LegendDot(color: const Color(0xFFFF9800), label: 'other'),
                 ],
@@ -69,7 +72,8 @@ class DebugScreen extends ConsumerWidget {
                   ? const _EmptyDebug()
                   : ListView.builder(
                       reverse: true,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       itemCount: packets.length,
                       itemBuilder: (ctx, i) {
                         final packet = packets[packets.length - 1 - i];

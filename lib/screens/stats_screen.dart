@@ -251,8 +251,7 @@ class _SpeedChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final maxY = samples.fold(0.0, (a, b) => a > b ? a : b);
     final spots = [
-      for (int i = 0; i < samples.length; i++)
-        FlSpot(i.toDouble(), samples[i]),
+      for (int i = 0; i < samples.length; i++) FlSpot(i.toDouble(), samples[i]),
     ];
 
     return Container(
@@ -334,13 +333,13 @@ class _PastSessionCard extends StatelessWidget {
     final startTime = DateTime.tryParse(json['startTime'] as String? ?? '');
     final distKm = (json['distanceKm'] as num?)?.toDouble() ?? 0.0;
     final distMi = distKm * 0.621371;
-    final maxSpd = ((json['maxSpeedKph'] as num?)?.toDouble() ?? 0.0) * 0.621371;
+    final maxSpd =
+        ((json['maxSpeedKph'] as num?)?.toDouble() ?? 0.0) * 0.621371;
     final durSec = (json['durationSeconds'] as num?)?.toInt() ?? 0;
     final wh = (json['totalWhUsed'] as num?)?.toDouble() ?? 0.0;
 
-    final dateStr = startTime != null
-        ? DateFormat('MMM d, HH:mm').format(startTime)
-        : '—';
+    final dateStr =
+        startTime != null ? DateFormat('MMM d, HH:mm').format(startTime) : '—';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -416,7 +415,8 @@ class _EmptySession extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Connect to the controller to start tracking',
-            style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 13),
+            style:
+                TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 13),
           ),
         ],
       ),

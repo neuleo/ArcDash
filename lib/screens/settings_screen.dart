@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/tuning_provider.dart';
-import 'package:arcdash/services/bluetooth_service.dart';
-import 'package:arcdash/services/storage_service.dart';
 
 final _useMphProvider = StateProvider<bool>((ref) {
   final storage = ref.read(storageServiceProvider);
@@ -74,9 +72,8 @@ class SettingsScreen extends ConsumerWidget {
                   ? 'Backup saved from first connect'
                   : 'Not yet backed up — connect first',
               icon: Icons.save_outlined,
-              iconColor: hasBackup
-                  ? const Color(0xFF39FF14)
-                  : const Color(0xFF4A5568),
+              iconColor:
+                  hasBackup ? const Color(0xFF39FF14) : const Color(0xFF4A5568),
             ),
             const SizedBox(height: 10),
             _SettingsTile(
@@ -98,8 +95,9 @@ class SettingsScreen extends ConsumerWidget {
                 _ProfileTile(
                   name: profile.name,
                   description: profile.description,
-                  onDelete: () =>
-                      ref.read(tuningProvider.notifier).deleteProfile(profile.name),
+                  onDelete: () => ref
+                      .read(tuningProvider.notifier)
+                      .deleteProfile(profile.name),
                   onLoad: () {
                     ref.read(tuningProvider.notifier).loadPreset(profile);
                     Navigator.of(context).pop();
@@ -114,9 +112,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 10),
             _SettingsTile(
               title: 'Disconnect',
-              subtitle: isConnected
-                  ? 'Currently connected'
-                  : 'Not connected',
+              subtitle: isConnected ? 'Currently connected' : 'Not connected',
               icon: Icons.bluetooth_disabled,
               iconColor: isConnected
                   ? const Color(0xFFFF1744)
@@ -309,8 +305,9 @@ class _SettingsTile extends StatelessWidget {
             if (icon != null) ...[
               Icon(
                 icon,
-                color:
-                    enabled ? (iconColor ?? const Color(0xFF00E5FF)) : const Color(0xFF2A3548),
+                color: enabled
+                    ? (iconColor ?? const Color(0xFF00E5FF))
+                    : const Color(0xFF2A3548),
                 size: 20,
               ),
               const SizedBox(width: 14),
@@ -342,7 +339,8 @@ class _SettingsTile extends StatelessWidget {
             if (trailing != null)
               trailing!
             else if (onTap != null && enabled)
-              const Icon(Icons.chevron_right, color: Color(0xFF4A5568), size: 20),
+              const Icon(Icons.chevron_right,
+                  color: Color(0xFF4A5568), size: 20),
           ],
         ),
       ),
@@ -399,8 +397,10 @@ class _ProfileTile extends StatelessWidget {
           ),
           TextButton(
             onPressed: onLoad,
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF00E5FF)),
-            child: const Text('LOAD', style: TextStyle(fontSize: 11, letterSpacing: 1)),
+            style:
+                TextButton.styleFrom(foregroundColor: const Color(0xFF00E5FF)),
+            child: const Text('LOAD',
+                style: TextStyle(fontSize: 11, letterSpacing: 1)),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 18),

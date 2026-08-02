@@ -84,8 +84,9 @@ class StorageService {
     final sessions = _loadSessionJsonList();
     sessions.add(session.toJson());
     // Keep only last 50 sessions
-    final trimmed =
-        sessions.length > 50 ? sessions.sublist(sessions.length - 50) : sessions;
+    final trimmed = sessions.length > 50
+        ? sessions.sublist(sessions.length - 50)
+        : sessions;
     await _prefs.setString(_prefKeyRideSessions, jsonEncode(trimmed));
   }
 

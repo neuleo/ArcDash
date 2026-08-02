@@ -60,8 +60,8 @@ class ControllerState {
   final int rateRatio;
 
   // Tunable parameters (read from controller)
-  final int maxSpeedRaw;       // raw RPM value
-  final int maxLineCurrRaw;    // raw, divide by 4 for amps
+  final int maxSpeedRaw; // raw RPM value
+  final int maxLineCurrRaw; // raw, divide by 4 for amps
   final int zeroBattCoeff;
   final int fullBattCoeff;
 
@@ -109,7 +109,10 @@ class ControllerState {
 
   double get maxLineCurrA => maxLineCurrRaw / 4.0;
   bool get hasAnyFault =>
-      motorHallError || throttleError || motorTempProtect || controllerTempProtect;
+      motorHallError ||
+      throttleError ||
+      motorTempProtect ||
+      controllerTempProtect;
 
   ControllerState copyWith({
     double? speedKph,

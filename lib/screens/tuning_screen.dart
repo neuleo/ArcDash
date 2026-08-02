@@ -68,8 +68,10 @@ class TuningScreen extends ConsumerWidget {
                 min: UnitConverter.kphToMph(10),
                 max: UnitConverter.kphToMph(100),
                 unit: 'mph',
-                displayValue: UnitConverter.kphToMph(profile.maxSpeedKph).toStringAsFixed(0),
-                onChanged: (mph) => notifier.updateMaxSpeed(UnitConverter.mphToKph(mph)),
+                displayValue: UnitConverter.kphToMph(profile.maxSpeedKph)
+                    .toStringAsFixed(0),
+                onChanged: (mph) =>
+                    notifier.updateMaxSpeed(UnitConverter.mphToKph(mph)),
                 accentColor: const Color(0xFF00E5FF),
               ),
               const SizedBox(height: 14),
@@ -82,8 +84,11 @@ class TuningScreen extends ConsumerWidget {
                 min: 5,
                 max: 100,
                 unit: '%',
-                displayValue: (profile.maxPhaseCurrA / 400.0 * 100).clamp(0, 100).toStringAsFixed(0),
-                onChanged: (pct) => notifier.updateMaxPhaseCurr((pct / 100.0 * 400.0).clamp(20, 400)),
+                displayValue: (profile.maxPhaseCurrA / 400.0 * 100)
+                    .clamp(0, 100)
+                    .toStringAsFixed(0),
+                onChanged: (pct) => notifier
+                    .updateMaxPhaseCurr((pct / 100.0 * 400.0).clamp(20, 400)),
                 accentColor: const Color(0xFF39FF14),
                 warningThreshold: 80,
               ),
@@ -97,8 +102,10 @@ class TuningScreen extends ConsumerWidget {
                 min: 0.7,
                 max: 14.4,
                 unit: 'kW',
-                displayValue: (profile.maxLineCurrA * 72.0 / 1000.0).toStringAsFixed(1),
-                onChanged: (kw) => notifier.updateMaxLineCurr((kw * 1000.0 / 72.0).clamp(10, 200)),
+                displayValue:
+                    (profile.maxLineCurrA * 72.0 / 1000.0).toStringAsFixed(1),
+                onChanged: (kw) => notifier
+                    .updateMaxLineCurr((kw * 1000.0 / 72.0).clamp(10, 200)),
                 accentColor: const Color(0xFFFF9800),
                 warningThreshold: 11.0,
               ),
@@ -175,8 +182,7 @@ class TuningScreen extends ConsumerWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    disabledBackgroundColor:
-                        const Color(0xFF2A3548),
+                    disabledBackgroundColor: const Color(0xFF2A3548),
                   ),
                   child: tuningState.isApplying
                       ? const SizedBox(
@@ -236,9 +242,7 @@ class TuningScreen extends ConsumerWidget {
             Text(
               isFullSend ? 'EXTREME WARNING' : 'APPLY CHANGES?',
               style: TextStyle(
-                color: isFullSend
-                    ? const Color(0xFFFF1744)
-                    : Colors.white,
+                color: isFullSend ? const Color(0xFFFF1744) : Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.5,
@@ -261,7 +265,8 @@ class TuningScreen extends ConsumerWidget {
                 '• Void your warranty\n'
                 '• Create dangerously high speeds\n'
                 '• Be illegal on public roads',
-                style: TextStyle(color: Color(0xFFFF9800), fontSize: 13, height: 1.6),
+                style: TextStyle(
+                    color: Color(0xFFFF9800), fontSize: 13, height: 1.6),
               ),
               const SizedBox(height: 12),
             ],
@@ -369,7 +374,8 @@ class _WarningBanner extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          Icon(Icons.warning_amber_outlined, color: Color(0xFFFF9800), size: 18),
+          Icon(Icons.warning_amber_outlined,
+              color: Color(0xFFFF9800), size: 18),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -424,14 +430,12 @@ class _PresetRow extends StatelessWidget {
       children: presets.map((p) {
         final isSelected = p.name == selectedName;
         final isFullSend = p.name == 'Full Send';
-        final color = isFullSend
-            ? const Color(0xFFFF1744)
-            : const Color(0xFF00E5FF);
+        final color =
+            isFullSend ? const Color(0xFFFF1744) : const Color(0xFF00E5FF);
 
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(
-                right: p == presets.last ? 0 : 8),
+            padding: EdgeInsets.only(right: p == presets.last ? 0 : 8),
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -586,7 +590,8 @@ class _TuningSlider extends StatelessWidget {
               child: Row(
                 children: [
                   const SizedBox(width: 4),
-                  const Icon(Icons.warning_amber, color: Color(0xFFFF9800), size: 12),
+                  const Icon(Icons.warning_amber,
+                      color: Color(0xFFFF9800), size: 12),
                   const SizedBox(width: 4),
                   const Text(
                     'High — monitor temps closely',

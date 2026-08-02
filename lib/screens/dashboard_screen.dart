@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' show FlutterBluePlus, BluetoothAdapterState;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart'
+    show FlutterBluePlus, BluetoothAdapterState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
-import 'package:arcdash/providers/stats_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/utils/unit_converter.dart';
 import 'package:arcdash/widgets/battery_indicator.dart';
@@ -37,8 +37,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final controllerState = ref.watch(controllerProvider);
-    final connectionState =
-        ref.watch(connectionStateProvider).valueOrNull ?? DongleConnectionState.idle;
+    final connectionState = ref.watch(connectionStateProvider).valueOrNull ??
+        DongleConnectionState.idle;
     final isConnected = ref.watch(isConnectedProvider);
     final deviceName = ref.watch(connectedDeviceNameProvider);
 
@@ -183,7 +183,8 @@ class _ConnectTabState extends ConsumerState<_ConnectTab> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Connection failed. Make sure the dongle is powered on.'),
+            content:
+                Text('Connection failed. Make sure the dongle is powered on.'),
             backgroundColor: Color(0xFFFF1744),
             behavior: SnackBarBehavior.floating,
           ),

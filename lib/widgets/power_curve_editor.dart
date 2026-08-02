@@ -138,7 +138,11 @@ class PowerCurveEditor extends StatelessWidget {
         // Sliders for each point's torque fraction
         for (int i = 0; i < points.length; i++) ...[
           _PointSlider(
-            label: i == 0 ? 'Low RPM' : i == 1 ? 'Mid RPM' : 'High RPM',
+            label: i == 0
+                ? 'Low RPM'
+                : i == 1
+                    ? 'Mid RPM'
+                    : 'High RPM',
             value: points[i].torqueFraction,
             onChanged: (v) {
               HapticFeedback.selectionClick();
@@ -190,8 +194,7 @@ class _PointSlider extends StatelessWidget {
               activeTrackColor: const Color(0xFF00E5FF),
               inactiveTrackColor: const Color(0xFF1A2030),
               thumbColor: const Color(0xFF00E5FF),
-              thumbShape:
-                  const RoundSliderThumbShape(enabledThumbRadius: 7),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
               overlayColor: const Color(0xFF00E5FF).withOpacity(0.2),
             ),
             child: Slider(

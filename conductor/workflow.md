@@ -160,8 +160,7 @@ docker compose run --rm flutter flutter pub get
 
 ### Daily Development
 ```bash
-# Run code generation (Riverpod providers)
-docker compose run --rm flutter dart run build_runner build --delete-conflicting-outputs
+# No code generation is currently used; providers are explicit Dart values.
 
 # Run tests
 docker compose run --rm flutter flutter test

@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/services/protocol_service.dart';
-import 'package:arcdash/services/storage_service.dart';
 
 class TuningState {
   final TuningProfile pendingProfile;
@@ -134,13 +132,13 @@ class TuningNotifier extends StateNotifier<TuningState> {
       );
 
       // Write max speed
-      final ok1 = await bluetooth.write(
-          ProtocolService.setMaxSpeedPacket(rawSpeed));
+      final ok1 =
+          await bluetooth.write(ProtocolService.setMaxSpeedPacket(rawSpeed));
       await Future.delayed(const Duration(milliseconds: 50));
 
       // Write max line current
-      final ok2 = await bluetooth.write(
-          ProtocolService.setMaxLineCurrPacket(profile.maxLineCurrA));
+      final ok2 = await bluetooth
+          .write(ProtocolService.setMaxLineCurrPacket(profile.maxLineCurrA));
       await Future.delayed(const Duration(milliseconds: 50));
 
       // Write throttle response
@@ -178,8 +176,8 @@ class TuningNotifier extends StateNotifier<TuningState> {
 
     try {
       for (final entry in backup.entries) {
-        await bluetooth.write(
-            ProtocolService.buildWritePacket(entry.key, entry.value));
+        await bluetooth
+            .write(ProtocolService.buildWritePacket(entry.key, entry.value));
         await Future.delayed(const Duration(milliseconds: 50));
       }
       state = state.copyWith(
@@ -189,7 +187,8 @@ class TuningNotifier extends StateNotifier<TuningState> {
       );
       return true;
     } catch (e) {
-      state = state.copyWith(isApplying: false, lastError: 'Restore failed: $e');
+      state =
+          state.copyWith(isApplying: false, lastError: 'Restore failed: $e');
       return false;
     }
   }

@@ -8,9 +8,6 @@
 ## State Management
 
 - **flutter_riverpod** — reactive state management.
-- **riverpod_annotation** — codegen annotations for providers.
-- **riverpod_generator** — provider code generation.
-- **build_runner** — code generation runner.
 
 ## Bluetooth
 
@@ -50,11 +47,11 @@
 
 - **flutter_test** — Unit-/Widget-Testing.
 - **flutter_lints** — default lint rules.
-- **custom_lint** + **riverpod_lint** — Riverpod-spezifisches Linting.
+- Provider werden bewusst ohne Codegen und Annotationen implementiert.
 
 ## Build & Test Environment
 
-All build processes, tests, code generation, and linting run **exclusively inside Docker containers**. No local Dart/Flutter dependencies are installed on the host.
+All build processes, tests, and linting run **exclusively inside Docker containers**. No local Dart/Flutter dependencies are installed on the host.
 
 - **Dockerfile** — base image `ghcr.io/cirruslabs/flutter:stable` (includes Flutter SDK, Android SDK, Java). Disables analytics and treats the mounted repo as a trusted git worktree.
 - **docker-compose.yml** — single `flutter` service mounting the project into `/app`, with persistent volumes for the Dart package cache (`flutter_pub_cache`) and the Gradle cache (`gradle_cache`).
@@ -73,15 +70,15 @@ Standard commands:
 ```bash
 docker compose build                                    # build the image
 docker compose run --rm flutter flutter pub get         # install dependencies
-docker compose run --rm flutter dart run build_runner build --delete-conflicting-outputs
-docker compose run --rm flutter flutter analyze         # lint / static analysis
+# No code generation is currently used; providers are explicit Dart values.
+docker compose run --rm flutter flutter analyze --no-fatal-infos # lint / static analysis
 docker compose run --rm flutter flutter test            # run tests
 docker compose run --rm flutter flutter test --coverage # coverage report
 docker compose run --rm flutter flutter build apk       # build Android APK
 docker compose run --rm flutter flutter build linux     # build Linux desktop
 ```
 
-Equivalent Make targets: `make build`, `make pub-get`, `make codegen`, `make analyze`, `make test`, `make coverage`, `make build-apk`, `make build-linux`, `make check`.
+Equivalent Make targets: `make build`, `make pub-get`, `make analyze`, `make test`, `make coverage`, `make build-apk`, `make build-linux`, `make check`.
 
 ## Architecture
 

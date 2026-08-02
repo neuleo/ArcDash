@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' show FlutterBluePlus, BluetoothAdapterState;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart'
+    show FlutterBluePlus, BluetoothAdapterState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
@@ -27,7 +28,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     // Wait until the BT adapter is on (handles macOS/iOS initialization delay)
     final adapterState = await FlutterBluePlus.adapterState
         .firstWhere((s) => s != BluetoothAdapterState.unknown)
-        .timeout(const Duration(seconds: 5), onTimeout: () => BluetoothAdapterState.unavailable);
+        .timeout(const Duration(seconds: 5),
+            onTimeout: () => BluetoothAdapterState.unavailable);
     if (adapterState != BluetoothAdapterState.on) {
       if (mounted) {
         setState(() => _isScanning = false);
@@ -66,8 +68,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final connectionState =
-        ref.watch(connectionStateProvider).valueOrNull ?? DongleConnectionState.idle;
+    final connectionState = ref.watch(connectionStateProvider).valueOrNull ??
+        DongleConnectionState.idle;
     final scanResults = ref.watch(scanResultsProvider).valueOrNull ?? [];
 
     return Scaffold(
@@ -155,8 +157,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                             ),
                           )
                         : const Icon(Icons.refresh, size: 16),
-                    label:
-                        Text(_isScanning ? 'Scanning...' : 'Scan'),
+                    label: Text(_isScanning ? 'Scanning...' : 'Scan'),
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF00E5FF),
                       textStyle: const TextStyle(

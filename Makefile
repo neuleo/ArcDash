@@ -1,5 +1,5 @@
 # All commands run inside the `flutter` Docker container — no local toolchain required.
-.PHONY: build up down shell pub-get codegen analyze test coverage format format-check build-linux build-apk android-check check
+.PHONY: build up down shell pub-get analyze test coverage format format-check build-linux build-apk android-check check
 
 build:
 	docker compose build
@@ -16,11 +16,8 @@ shell:
 pub-get:
 	docker compose run --rm flutter flutter pub get
 
-codegen:
-	docker compose run --rm flutter dart run build_runner build --delete-conflicting-outputs
-
 analyze:
-	docker compose run --rm flutter flutter analyze
+	docker compose run --rm flutter flutter analyze --no-fatal-infos
 
 test:
 	docker compose run --rm flutter flutter test

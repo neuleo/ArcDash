@@ -10,15 +10,13 @@ final bluetoothServiceProvider = Provider<DongleService>((ref) {
 });
 
 // Connection state stream
-final connectionStateProvider =
-    StreamProvider<DongleConnectionState>((ref) {
+final connectionStateProvider = StreamProvider<DongleConnectionState>((ref) {
   final service = ref.watch(bluetoothServiceProvider);
   return service.connectionStateStream;
 });
 
 // Scan results stream
-final scanResultsProvider =
-    StreamProvider<List<DiscoveredDongle>>((ref) {
+final scanResultsProvider = StreamProvider<List<DiscoveredDongle>>((ref) {
   final service = ref.watch(bluetoothServiceProvider);
   return service.scanResultsStream;
 });

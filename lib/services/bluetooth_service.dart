@@ -34,7 +34,6 @@ class DiscoveredDongle {
 class DongleService {
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _writeChar;
-  BluetoothCharacteristic? _notifyChar;
   StreamSubscription? _notifySubscription;
   StreamSubscription? _deviceStateSubscription;
 
@@ -73,7 +72,8 @@ class DongleService {
   /// known UART service UUIDs reach the callback (eliminates phones, headphones, etc.).
   /// Layer 2: Name-pattern filter — catches dongles advertising those services
   /// and validates against known FarDriver naming conventions.
-  Future<void> startScan({Duration timeout = const Duration(seconds: 10)}) async {
+  Future<void> startScan(
+      {Duration timeout = const Duration(seconds: 10)}) async {
     _setState(DongleConnectionState.scanning);
     final results = <String, DiscoveredDongle>{};
 
@@ -214,7 +214,6 @@ class DongleService {
       if (writeChar == null || notifyChar == null) return false;
 
       _writeChar = writeChar;
-      _notifyChar = notifyChar;
 
       await notifyChar.setNotifyValue(true);
       _notifySubscription = notifyChar.onValueReceived.listen((data) {
@@ -255,7 +254,6 @@ class DongleService {
       _connectedDevice = null;
     }
     _writeChar = null;
-    _notifyChar = null;
     _setState(DongleConnectionState.disconnected);
   }
 
@@ -263,7 +261,6 @@ class DongleService {
     _notifySubscription?.cancel();
     _notifySubscription = null;
     _writeChar = null;
-    _notifyChar = null;
     _connectedDevice = null;
     _setState(DongleConnectionState.disconnected);
   }

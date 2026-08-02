@@ -176,9 +176,7 @@ class ArcDashApp extends StatelessWidget {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected)
-              ? accentCyan
-              : Colors.grey,
+          (s) => s.contains(WidgetState.selected) ? accentCyan : Colors.grey,
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected)

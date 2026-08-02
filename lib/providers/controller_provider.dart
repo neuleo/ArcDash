@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
-import 'package:arcdash/services/bluetooth_service.dart' show DongleService, DongleConnectionState;
+import 'package:arcdash/services/bluetooth_service.dart'
+    show DongleService, DongleConnectionState;
 import 'package:arcdash/services/protocol_service.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/utils/packet_parser.dart';
@@ -82,7 +83,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   void _processPacket(ParsedPacket parsed, List<int> raw) {
     // Debug log (keep last 50)
     final hex = PacketParser.toHexString(raw);
-    _debugPackets.add('[0x${parsed.address.toRadixString(16).padLeft(2, '0').toUpperCase()}] $hex');
+    _debugPackets.add(
+        '[0x${parsed.address.toRadixString(16).padLeft(2, '0').toUpperCase()}] $hex');
     if (_debugPackets.length > 50) _debugPackets.removeAt(0);
 
     // Packet rate calculation
@@ -111,28 +113,47 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     }
     if (update.gear != null) next = next.copyWith(gear: update.gear);
     if (update.brake != null) next = next.copyWith(isBraking: update.brake);
-    if (update.motorHallError != null) next = next.copyWith(motorHallError: update.motorHallError);
-    if (update.throttleError != null) next = next.copyWith(throttleError: update.throttleError);
-    if (update.motorTempProtect != null) next = next.copyWith(motorTempProtect: update.motorTempProtect);
-    if (update.controllerTempProtect != null) next = next.copyWith(controllerTempProtect: update.controllerTempProtect);
+    if (update.motorHallError != null)
+      next = next.copyWith(motorHallError: update.motorHallError);
+    if (update.throttleError != null)
+      next = next.copyWith(throttleError: update.throttleError);
+    if (update.motorTempProtect != null)
+      next = next.copyWith(motorTempProtect: update.motorTempProtect);
+    if (update.controllerTempProtect != null)
+      next = next.copyWith(controllerTempProtect: update.controllerTempProtect);
 
-    if (update.voltageV != null) next = next.copyWith(voltageV: update.voltageV);
-    if (update.currentA != null) next = next.copyWith(currentA: update.currentA);
-    if (update.phaseACurrA != null) next = next.copyWith(phaseACurrA: update.phaseACurrA);
-    if (update.phaseCCurrA != null) next = next.copyWith(phaseCCurrA: update.phaseCCurrA);
-    if (update.motorTempC != null) next = next.copyWith(motorTempC: update.motorTempC);
-    if (update.battCapPercent != null) next = next.copyWith(battCapPercent: update.battCapPercent);
-    if (update.mosTempC != null) next = next.copyWith(controllerTempC: update.mosTempC);
+    if (update.voltageV != null)
+      next = next.copyWith(voltageV: update.voltageV);
+    if (update.currentA != null)
+      next = next.copyWith(currentA: update.currentA);
+    if (update.phaseACurrA != null)
+      next = next.copyWith(phaseACurrA: update.phaseACurrA);
+    if (update.phaseCCurrA != null)
+      next = next.copyWith(phaseCCurrA: update.phaseCCurrA);
+    if (update.motorTempC != null)
+      next = next.copyWith(motorTempC: update.motorTempC);
+    if (update.battCapPercent != null)
+      next = next.copyWith(battCapPercent: update.battCapPercent);
+    if (update.mosTempC != null)
+      next = next.copyWith(controllerTempC: update.mosTempC);
 
-    if (update.wheelRadius != null) next = next.copyWith(wheelRadius: update.wheelRadius);
-    if (update.wheelWidth != null) next = next.copyWith(wheelWidth: update.wheelWidth);
-    if (update.wheelRatio != null) next = next.copyWith(wheelRatio: update.wheelRatio);
-    if (update.rateRatio != null && update.rateRatio! > 0) next = next.copyWith(rateRatio: update.rateRatio);
+    if (update.wheelRadius != null)
+      next = next.copyWith(wheelRadius: update.wheelRadius);
+    if (update.wheelWidth != null)
+      next = next.copyWith(wheelWidth: update.wheelWidth);
+    if (update.wheelRatio != null)
+      next = next.copyWith(wheelRatio: update.wheelRatio);
+    if (update.rateRatio != null && update.rateRatio! > 0)
+      next = next.copyWith(rateRatio: update.rateRatio);
 
-    if (update.maxSpeed != null) next = next.copyWith(maxSpeedRaw: update.maxSpeed);
-    if (update.maxLineCurrRaw != null) next = next.copyWith(maxLineCurrRaw: update.maxLineCurrRaw);
-    if (update.zeroBattCoeff != null) next = next.copyWith(zeroBattCoeff: update.zeroBattCoeff);
-    if (update.fullBattCoeff != null) next = next.copyWith(fullBattCoeff: update.fullBattCoeff);
+    if (update.maxSpeed != null)
+      next = next.copyWith(maxSpeedRaw: update.maxSpeed);
+    if (update.maxLineCurrRaw != null)
+      next = next.copyWith(maxLineCurrRaw: update.maxLineCurrRaw);
+    if (update.zeroBattCoeff != null)
+      next = next.copyWith(zeroBattCoeff: update.zeroBattCoeff);
+    if (update.fullBattCoeff != null)
+      next = next.copyWith(fullBattCoeff: update.fullBattCoeff);
 
     // Recompute derived fields
     state = next.withComputedFields();
@@ -161,7 +182,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
   Future<void> setRideMode(RideMode mode) async {
     if (state.speedKph > 2.0) return; // Safety: no changes while moving
-    final packet = ProtocolService.setThrottleResponsePacket(mode.throttleResponseValue);
+    final packet =
+        ProtocolService.setThrottleResponsePacket(mode.throttleResponseValue);
     await _bluetooth.write(packet);
     state = state.copyWith(rideMode: mode, lastUpdate: DateTime.now());
   }

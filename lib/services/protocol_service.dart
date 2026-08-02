@@ -56,7 +56,8 @@ class ProtocolService {
   }
 
   /// Packet to start status streaming (non-following status mode).
-  static List<int> startStatusStreamPacket() => buildSysCmd(SysCmd.nonFollowingStatus);
+  static List<int> startStatusStreamPacket() =>
+      buildSysCmd(SysCmd.nonFollowingStatus);
 
   /// Sets the max line current. [amps] is the desired value in A.
   /// Raw value = amps * 4.
@@ -67,7 +68,8 @@ class ProtocolService {
 
   /// Sets max speed. [maxSpeedRaw] is the raw uint16 RPM value.
   static List<int> setMaxSpeedPacket(int maxSpeedRaw) {
-    return buildWritePacket(FardriverAddr.maxSpeed, maxSpeedRaw.clamp(0, 0xFFFF));
+    return buildWritePacket(
+        FardriverAddr.maxSpeed, maxSpeedRaw.clamp(0, 0xFFFF));
   }
 
   /// Sets throttle response mode: 0=Line, 1=Sport, 2=ECO.
@@ -88,8 +90,9 @@ class ProtocolService {
     required int wheelRatio,
     required int rateRatio,
   }) {
-    final factor =
-        0.00376991136 * (wheelRadius * 1270.0 + wheelWidth * wheelRatio) / rateRatio;
+    final factor = 0.00376991136 *
+        (wheelRadius * 1270.0 + wheelWidth * wheelRatio) /
+        rateRatio;
     if (factor <= 0) return 0;
     return (kph / factor).round().clamp(0, 0xFFFF);
   }

@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/ride_stats.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
-import 'package:arcdash/services/bluetooth_service.dart' show DongleConnectionState;
+import 'package:arcdash/services/bluetooth_service.dart'
+    show DongleConnectionState;
 import 'package:arcdash/providers/controller_provider.dart';
-import 'package:arcdash/services/storage_service.dart';
 
 class StatsState {
   final RideSession? currentSession;
@@ -24,8 +24,9 @@ class StatsState {
     bool clearCurrentSession = false,
   }) =>
       StatsState(
-        currentSession:
-            clearCurrentSession ? null : (currentSession ?? this.currentSession),
+        currentSession: clearCurrentSession
+            ? null
+            : (currentSession ?? this.currentSession),
         pastSessions: pastSessions ?? this.pastSessions,
         isTracking: isTracking ?? this.isTracking,
       );
@@ -131,7 +132,6 @@ class StatsNotifier extends StateNotifier<StatsState> {
   }
 }
 
-final statsProvider =
-    StateNotifierProvider<StatsNotifier, StatsState>((ref) {
+final statsProvider = StateNotifierProvider<StatsNotifier, StatsState>((ref) {
   return StatsNotifier(ref);
 });
