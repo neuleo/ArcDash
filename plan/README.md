@@ -78,7 +78,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [!] **T034** Transaktionales Schreiben mit Read-back bauen (BLOCKIERT: reale ACK-/Read-back-Abnahme fehlt) ([Details](./05-sichere-schreibengine.md#t034---transaktionales-schreiben-mit-read-back-bauen))
 - [!] **T035** Teilfehler und Rollback behandeln (BLOCKIERT: reale verifizierte Rollback-Parameter fehlen) ([Details](./05-sichere-schreibengine.md#t035---teilfehler-und-rollback-behandeln))
 - [x] **T036** Write-Lock, Idempotenz und Audit-Log ergaenzen (`ef46d4c`) ([Details](./05-sichere-schreibengine.md#t036---write-lock-idempotenz-und-audit-log-ergaenzen))
-- [ ] **T037** Safety-UX und Hardware-Testplan fertigstellen ([Details](./05-sichere-schreibengine.md#t037---safety-ux-und-hardware-testplan-fertigstellen))
+- [!] **T037** Safety-UX und Hardware-Testplan fertigstellen (BLOCKIERT: Hardwaregrenzen und Read-back-Abnahme fehlen) ([Details](./05-sichere-schreibengine.md#t037---safety-ux-und-hardware-testplan-fertigstellen))
 
 ## Phase 6: Profilsystem
 
