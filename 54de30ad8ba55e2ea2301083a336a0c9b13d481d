@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/models/versioned_profile.dart test/versioned_profile_test.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. Profile tests cover round-trip, unknown parameters, newer schemas, and legacy migration.
