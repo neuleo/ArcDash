@@ -1,0 +1,1 @@
+T019 Android-Runtime-Permissions implementieren. AndroidPermissionPolicy trennt SDK <31 (Location) von SDK 31+ (Bluetooth Scan/Connect), AndroidPermissionService verarbeitet Ablehnungen ohne Scanfreigabe, PermissionHandlerRequester bindet permission_handler an. Fake-Policy-/Denial-/Grant-Tests bestehen; reale Android-UI-Abnahme bleibt geraeteabhaengig.
