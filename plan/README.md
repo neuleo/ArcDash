@@ -67,7 +67,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T026** Vollstaendige Parametersnapshots atomar speichern (`f30b3d2`) ([Details](./04-backup-und-snapshots.md#t026---vollstaendige-parametersnapshots-atomar-speichern))
 - [!] **T027** Verlaessliches Stock-Backup erzeugen (BLOCKIERT: Hardware-Abnahme und verifiziertes Stock-Read-back fehlen) ([Details](./04-backup-und-snapshots.md#t027---verlaessliches-stock-backup-erzeugen))
 - [x] **T028** Backup-Import und -Export implementieren (`7872fba`) ([Details](./04-backup-und-snapshots.md#t028---backup-import-und--export-implementieren))
-- [~] **T029** Sicheren Restore-Ablauf vorbereiten ([Details](./04-backup-und-snapshots.md#t029---sicheren-restore-ablauf-vorbereiten))
+- [x] **T029** Sicheren Restore-Ablauf vorbereiten (`8f27871`) ([Details](./04-backup-und-snapshots.md#t029---sicheren-restore-ablauf-vorbereiten))
 
 ## Phase 5: Sichere Schreibengine
 
