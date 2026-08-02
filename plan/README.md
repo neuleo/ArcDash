@@ -42,7 +42,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 ## Phase 2: Protokoll und Parameter
 
 - [x] **T009** Protokoll-Belegmatrix erstellen (`e41a7d1`) ([Details](./02-protokoll-und-parameter.md#t009---protokoll-belegmatrix-erstellen))
-- [ ] **T010** BLE-Captures und Paket-Fixtures definieren ([Details](./02-protokoll-und-parameter.md#t010---ble-captures-und-paket-fixtures-definieren))
+- [~] **T010** BLE-Captures und Paket-Fixtures definieren ([Details](./02-protokoll-und-parameter.md#t010---ble-captures-und-paket-fixtures-definieren))
 - [ ] **T011** CRC durch Golden-Tests absichern ([Details](./02-protokoll-und-parameter.md#t011---crc-durch-golden-tests-absichern))
 - [ ] **T012** Fragmentierungsfesten Paket-Framer bauen ([Details](./02-protokoll-und-parameter.md#t012---fragmentierungsfesten-paket-framer-bauen))
 - [ ] **T013** FarDriver-Speichermodell abbilden ([Details](./02-protokoll-und-parameter.md#t013---fardriver-speichermodell-abbilden))
