@@ -1,0 +1,1 @@
+Verification: docker compose run --rm flutter dart format lib/services/backup_codec.dart test/backup_codec_test.dart; docker compose run --rm flutter flutter test; docker compose run --rm flutter flutter analyze --no-fatal-infos. All tests passed; analyzer reports existing info-level lints only. HEB import remains explicitly disabled pending T016.
