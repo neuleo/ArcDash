@@ -115,12 +115,12 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 ## Phase 9: Reichweitenprognose
 
 - [x] **T061** Reichweiten-Domainmodell definieren (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t061---reichweiten-domainmodell-definieren))
-- [~] **T062** GPS-Distanz filtern ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
+- [x] **T062** GPS-Distanz filtern (`f2c07ce`) ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
 - [x] **T063** Energie und Ladung integrieren (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t063---energie-und-ladung-integrieren))
-- [ ] **T064** Spannungsbasierten SOC-Filter bauen ([Details](./09-reichweitenprognose.md#t064---spannungsbasierten-soc-filter-bauen))
-- [ ] **T065** Nutzbare Kapazitaet lernen ([Details](./09-reichweitenprognose.md#t065---nutzbare-kapazitaet-lernen))
-- [ ] **T066** Verbrauchsfenster und Fahrstil modellieren ([Details](./09-reichweitenprognose.md#t066---verbrauchsfenster-und-fahrstil-modellieren))
-- [ ] **T067** Unsicherheitsintervall berechnen ([Details](./09-reichweitenprognose.md#t067---unsicherheitsintervall-berechnen))
+- [x] **T064** Spannungsbasierten SOC-Filter bauen (`pending`) ([Details](./09-reichweitenprognose.md#t064---spannungsbasierten-soc-filter-bauen))
+- [x] **T065** Nutzbare Kapazitaet lernen (`pending`) ([Details](./09-reichweitenprognose.md#t065---nutzbare-kapazitaet-lernen))
+- [x] **T066** Verbrauchsfenster und Fahrstil modellieren (`pending`) ([Details](./09-reichweitenprognose.md#t066---verbrauchsfenster-und-fahrstil-modellieren))
+- [x] **T067** Unsicherheitsintervall berechnen (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t067---unsicherheitsintervall-berechnen))
 - [ ] **T068** Lernzustand persistieren ([Details](./09-reichweitenprognose.md#t068---lernzustand-persistieren))
 - [ ] **T069** Simulation und Dashboard-Integration abschliessen ([Details](./09-reichweitenprognose.md#t069---simulation-und-dashboard-integration-abschliessen))
 
