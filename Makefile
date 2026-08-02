@@ -1,5 +1,5 @@
 # All commands run inside the `flutter` Docker container — no local toolchain required.
-.PHONY: build up down shell pub-get codegen analyze test coverage format format-check build-linux build-apk check
+.PHONY: build up down shell pub-get codegen analyze test coverage format format-check build-linux build-apk android-check check
 
 build:
 	docker compose build
@@ -39,6 +39,9 @@ build-linux:
 
 build-apk:
 	docker compose run --rm flutter flutter build apk
+
+android-check:
+	./tooling/check_android_config.sh
 
 # Run all pre-commit checks in the container.
 check: format-check analyze test
