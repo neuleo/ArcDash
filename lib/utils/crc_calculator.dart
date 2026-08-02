@@ -522,6 +522,7 @@ class CrcCalculator {
   /// Computes and writes CRC to the last 2 bytes of [data].
   /// [length] is the total packet length (including the 2 CRC bytes).
   static void computeCRC(List<int> data, int length) {
+    if (length < 2 || data.length < length) return;
     int a = 0x3C;
     int b = 0x7F;
     for (int pos = 0; pos < length - 2; pos++) {
@@ -535,6 +536,7 @@ class CrcCalculator {
 
   /// Verifies CRC of a received packet (length = 16 for status packets, 8 for write acks).
   static bool verifyCRC(List<int> data, int length) {
+    if (length < 2 || data.length < length) return false;
     int a = 0x3C;
     int b = 0x7F;
     for (int pos = 0; pos < length - 2; pos++) {
