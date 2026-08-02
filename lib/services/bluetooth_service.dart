@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide BluetoothService;
+import 'package:arcdash/services/ble_transport.dart';
 
 // BLE UART service/characteristic UUIDs for HM-10/HC-08 style dongles
 const _uartServiceUuid = '0000ffe0-0000-1000-8000-00805f9b34fb';
@@ -31,7 +32,7 @@ class DiscoveredDongle {
   });
 }
 
-class DongleService {
+class DongleService implements BleTransport {
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _writeChar;
   StreamSubscription? _notifySubscription;

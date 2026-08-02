@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart'
-    show DongleService, DongleConnectionState;
+    show DongleConnectionState;
+import 'package:arcdash/services/ble_transport.dart';
 import 'package:arcdash/services/protocol_service.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/utils/packet_parser.dart';
@@ -14,7 +15,7 @@ final storageServiceProvider = Provider<StorageService>((ref) {
 });
 
 class ControllerNotifier extends StateNotifier<ControllerState> {
-  final DongleService _bluetooth;
+  final BleTransport _bluetooth;
   final StorageService _storage;
 
   StreamSubscription? _dataSub;
