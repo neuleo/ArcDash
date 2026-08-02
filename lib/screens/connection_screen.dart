@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' show FlutterBluePlus, BluetoothAdapterState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:biketunes/providers/bluetooth_provider.dart';
-import 'package:biketunes/services/bluetooth_service.dart';
-import 'package:biketunes/widgets/connection_status_bar.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
+import 'package:arcdash/services/bluetooth_service.dart';
+import 'package:arcdash/widgets/connection_status_bar.dart';
 
 class ConnectionScreen extends ConsumerStatefulWidget {
   const ConnectionScreen({super.key});

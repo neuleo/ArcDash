@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:biketunes/providers/stats_provider.dart';
+import 'package:arcdash/providers/stats_provider.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:biketunes/providers/bluetooth_provider.dart';
-import 'package:biketunes/providers/controller_provider.dart';
-import 'package:biketunes/providers/tuning_provider.dart';
-import 'package:biketunes/services/bluetooth_service.dart';
-import 'package:biketunes/services/storage_service.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
+import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/tuning_provider.dart';
+import 'package:arcdash/services/bluetooth_service.dart';
+import 'package:arcdash/services/storage_service.dart';
 
 final _useMphProvider = StateProvider<bool>((ref) {
   final storage = ref.read(storageServiceProvider);
@@ -146,7 +146,7 @@ class SettingsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'BikeTunes',
+                    'ArcDash',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

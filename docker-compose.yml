@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: biketunes-flutter:latest
+    image: arcdash-flutter:latest
     working_dir: /app
     environment:
       # Non-interactive / CI-style execution for watch-mode tools.

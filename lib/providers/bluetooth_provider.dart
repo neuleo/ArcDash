@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:biketunes/services/bluetooth_service.dart';
+import 'package:arcdash/services/bluetooth_service.dart';
 
 // Singleton bluetooth service
 final bluetoothServiceProvider = Provider<DongleService>((ref) {

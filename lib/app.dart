@@ -2,15 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:biketunes/screens/connection_screen.dart';
-import 'package:biketunes/screens/dashboard_screen.dart';
-import 'package:biketunes/screens/debug_screen.dart';
-import 'package:biketunes/screens/settings_screen.dart';
-import 'package:biketunes/screens/stats_screen.dart';
-import 'package:biketunes/screens/tuning_screen.dart';
+import 'package:arcdash/screens/connection_screen.dart';
+import 'package:arcdash/screens/dashboard_screen.dart';
+import 'package:arcdash/screens/debug_screen.dart';
+import 'package:arcdash/screens/settings_screen.dart';
+import 'package:arcdash/screens/stats_screen.dart';
+import 'package:arcdash/screens/tuning_screen.dart';
 
-class BikeTunesApp extends StatelessWidget {
-  const BikeTunesApp({super.key});
+class ArcDashApp extends StatelessWidget {
+  const ArcDashApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class BikeTunesApp extends StatelessWidget {
     ));
 
     return MaterialApp(
-      title: 'BikeTunes',
+      title: 'ArcDash',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
       initialRoute: '/dashboard',

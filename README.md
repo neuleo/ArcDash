@@ -1,6 +1,6 @@
-# BikeTunes
+# ArcDash
 
-A production-ready Flutter app for tuning FarDriver motor controllers on electric dirt bikes. Connects via Bluetooth BLE UART and implements the reverse-engineered FarDriver serial protocol.
+A Flutter app for monitoring and safely managing FarDriver motor controllers on electric dirt bikes. Connects via Bluetooth BLE UART and implements the reverse-engineered FarDriver serial protocol.
 
 ## Features
 
@@ -42,8 +42,8 @@ Based on the reverse-engineered protocol from [jackhumbert/fardriver-controllers
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/caydenchapple/Biketunes.git
-cd Biketunes
+git clone <repository-url>
+cd ArcDash
 
 # 2. Install dependencies
 flutter pub get
@@ -60,9 +60,9 @@ flutter run
 `ios/Runner/Info.plist` already includes the required Bluetooth keys:
 ```xml
 <key>NSBluetoothAlwaysUsageDescription</key>
-<string>BikeTunes needs Bluetooth to connect to your FarDriver controller dongle.</string>
+<string>ArcDash needs Bluetooth to connect to your FarDriver controller dongle.</string>
 <key>NSBluetoothPeripheralUsageDescription</key>
-<string>BikeTunes needs Bluetooth to connect to your FarDriver controller dongle.</string>
+<string>ArcDash needs Bluetooth to connect to your FarDriver controller dongle.</string>
 ```
 
 ### macOS Setup

@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:biketunes/utils/crc_calculator.dart';
+import 'package:arcdash/utils/crc_calculator.dart';
 
 /// Memory address lookup table for rotating status packet IDs (0–54).
 /// id < 0x37 maps to flash_read_addr[id] from the FarDriver protocol repo.

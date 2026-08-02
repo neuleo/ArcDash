@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:biketunes/providers/controller_provider.dart';
+import 'package:arcdash/providers/controller_provider.dart';
 
 class DebugScreen extends ConsumerWidget {
   const DebugScreen({super.key});

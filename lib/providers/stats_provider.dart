@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:biketunes/models/ride_stats.dart';
-import 'package:biketunes/providers/bluetooth_provider.dart';
-import 'package:biketunes/services/bluetooth_service.dart' show DongleConnectionState;
-import 'package:biketunes/providers/controller_provider.dart';
-import 'package:biketunes/services/storage_service.dart';
+import 'package:arcdash/models/ride_stats.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
+import 'package:arcdash/services/bluetooth_service.dart' show DongleConnectionState;
+import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/services/storage_service.dart';
 
 class StatsState {
   final RideSession? currentSession;

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.biketunes.biketunes"
+    namespace = "com.arcdash.arcdash"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,8 +20,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.biketunes.biketunes"
-        minSdk = flutter.minSdkVersion
+        applicationId = "com.arcdash.arcdash"
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

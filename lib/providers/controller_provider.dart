@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:biketunes/models/controller_state.dart';
-import 'package:biketunes/providers/bluetooth_provider.dart';
-import 'package:biketunes/services/bluetooth_service.dart' show DongleService, DongleConnectionState;
-import 'package:biketunes/services/protocol_service.dart';
-import 'package:biketunes/services/storage_service.dart';
-import 'package:biketunes/utils/packet_parser.dart';
+import 'package:arcdash/models/controller_state.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
+import 'package:arcdash/services/bluetooth_service.dart' show DongleService, DongleConnectionState;
+import 'package:arcdash/services/protocol_service.dart';
+import 'package:arcdash/services/storage_service.dart';
+import 'package:arcdash/utils/packet_parser.dart';
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   throw UnimplementedError('Override in ProviderScope');

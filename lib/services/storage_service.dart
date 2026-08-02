@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:biketunes/models/tuning_profile.dart';
-import 'package:biketunes/models/ride_stats.dart';
+import 'package:arcdash/models/tuning_profile.dart';
+import 'package:arcdash/models/ride_stats.dart';
 import 'package:csv/csv.dart';
 
 const _prefKeyUseMph = 'use_mph';
@@ -107,7 +107,7 @@ class StorageService {
     final csv = const ListToCsvConverter().convert(rows);
     final dir = await getApplicationDocumentsDirectory();
     final file = File(
-        '${dir.path}/biketunes_ride_${session.startTime.millisecondsSinceEpoch}.csv');
+        '${dir.path}/arcdash_ride_${session.startTime.millisecondsSinceEpoch}.csv');
     await file.writeAsString(csv);
     return file.path;
   }

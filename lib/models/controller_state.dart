@@ -1,4 +1,4 @@
-import 'package:biketunes/utils/unit_converter.dart';
+import 'package:arcdash/utils/unit_converter.dart';
 
 enum RideMode { eco, trail, sport, race }
 

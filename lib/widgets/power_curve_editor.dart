@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:biketunes/models/tuning_profile.dart';
+import 'package:arcdash/models/tuning_profile.dart';
 
 class PowerCurveEditor extends StatelessWidget {
   final List<PowerPoint> points;

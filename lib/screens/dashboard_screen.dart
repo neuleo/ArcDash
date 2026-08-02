@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' show FlutterBluePlus, BluetoothAdapterState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:biketunes/models/controller_state.dart';
-import 'package:biketunes/providers/bluetooth_provider.dart';
-import 'package:biketunes/providers/controller_provider.dart';
-import 'package:biketunes/providers/stats_provider.dart';
-import 'package:biketunes/services/bluetooth_service.dart';
-import 'package:biketunes/utils/unit_converter.dart';
-import 'package:biketunes/widgets/battery_indicator.dart';
-import 'package:biketunes/widgets/connection_status_bar.dart';
-import 'package:biketunes/widgets/data_tile.dart';
-import 'package:biketunes/widgets/ride_mode_card.dart';
-import 'package:biketunes/widgets/speedometer_gauge.dart';
+import 'package:arcdash/models/controller_state.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
+import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/stats_provider.dart';
+import 'package:arcdash/services/bluetooth_service.dart';
+import 'package:arcdash/utils/unit_converter.dart';
+import 'package:arcdash/widgets/battery_indicator.dart';
+import 'package:arcdash/widgets/connection_status_bar.dart';
+import 'package:arcdash/widgets/data_tile.dart';
+import 'package:arcdash/widgets/ride_mode_card.dart';
+import 'package:arcdash/widgets/speedometer_gauge.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});

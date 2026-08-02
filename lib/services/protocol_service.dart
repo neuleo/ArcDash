@@ -1,4 +1,4 @@
-import 'package:biketunes/utils/crc_calculator.dart';
+import 'package:arcdash/utils/crc_calculator.dart';
 
 /// Known memory addresses for FarDriver protocol.
 class FardriverAddr {
