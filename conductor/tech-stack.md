@@ -19,6 +19,23 @@
 - **MacroDroid-Integration** — Empfang eines Intents/Deep-Links (Volume-Down-Doppelklick) zum Auslösen von Profilwechseln im Hintergrund, ohne dass der Bildschirm angeht.
 - **permission_handler** — runtime permissions (Bluetooth, Standort für BLE-Scan).
 
+### Foreground-Service-Architektur T046
+
+Der native Android-Foreground-Service besitzt genau eine `ControllerSession` und
+ist die einzige Instanz mit langlebigem BLE-Lifecycle. Flutter bleibt Beobachter
+und sendet nur versionierte, validierte Kommandos über eine Method-/Event-Bridge;
+die Write-Engine und ihr Lock bleiben auch im Service verpflichtend. Start und
+Stop erfolgen nur durch sichtbare Nutzeraktion oder den später dokumentierten,
+eng begrenzten Street-Legal-Vertrag. Activity-Neustarts erzeugen keine zweite
+GATT-Verbindung; der Service veröffentlicht den aktuellen Zustand erneut.
+
+Nach Process Death wird kein automatischer Write gestartet. Der Service beendet
+BLE-Ressourcen, verwirft aktive Transaktionen und darf erst nach einer neuen
+Safety-/Identity-/Snapshot-Prüfung reconnecten. WorkManager wird nicht für eine
+dauerhafte BLE-Session verwendet. Android 12-14, Notification-Recht ab Android
+13 sowie OEM-Battery-Saver-Einschränkungen werden als explizite Lifecycle-Zustände
+behandelt, nicht als Erfolgsannahmen.
+
 ## Storage & Persistence
 
 - **shared_preferences** — lightweight key/value settings storage.

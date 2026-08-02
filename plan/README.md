@@ -93,7 +93,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 7: Android-Hintergrundbetrieb
 
-- [ ] **T046** Foreground-Service-Architektur festlegen ([Details](./07-android-hintergrundbetrieb.md#t046---foreground-service-architektur-festlegen))
+- [~] **T046** Foreground-Service-Architektur festlegen ([Details](./07-android-hintergrundbetrieb.md#t046---foreground-service-architektur-festlegen))
 - [ ] **T047** Android-Service und Berechtigungen konfigurieren ([Details](./07-android-hintergrundbetrieb.md#t047---android-service-und-berechtigungen-konfigurieren))
 - [ ] **T048** BLE-Session in den Service integrieren ([Details](./07-android-hintergrundbetrieb.md#t048---ble-session-in-den-service-integrieren))
 - [ ] **T049** Native Flutter-Kommandobruecke bauen ([Details](./07-android-hintergrundbetrieb.md#t049---native-flutter-kommandobruecke-bauen))
