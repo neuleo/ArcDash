@@ -1,0 +1,1 @@
+T046 architecture decision: native Android foreground service owns the single BLE session; Flutter observes via versioned bridge; no writes after process death without fresh safety checks.
