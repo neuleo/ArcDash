@@ -62,7 +62,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 4: Backup und Snapshots
 
-- [ ] **T024** Versionierte Persistenzarchitektur festlegen ([Details](./04-backup-und-snapshots.md#t024---versionierte-persistenzarchitektur-festlegen))
+- [~] **T024** Versionierte Persistenzarchitektur festlegen ([Details](./04-backup-und-snapshots.md#t024---versionierte-persistenzarchitektur-festlegen))
 - [ ] **T025** Controller-Identitaet und Kompatibilitaet erfassen ([Details](./04-backup-und-snapshots.md#t025---controller-identitaet-und-kompatibilitaet-erfassen))
 - [ ] **T026** Vollstaendige Parametersnapshots atomar speichern ([Details](./04-backup-und-snapshots.md#t026---vollstaendige-parametersnapshots-atomar-speichern))
 - [ ] **T027** Verlaessliches Stock-Backup erzeugen ([Details](./04-backup-und-snapshots.md#t027---verlaessliches-stock-backup-erzeugen))

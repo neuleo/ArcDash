@@ -25,6 +25,24 @@
 - **path_provider** — platform file-system directories (Profil-Export/Import, Backups).
 - **JSON** — Profil-Format für Export/Import.
 
+### Persistenzentscheidung T024
+
+Settings bleiben in `shared_preferences`. Wachsende strukturierte Daten (Profile,
+Snapshots, Sessions und Lernzustand) werden zunächst als versionierte JSON-
+Dokumente über einen Repository-Vertrag gespeichert. Der Dateischreiber legt
+zuerst eine temporäre Datei an und ersetzt das Zieldokument erst nach
+erfolgreichem Schreiben. So bleibt ein abgebrochener Schreibvorgang unsichtbar.
+
+SQLite/Drift und Hive wurden als Alternativen bewertet: SQLite/Drift bietet
+Transaktionen und Abfragen, würde aber eine zusätzliche Android-/Migrations-
+Abhängigkeit einführen; Hive ist leichtgewichtig, hat aber für die geplante
+Backup-Integrität weniger passende Standardsemantik. Die aktuelle Dateilösung
+passt zur kleinen V1-Datenmenge und hält den Repository-Vertrag unabhängig von
+der späteren Speicherengine. Ein Wechsel auf SQLite/Drift erfolgt, wenn
+Abfragen, Datengröße oder konkurrierende Schreibvorgänge die JSON-Dokumente
+überfordern; dann wird jede Dokumentversion über eine explizite Migration
+angehoben. Unbekannte Versionen werden nie stillschweigend geladen.
+
 ## Telemetry & Range Prediction
 
 - **fl_chart** — Telemetrie-Visualisierungen.
