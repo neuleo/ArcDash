@@ -71,8 +71,8 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 5: Sichere Schreibengine
 
-- [ ] **T030** Parameterkatalog und Hardwaregrenzen erstellen ([Details](./05-sichere-schreibengine.md#t030---parameterkatalog-und-hardwaregrenzen-erstellen))
-- [ ] **T031** Fail-closed Safety-Evaluator bauen ([Details](./05-sichere-schreibengine.md#t031---fail-closed-safety-evaluator-bauen))
+- [~] **T030** Parameterkatalog und Hardwaregrenzen erstellen ([Details](./05-sichere-schreibengine.md#t030---parameterkatalog-und-hardwaregrenzen-erstellen))
+- [~] **T031** Fail-closed Safety-Evaluator bauen ([Details](./05-sichere-schreibengine.md#t031---fail-closed-safety-evaluator-bauen))
 - [ ] **T032** Optionales Schreiben beim Ausrollen modellieren ([Details](./05-sichere-schreibengine.md#t032---optionales-schreiben-beim-ausrollen-modellieren))
 - [ ] **T033** Diff und Read-modify-write implementieren ([Details](./05-sichere-schreibengine.md#t033---diff-und-read-modify-write-implementieren))
 - [ ] **T034** Transaktionales Schreiben mit Read-back bauen ([Details](./05-sichere-schreibengine.md#t034---transaktionales-schreiben-mit-read-back-bauen))
