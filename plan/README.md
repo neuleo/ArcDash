@@ -82,7 +82,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 
 ## Phase 6: Profilsystem
 
-- [ ] **T038** Versioniertes Profilmodell implementieren ([Details](./06-profilsystem.md#t038---versioniertes-profilmodell-implementieren))
+- [~] **T038** Versioniertes Profilmodell implementieren ([Details](./06-profilsystem.md#t038---versioniertes-profilmodell-implementieren))
 - [ ] **T039** Integrierte Profile definieren ([Details](./06-profilsystem.md#t039---integrierte-profile-definieren))
 - [ ] **T040** Profilverwaltung implementieren ([Details](./06-profilsystem.md#t040---profilverwaltung-implementieren))
 - [ ] **T041** Sicheren Profileditor bauen ([Details](./06-profilsystem.md#t041---sicheren-profileditor-bauen))
