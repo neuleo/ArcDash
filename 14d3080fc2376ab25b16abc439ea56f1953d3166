@@ -1,0 +1,1 @@
+T042/T043 implementation is 03aae75. Full test suite passed; T041 remains in progress because the UI editor must still be wired to the fail-closed catalog.
