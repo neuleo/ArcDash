@@ -44,7 +44,7 @@ kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
 - [x] **T009** Protokoll-Belegmatrix erstellen (`e41a7d1`) ([Details](./02-protokoll-und-parameter.md#t009---protokoll-belegmatrix-erstellen))
 - [x] **T010** BLE-Captures und Paket-Fixtures definieren (`0ad9ecf`) ([Details](./02-protokoll-und-parameter.md#t010---ble-captures-und-paket-fixtures-definieren))
 - [x] **T011** CRC durch Golden-Tests absichern (`9434f27`) ([Details](./02-protokoll-und-parameter.md#t011---crc-durch-golden-tests-absichern))
-- [~] **T012** Fragmentierungsfesten Paket-Framer bauen ([Details](./02-protokoll-und-parameter.md#t012---fragmentierungsfesten-paket-framer-bauen))
+- [x] **T012** Fragmentierungsfesten Paket-Framer bauen (`6a95ff0`) ([Details](./02-protokoll-und-parameter.md#t012---fragmentierungsfesten-paket-framer-bauen))
 - [ ] **T013** FarDriver-Speichermodell abbilden ([Details](./02-protokoll-und-parameter.md#t013---fardriver-speichermodell-abbilden))
 - [ ] **T014** Telemetrie-, Fehler- und Safety-Register decodieren ([Details](./02-protokoll-und-parameter.md#t014---telemetrie--fehler--und-safety-register-decodieren))
 - [ ] **T015** Parameter-Snapshots aus dem Datenstrom aufbauen ([Details](./02-protokoll-und-parameter.md#t015---parameter-snapshots-aus-dem-datenstrom-aufbauen))
