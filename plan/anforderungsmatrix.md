@@ -50,6 +50,7 @@ auf und blockiert keine reine Simulation oder UI-Arbeit.
 | REQ-038 | Defensive Programmierung beim Schreiben ([Ziel](../reference/ziel.md#6-technische-leitplanken)) | V1 | Ja | T030-T036 | Fuzz-/Fehlerpfad- und Coverage-Tests | 1.5 | - |
 | REQ-039 | Deutsche, minimalistische AMOLED-Oberflaeche ([Ziel](../reference/ziel.md#5-uiux-richtlinien)) | V1 | Nein | T054, T057-T060 | Golden-, Accessibility- und manuelle Displaytests | 8 | Englisch optional |
 | REQ-040 | Telemetrie, Profilwechsel, Backup, Safety und Reichweite in Version 1 fertig ([Ziel](../reference/ziel.md#7-entwicklungsreihenfolge-empfehlung)) | V1 | Ja | T008, T016, T029, T037, T045, T069, T083 | Release-Gate und kritische Integrationstests | 11 | - |
+| REQ-041 | Dashboard von Grund auf neu; getrennte Hoch-/Querformatlayouts und frei waehlbare Werte ([Produktentscheidung](../conductor/product.md#core-features-version-1)) | V1 | Nein | T054, T057-T060 | Layoutmodell-, Persistenz-, Editor-, Orientierungs- und Golden-Tests | 8 | Alte Fork-Dashboard-UI wird nicht weiterverwendet |
 
 ## Version-2-Abgrenzung
 

@@ -107,8 +107,8 @@ Background-Service.
 - Konsolidiere Sprache, Einheiten, Feedback, Reconnect, Safety-Ausrolloption und
   Datenschutz in typisierten Settings.
 - Dark Mode bleibt fuer Version 1 AMOLED; entferne wirkungslose Schalter.
-- Implementiere getrenntes Zuruecksetzen von Lernwerten, Sessions, Profilen und
-  allen App-Daten mit klarer Bestaetigung.
+- Implementiere getrenntes Zuruecksetzen von Dashboard-Layouts, Lernwerten,
+  Sessions, Profilen und allen App-Daten mit klarer Bestaetigung.
 
 ### Tests und Akzeptanz
 

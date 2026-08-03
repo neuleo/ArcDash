@@ -1,18 +1,12 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart'
-    show FlutterBluePlus, BluetoothAdapterState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
+import 'package:arcdash/models/dashboard_layout.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
-import 'package:arcdash/services/bluetooth_service.dart';
-import 'package:arcdash/utils/unit_converter.dart';
-import 'package:arcdash/widgets/battery_indicator.dart';
-import 'package:arcdash/models/range_model.dart';
-import 'package:arcdash/widgets/connection_status_bar.dart';
-import 'package:arcdash/widgets/data_tile.dart';
-import 'package:arcdash/widgets/ride_mode_card.dart';
-import 'package:arcdash/widgets/speedometer_gauge.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -22,613 +16,738 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  int _selectedIndex = 0;
-  double _sessionTopSpeed = 0;
+  DashboardLayout _dashboard = DashboardLayout.defaults();
+  Timer? _saveTimer;
+  bool _editing = false;
+  bool _loaded = false;
+  DashboardOrientation _editingOrientation = DashboardOrientation.portrait;
 
-  static const int _connectTabIndex = 4;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loaded) return;
+    _loaded = true;
+    _dashboard = ref.read(storageServiceProvider).loadDashboardLayout();
+  }
 
-  final List<_NavItem> _navItems = [
-    const _NavItem(icon: Icons.speed, label: 'DASH'),
-    const _NavItem(icon: Icons.tune, label: 'TUNE'),
-    const _NavItem(icon: Icons.bar_chart, label: 'STATS'),
-    const _NavItem(icon: Icons.settings, label: 'SETUP'),
-    const _NavItem(icon: Icons.bluetooth, label: 'CONNECT'),
-  ];
+  @override
+  void dispose() {
+    _saveTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleSave() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 350), () {
+      ref.read(storageServiceProvider).saveDashboardLayout(_dashboard);
+    });
+  }
+
+  DashboardOrientation get _currentOrientation =>
+      MediaQuery.orientationOf(context) == Orientation.portrait
+          ? DashboardOrientation.portrait
+          : DashboardOrientation.landscape;
+
+  DashboardOrientation get _activeOrientation =>
+      _editing ? _editingOrientation : _currentOrientation;
+
+  void _updateCurrent(DashboardOrientationLayout layout) {
+    setState(
+        () => _dashboard = _dashboard.withLayout(_activeOrientation, layout));
+    _scheduleSave();
+  }
+
+  void _removeTile(DashboardTile tile) {
+    final layout = _dashboard.layoutFor(_activeOrientation);
+    _updateCurrent(layout.copyWith(
+      tiles:
+          layout.tiles.where((candidate) => candidate.id != tile.id).toList(),
+    ));
+  }
+
+  void _moveTile(DashboardTile tile, int direction) {
+    final layout = _dashboard.layoutFor(_activeOrientation);
+    final index = layout.tiles.indexOf(tile);
+    if (index < 0) return;
+    final moved = direction.abs() > 1
+        ? tile.copyWith(column: tile.column + direction.sign)
+        : tile.copyWith(row: tile.row + direction);
+    final tiles = [...layout.tiles]..[index] = moved;
+    try {
+      final next = layout.copyWith(tiles: tiles);
+      next.validate();
+      _updateCurrent(next);
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text('Diese Position ist belegt oder außerhalb des Rasters.')),
+      );
+    }
+  }
+
+  void _resizeTile(DashboardTile tile) {
+    final layout = _dashboard.layoutFor(_activeOrientation);
+    final index = layout.tiles.indexOf(tile);
+    final nextWidth = tile.width == 1
+        ? 2
+        : tile.width == 2
+            ? 3
+            : 1;
+    final resized = tile.copyWith(width: nextWidth);
+    final tiles = [...layout.tiles]..[index] = resized;
+    try {
+      final next = layout.copyWith(tiles: tiles);
+      next.validate();
+      _updateCurrent(next);
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Diese Größe passt nicht in das Layout.')),
+      );
+    }
+  }
+
+  void _resetCurrent() {
+    _updateCurrent(DashboardLayout.defaults().layoutFor(_activeOrientation));
+  }
+
+  void _copyOrientation() {
+    final source = _dashboard.layoutFor(_editingOrientation);
+    final target = _editingOrientation == DashboardOrientation.portrait
+        ? DashboardOrientation.landscape
+        : DashboardOrientation.portrait;
+    final targetGrid = _dashboard.layoutFor(target);
+    final tiles = source.tiles
+        .map((tile) => tile.copyWith(
+              column: tile.column.clamp(0, targetGrid.columns - 1),
+              row: tile.row.clamp(0, targetGrid.rows - 1),
+              width: tile.width.clamp(1, targetGrid.columns),
+              height: tile.height.clamp(1, targetGrid.rows),
+            ))
+        .toList();
+    try {
+      final copied = DashboardOrientationLayout(
+        columns: targetGrid.columns,
+        rows: targetGrid.rows,
+        tiles: tiles,
+      );
+      copied.validate();
+      setState(() => _dashboard = _dashboard.withLayout(target, copied));
+      _scheduleSave();
+    } on FormatException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Das Layout passt nicht in diese Ausrichtung.')),
+      );
+    }
+  }
+
+  void _addMetric(DashboardMetric metric) {
+    final layout = _dashboard.layoutFor(_activeOrientation);
+    if (layout.tiles.any((tile) => tile.metric == metric)) return;
+    final kind = metric == DashboardMetric.power
+        ? DashboardTileKind.arc
+        : metric == DashboardMetric.connection ||
+                metric == DashboardMetric.errors
+            ? DashboardTileKind.status
+            : DashboardTileKind.value;
+    for (var row = 0; row < layout.rows; row++) {
+      for (var column = 0; column < layout.columns; column++) {
+        final tile = DashboardTile(
+          id: metric.name,
+          metric: metric,
+          kind: kind,
+          column: column,
+          row: row,
+          width: 1,
+          height: 1,
+        );
+        if (_fits(tile, layout)) {
+          _updateCurrent(layout.copyWith(tiles: [...layout.tiles, tile]));
+          return;
+        }
+      }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Im Raster ist kein Platz mehr.')),
+    );
+  }
+
+  bool _fits(DashboardTile candidate, DashboardOrientationLayout layout) {
+    if (candidate.column + candidate.width > layout.columns ||
+        candidate.row + candidate.height > layout.rows) {
+      return false;
+    }
+    return layout.tiles.every((tile) {
+      final separated = candidate.column + candidate.width <= tile.column ||
+          tile.column + tile.width <= candidate.column ||
+          candidate.row + candidate.height <= tile.row ||
+          tile.row + tile.height <= candidate.row;
+      return tile.id == candidate.id || separated;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final controllerState = ref.watch(controllerProvider);
-    final connectionState = ref.watch(connectionStateProvider).valueOrNull ??
-        DongleConnectionState.idle;
-    final isConnected = ref.watch(isConnectedProvider);
-    final deviceName = ref.watch(connectedDeviceNameProvider);
-
-    // Track session top speed
-    if (controllerState.speedKph > _sessionTopSpeed) {
-      _sessionTopSpeed = controllerState.speedKph;
-    }
+    final state = ref.watch(controllerProvider);
+    final connected = ref.watch(isConnectedProvider);
+    final orientation = _activeOrientation;
+    final layout = _dashboard.layoutFor(orientation);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF080B0E),
+      backgroundColor: const Color(0xFF050608),
+      appBar: AppBar(
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ARCDASH'),
+            Text('RIDE COMPUTER',
+                style: TextStyle(
+                    fontSize: 9, letterSpacing: 1.8, color: Colors.white38)),
+          ],
+        ),
+        actions: [
+          _ConnectionPill(
+            connected: connected,
+            onTap: () => Navigator.of(context).pushNamed('/'),
+          ),
+          IconButton(
+            tooltip:
+                _editing ? 'Bearbeitung schließen' : 'Dashboard bearbeiten',
+            onPressed: () => setState(() {
+              _editing = !_editing;
+              _editingOrientation = orientation;
+            }),
+            icon: Icon(_editing ? Icons.check : Icons.tune),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                children: [
-                  const Text(
-                    'BIKETUNES',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 3,
-                    ),
-                  ),
-                  const Spacer(),
-                  ConnectionStatusBar(
-                    state: connectionState,
-                    deviceName: deviceName,
-                  ),
-                ],
+            if (_editing)
+              _EditorBar(
+                orientation: _editingOrientation,
+                onOrientationChanged: (value) =>
+                    setState(() => _editingOrientation = value),
+                onAdd: () => _showMetricPicker(),
+                onCopy: _copyOrientation,
+                onReset: _resetCurrent,
               ),
-            ),
-
-            // Fault banner
-            if (controllerState.hasAnyFault)
-              _FaultBanner(state: controllerState),
-
-            // Main content (screens)
             Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: [
-                  _DashTab(
-                    controllerState: controllerState,
-                    isConnected: isConnected,
-                    sessionTopSpeed: _sessionTopSpeed,
-                    onModeSelected: (mode) =>
-                        ref.read(controllerProvider.notifier).setRideMode(mode),
-                  ),
-                  // Screens pushed via named routes from bottom nav taps
-                  const SizedBox.shrink(),
-                  const SizedBox.shrink(),
-                  const SizedBox.shrink(),
-                  // Connect tab — persistent connection/scan UI
-                  _ConnectTab(
-                    connectionState: connectionState,
-                    deviceName: deviceName,
-                    onConnected: () => setState(() => _selectedIndex = 0),
-                  ),
-                ],
+              child: _DashboardCanvas(
+                layout: layout,
+                state: state,
+                connected: connected,
+                editing: _editing,
+                onRemove: _removeTile,
+                onMove: _moveTile,
+                onResize: _resizeTile,
               ),
-            ),
-
-            // Bottom nav
-            _BottomNav(
-              items: _navItems,
-              selectedIndex: _selectedIndex,
-              onTap: (i) {
-                if (i == 0) {
-                  setState(() => _selectedIndex = 0);
-                } else if (i == 1) {
-                  Navigator.of(context).pushNamed('/tuning');
-                } else if (i == 2) {
-                  Navigator.of(context).pushNamed('/stats');
-                } else if (i == 3) {
-                  Navigator.of(context).pushNamed('/settings');
-                } else if (i == _connectTabIndex) {
-                  setState(() => _selectedIndex = _connectTabIndex);
-                }
-              },
             ),
           ],
         ),
       ),
+      bottomNavigationBar: _editing
+          ? null
+          : NavigationBar(
+              selectedIndex: 0,
+              onDestinationSelected: (index) {
+                if (index == 1) Navigator.of(context).pushNamed('/stats');
+                if (index == 2) Navigator.of(context).pushNamed('/settings');
+              },
+              destinations: const [
+                NavigationDestination(
+                    icon: Icon(Icons.speed), label: 'Cockpit'),
+                NavigationDestination(
+                    icon: Icon(Icons.route_outlined), label: 'Fahrten'),
+                NavigationDestination(
+                    icon: Icon(Icons.settings_outlined),
+                    label: 'Einstellungen'),
+              ],
+            ),
     );
+  }
+
+  Future<void> _showMetricPicker() async {
+    final selected = await showModalBottomSheet<DashboardMetric>(
+      context: context,
+      backgroundColor: const Color(0xFF11151A),
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: DashboardMetric.values
+              .map((metric) => ListTile(
+                    title: Text(_metricLabel(metric)),
+                    leading: const Icon(Icons.add),
+                    onTap: () => Navigator.pop(context, metric),
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+    if (selected != null) _addMetric(selected);
   }
 }
 
-class _ConnectTab extends ConsumerStatefulWidget {
-  final DongleConnectionState connectionState;
-  final String? deviceName;
-  final VoidCallback onConnected;
+class _EditorBar extends StatelessWidget {
+  final DashboardOrientation orientation;
+  final ValueChanged<DashboardOrientation> onOrientationChanged;
+  final VoidCallback onAdd;
+  final VoidCallback onCopy;
+  final VoidCallback onReset;
 
-  const _ConnectTab({
-    required this.connectionState,
-    required this.deviceName,
-    required this.onConnected,
+  const _EditorBar({
+    required this.orientation,
+    required this.onOrientationChanged,
+    required this.onAdd,
+    required this.onCopy,
+    required this.onReset,
   });
 
   @override
-  ConsumerState<_ConnectTab> createState() => _ConnectTabState();
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+        color: const Color(0xFF11151A),
+        child: Row(
+          children: [
+            SegmentedButton<DashboardOrientation>(
+              segments: const [
+                ButtonSegment(
+                    value: DashboardOrientation.portrait, label: Text('Hoch')),
+                ButtonSegment(
+                    value: DashboardOrientation.landscape, label: Text('Quer')),
+              ],
+              selected: {orientation},
+              onSelectionChanged: (value) => onOrientationChanged(value.single),
+            ),
+            const Spacer(),
+            IconButton(
+                tooltip: 'Wert hinzufügen',
+                onPressed: onAdd,
+                icon: const Icon(Icons.add_box_outlined)),
+            IconButton(
+                tooltip: 'Ausrichtung kopieren',
+                onPressed: onCopy,
+                icon: const Icon(Icons.copy)),
+            IconButton(
+                tooltip: 'Standardlayout',
+                onPressed: onReset,
+                icon: const Icon(Icons.restart_alt)),
+          ],
+        ),
+      );
 }
 
-class _ConnectTabState extends ConsumerState<_ConnectTab> {
-  bool _isScanning = false;
-  String? _connectingId;
+class _DashboardCanvas extends StatelessWidget {
+  final DashboardOrientationLayout layout;
+  final ControllerState state;
+  final bool connected;
+  final bool editing;
+  final ValueChanged<DashboardTile> onRemove;
+  final void Function(DashboardTile, int) onMove;
+  final ValueChanged<DashboardTile> onResize;
+
+  const _DashboardCanvas({
+    required this.layout,
+    required this.state,
+    required this.connected,
+    required this.editing,
+    required this.onRemove,
+    required this.onMove,
+    required this.onResize,
+  });
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.connectionState != DongleConnectionState.connected) {
-      _startScan();
-    }
-  }
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final cellWidth = constraints.maxWidth / layout.columns;
+          final cellHeight = constraints.maxHeight / layout.rows;
+          return Stack(
+            children: [
+              for (final tile in layout.tiles)
+                Positioned(
+                  left: tile.column * cellWidth + 6,
+                  top: tile.row * cellHeight + 6,
+                  width: tile.width * cellWidth - 12,
+                  height: tile.height * cellHeight - 12,
+                  child: _TileFrame(
+                    tile: tile,
+                    editing: editing,
+                    onRemove: () => onRemove(tile),
+                    onMoveLeft: () => onMove(tile, -10),
+                    onMoveRight: () => onMove(tile, 10),
+                    onMoveUp: () => onMove(tile, -1),
+                    onMoveDown: () => onMove(tile, 1),
+                    onResize: () => onResize(tile),
+                    child: _MetricView(
+                        tile: tile, state: state, connected: connected),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+}
 
-  Future<void> _startScan() async {
-    setState(() => _isScanning = true);
-    final BluetoothAdapterState adapterState;
-    try {
-      adapterState = await FlutterBluePlus.adapterState
-          .firstWhere((s) => s != BluetoothAdapterState.unknown)
-          .timeout(const Duration(seconds: 5),
-              onTimeout: () => BluetoothAdapterState.unavailable);
-    } on UnsupportedError {
-      if (mounted) setState(() => _isScanning = false);
-      return;
-    }
-    if (adapterState != BluetoothAdapterState.on) {
-      if (mounted) setState(() => _isScanning = false);
-      return;
-    }
-    final service = ref.read(bluetoothServiceProvider);
-    await service.startScan(timeout: const Duration(seconds: 10));
-    if (mounted) setState(() => _isScanning = false);
-  }
+class _TileFrame extends StatelessWidget {
+  final DashboardTile tile;
+  final bool editing;
+  final Widget child;
+  final VoidCallback onRemove;
+  final VoidCallback onMoveLeft;
+  final VoidCallback onMoveRight;
+  final VoidCallback onMoveUp;
+  final VoidCallback onMoveDown;
+  final VoidCallback onResize;
 
-  Future<void> _connect(DiscoveredDongle dongle) async {
-    setState(() => _connectingId = dongle.device.remoteId.str);
-    final service = ref.read(bluetoothServiceProvider);
-    final success = await service.connect(dongle);
-    if (mounted) {
-      setState(() => _connectingId = null);
-      if (success) {
-        widget.onConnected();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-                Text('Connection failed. Make sure the dongle is powered on.'),
-            backgroundColor: Color(0xFFFF1744),
-            behavior: SnackBarBehavior.floating,
+  const _TileFrame({
+    required this.tile,
+    required this.editing,
+    required this.child,
+    required this.onRemove,
+    required this.onMoveLeft,
+    required this.onMoveRight,
+    required this.onMoveUp,
+    required this.onMoveDown,
+    required this.onResize,
+  });
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: tile.metric == DashboardMetric.speed
+              ? const RadialGradient(
+                  colors: [Color(0xFF16232A), Color(0xFF080B0E)], radius: 0.9)
+              : const LinearGradient(
+                  colors: [Color(0xFF12171C), Color(0xFF0B0E12)]),
+          borderRadius: BorderRadius.circular(
+              tile.metric == DashboardMetric.speed ? 28 : 18),
+          border: Border.all(
+            color: editing
+                ? const Color(0xFF00E5FF)
+                : tile.metric == DashboardMetric.speed
+                    ? const Color(0xFF263943)
+                    : const Color(0xFF202833),
+            width: editing ? 2 : 1,
           ),
-        );
-      }
-    }
-  }
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: tile.height == 1
+                    ? const EdgeInsets.symmetric(horizontal: 12, vertical: 6)
+                    : const EdgeInsets.all(14),
+                child: child,
+              ),
+            ),
+            if (editing)
+              Positioned(
+                right: 2,
+                top: 2,
+                child: PopupMenuButton<_TileCommand>(
+                  tooltip: '${_metricLabel(tile.metric)} bearbeiten',
+                  onSelected: (command) => switch (command) {
+                    _TileCommand.left => onMoveLeft(),
+                    _TileCommand.right => onMoveRight(),
+                    _TileCommand.up => onMoveUp(),
+                    _TileCommand.down => onMoveDown(),
+                    _TileCommand.resize => onResize(),
+                    _TileCommand.remove => onRemove(),
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                        value: _TileCommand.left, child: Text('Nach links')),
+                    PopupMenuItem(
+                        value: _TileCommand.right, child: Text('Nach rechts')),
+                    PopupMenuItem(
+                        value: _TileCommand.up, child: Text('Nach oben')),
+                    PopupMenuItem(
+                        value: _TileCommand.down, child: Text('Nach unten')),
+                    PopupMenuItem(
+                        value: _TileCommand.resize,
+                        child: Text('Größe ändern')),
+                    PopupMenuItem(
+                        value: _TileCommand.remove, child: Text('Entfernen')),
+                  ],
+                  icon: const Icon(Icons.more_vert),
+                ),
+              ),
+          ],
+        ),
+      );
+}
 
-  Future<void> _disconnect() async {
-    final service = ref.read(bluetoothServiceProvider);
-    await service.disconnect();
-    if (mounted) _startScan();
-  }
+enum _TileCommand { left, right, up, down, resize, remove }
+
+class _MetricView extends StatelessWidget {
+  final DashboardTile tile;
+  final ControllerState state;
+  final bool connected;
+
+  const _MetricView(
+      {required this.tile, required this.state, required this.connected});
 
   @override
   Widget build(BuildContext context) {
-    final scanResults = ref.watch(scanResultsProvider).valueOrNull ?? [];
-    final isConnected =
-        widget.connectionState == DongleConnectionState.connected;
-
-    if (isConnected) {
-      return _ConnectedView(
-        deviceName: widget.deviceName ?? 'Tuner',
-        onDisconnect: _disconnect,
-      );
+    final reading = _reading(tile.metric);
+    final label = _metricLabel(tile.metric);
+    if (tile.metric == DashboardMetric.speed) {
+      return _SpeedDial(speedKph: state.speedKph, connected: connected);
     }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
+    if (tile.metric == DashboardMetric.power) {
+      return _PowerMeter(powerKw: state.powerKw, connected: connected);
+    }
+    final valueColor = tile.metric == DashboardMetric.errors
+        ? state.hasAnyFault
+            ? const Color(0xFFFF5470)
+            : const Color(0xFF54E39E)
+        : Colors.white;
+    return LayoutBuilder(builder: (context, constraints) {
+      final compact = constraints.maxHeight < 70;
+      final labelWidget = Text(label.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+              color: Colors.white54, fontSize: 10, letterSpacing: 1.1));
+      final valueWidget = Text(reading,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: valueColor,
+            fontSize: compact
+                ? 17
+                : tile.kind == DashboardTileKind.status
+                    ? 18
+                    : 28,
+            fontWeight: FontWeight.w800,
+          ));
+      if (compact) {
+        return Row(children: [
+          Expanded(child: labelWidget),
+          const SizedBox(width: 8),
+          Flexible(child: valueWidget),
+        ]);
+      }
+      return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              const Text(
-                'NEARBY TUNERS',
-                style: TextStyle(
-                  color: Color(0xFF4A5568),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 2,
-                ),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [labelWidget, const SizedBox(height: 6), valueWidget],
+      );
+    });
+  }
+
+  String _reading(DashboardMetric metric) {
+    if (!connected && metric != DashboardMetric.connection) return '—';
+    return switch (metric) {
+      DashboardMetric.speed => '${state.speedKph.toStringAsFixed(0)} km/h',
+      DashboardMetric.power => '${state.powerKw.toStringAsFixed(1)} kW',
+      DashboardMetric.voltage => '${state.voltageV.toStringAsFixed(1)} V',
+      DashboardMetric.current => '${state.currentA.toStringAsFixed(1)} A',
+      DashboardMetric.soc => '${state.batteryPercent.toStringAsFixed(0)} %',
+      DashboardMetric.range => '— km',
+      DashboardMetric.profile => state.rideMode.displayName,
+      DashboardMetric.gear => state.gear == 0 ? '—' : state.gear.toString(),
+      DashboardMetric.motorTemperature =>
+        '${state.motorTempC.toStringAsFixed(0)} °C',
+      DashboardMetric.controllerTemperature =>
+        '${state.controllerTempC.toStringAsFixed(0)} °C',
+      DashboardMetric.errors => state.hasAnyFault ? 'Fehler' : 'Keine Fehler',
+      DashboardMetric.connection => connected ? 'Verbunden' : 'Getrennt',
+    };
+  }
+}
+
+class _ConnectionPill extends StatelessWidget {
+  final bool connected;
+  final VoidCallback onTap;
+
+  const _ConnectionPill({required this.connected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Material(
+          color: connected ? const Color(0xFF123328) : const Color(0xFF271D20),
+          borderRadius: BorderRadius.circular(24),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.bluetooth,
+                      size: 16,
+                      color: connected
+                          ? const Color(0xFF54E39E)
+                          : const Color(0xFFFFB45C)),
+                  const SizedBox(width: 6),
+                  Text(connected ? 'LIVE' : 'VERBINDEN',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1)),
+                ],
               ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: _isScanning ? null : _startScan,
-                icon: _isScanning
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF00E5FF),
-                        ),
-                      )
-                    : const Icon(Icons.refresh, size: 16),
-                label: Text(_isScanning ? 'Scanning...' : 'Scan'),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF00E5FF),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
-                  ),
-                ),
+            ),
+          ),
+        ),
+      );
+}
+
+class _SpeedDial extends StatelessWidget {
+  final double speedKph;
+  final bool connected;
+
+  const _SpeedDial({required this.speedKph, required this.connected});
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        key: const Key('speed-dial'),
+        label: connected
+            ? 'Geschwindigkeit ${speedKph.round()} Kilometer pro Stunde'
+            : 'Geschwindigkeit unbekannt, nicht verbunden',
+        child: LayoutBuilder(
+          builder: (context, constraints) => Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                  child: CustomPaint(
+                      painter: _SpeedDialPainter(
+                          speedKph: connected ? speedKph : 0,
+                          active: connected))),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(connected ? speedKph.round().toString() : '–',
+                      style: TextStyle(
+                          fontSize: math.min(constraints.maxHeight * 0.29, 82),
+                          height: 0.9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -3)),
+                  const SizedBox(height: 8),
+                  const Text('km/h',
+                      style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2)),
+                  const SizedBox(height: 8),
+                  Text(connected ? 'CONTROLLER' : 'KEINE DATEN',
+                      style: TextStyle(
+                          color: connected
+                              ? const Color(0xFF00E5FF)
+                              : const Color(0xFFFFB45C),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5)),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: scanResults.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.bluetooth_searching,
-                          size: 56,
-                          color: const Color(0xFF2A3548),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _isScanning
-                              ? 'Searching for tuners...'
-                              : 'No tuners found',
-                          style: const TextStyle(
-                            color: Color(0xFF4A5568),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _isScanning
-                              ? 'Make sure your bike is on and\nthe dongle is connected'
-                              : 'Tap Scan to search again',
-                          style: const TextStyle(
-                            color: Color(0xFF2A3548),
-                            fontSize: 13,
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                    itemCount: scanResults.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, i) {
-                      final dongle = scanResults[i];
-                      final isConnecting =
-                          _connectingId == dongle.device.remoteId.str;
-                      return _DongleCard(
-                        dongle: dongle,
-                        isConnecting: isConnecting,
-                        onTap: () => _connect(dongle),
-                      );
-                    },
-                  ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A2030).withOpacity(0.5),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF2A3548)),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  color: Color(0xFF4A5568),
-                  size: 16,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Device names: YuanQ, FOC, FarDriver. Make sure the dongle is plugged into the controller and the bike is powered on.',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
-                      fontSize: 12,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
 }
 
-class _ConnectedView extends StatelessWidget {
-  final String deviceName;
-  final VoidCallback onDisconnect;
+class _SpeedDialPainter extends CustomPainter {
+  final double speedKph;
+  final bool active;
 
-  const _ConnectedView({
-    required this.deviceName,
-    required this.onDisconnect,
-  });
+  const _SpeedDialPainter({required this.speedKph, required this.active});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) * 0.39;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    const start = math.pi * 0.72;
+    const sweep = math.pi * 1.56;
+    final track = Paint()
+      ..color = const Color(0xFF243039)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, start, sweep, false, track);
+    final progress = (speedKph / 120).clamp(0.0, 1.0);
+    final activePaint = Paint()
+      ..shader = const SweepGradient(
+          colors: [Color(0xFF00E5FF), Color(0xFF54E39E), Color(0xFFFFB45C)],
+          stops: [0, 0.72, 1]).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round;
+    if (active) {
+      canvas.drawArc(rect, start, sweep * progress, false, activePaint);
+    }
+    final tickPaint = Paint()..strokeWidth = 2;
+    for (var i = 0; i <= 12; i++) {
+      final angle = start + sweep * i / 12;
+      tickPaint.color =
+          i / 12 <= progress && active ? Colors.white : const Color(0xFF52616A);
+      final outer =
+          center + Offset(math.cos(angle), math.sin(angle)) * (radius + 18);
+      final inner = center +
+          Offset(math.cos(angle), math.sin(angle)) *
+              (radius + (i.isEven ? 4 : 9));
+      canvas.drawLine(inner, outer, tickPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SpeedDialPainter oldDelegate) =>
+      oldDelegate.speedKph != speedKph || oldDelegate.active != active;
+}
+
+class _PowerMeter extends StatelessWidget {
+  final double powerKw;
+  final bool connected;
+
+  const _PowerMeter({required this.powerKw, required this.connected});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+    final regen = powerKw < 0;
+    final color = !connected
+        ? Colors.white24
+        : regen
+            ? const Color(0xFF54E39E)
+            : const Color(0xFF00E5FF);
+    final normalized = connected ? (powerKw.abs() / 20).clamp(0.0, 1.0) : 0.0;
+    return Semantics(
+      label: connected
+          ? '${regen ? 'Rekuperation' : 'Leistung'} ${powerKw.abs().toStringAsFixed(1)} Kilowatt'
+          : 'Leistung unbekannt',
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: const Color(0xFF00E5FF).withOpacity(0.1),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(0xFF00E5FF).withOpacity(0.4),
-                width: 2,
-              ),
-            ),
-            child: const Icon(
-              Icons.bluetooth_connected,
-              color: Color(0xFF00E5FF),
-              size: 32,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'CONNECTED',
-            style: TextStyle(
-              color: Color(0xFF00E5FF),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            deviceName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 40),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onDisconnect,
-              icon: const Icon(Icons.bluetooth_disabled, size: 18),
-              label: const Text('DISCONNECT'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFFF1744),
-                side: const BorderSide(color: Color(0xFFFF1744), width: 1.5),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DashTab extends StatelessWidget {
-  final ControllerState controllerState;
-  final bool isConnected;
-  final double sessionTopSpeed;
-  final ValueChanged<RideMode> onModeSelected;
-
-  const _DashTab({
-    required this.controllerState,
-    required this.isConnected,
-    required this.sessionTopSpeed,
-    required this.onModeSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final speedMph = UnitConverter.kphToMph(controllerState.speedKph);
-    final topSpeedMph = UnitConverter.kphToMph(sessionTopSpeed);
-    final maxSpeedMph = controllerState.maxSpeedRaw > 0
-        ? UnitConverter.kphToMph(100.0)
-        : UnitConverter.kphToMph(80.0);
-
-    final range = RangeEstimate.estimate(
-      socPercent: controllerState.batteryPercent,
-      usableCapacityWh: null,
-      consumptionWhPerKm: null,
-    );
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          const SizedBox(height: 8),
-
-          // Speedometer
-          SizedBox(
-            width: double.infinity,
-            height: 240,
-            child: SpeedometerGauge(
-              speed: speedMph,
-              maxSpeed: maxSpeedMph,
-              topSpeed: topSpeedMph,
-              unit: 'mph',
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Battery section
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF111518),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFF1A2030)),
-            ),
-            child: BatteryIndicator(
-              percentage: controllerState.batteryPercent,
-              voltageV: controllerState.voltageV,
-              estimatedRangeKm: range.kilometers,
-              rangeStatus: range.status,
-              useMph: true,
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Data tiles 2×2 grid
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.35,
+          Row(
             children: [
-              DataTile(
-                label: 'MOTOR TEMP',
-                value: UnitConverter.fmt0(controllerState.motorTempC),
-                unit: '°C',
-                icon: Icons.thermostat,
-                accentColor: controllerState.motorTempProtect
-                    ? const Color(0xFFFF1744)
-                    : const Color(0xFFFF9800),
-                isWarning: controllerState.motorTempProtect,
-              ),
-              DataTile(
-                label: 'CTRL TEMP',
-                value: UnitConverter.fmt0(controllerState.controllerTempC),
-                unit: '°C',
-                icon: Icons.memory,
-                accentColor: controllerState.controllerTempProtect
-                    ? const Color(0xFFFF1744)
-                    : const Color(0xFF00E5FF),
-                isWarning: controllerState.controllerTempProtect,
-              ),
-              DataTile(
-                label: 'CURRENT',
-                value: UnitConverter.fmt1(controllerState.currentA),
-                unit: 'A',
-                icon: Icons.bolt,
-                accentColor: const Color(0xFF39FF14),
-              ),
-              DataTile(
-                label: 'POWER',
-                value: UnitConverter.fmt1(controllerState.powerKw),
-                unit: 'kW',
-                icon: Icons.electric_bolt,
-                accentColor: const Color(0xFF00E5FF),
-              ),
+              Icon(regen ? Icons.battery_charging_full : Icons.bolt,
+                  color: color, size: 18),
+              const SizedBox(width: 8),
+              Text(regen ? 'REKUPERATION' : 'LEISTUNG',
+                  style: TextStyle(
+                      color: color,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5)),
+              const Spacer(),
+              Text(
+                  connected ? '${powerKw.abs().toStringAsFixed(1)} kW' : '– kW',
+                  style: const TextStyle(
+                      fontSize: 26, fontWeight: FontWeight.w900)),
             ],
           ),
-
           const SizedBox(height: 14),
-
-          // Ride modes
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF111518),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFF1A2030)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'RIDE MODE',
-                  style: TextStyle(
-                    color: Color(0xFF4A5568),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: RideMode.values.map((mode) {
-                    return Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          right: mode != RideMode.race ? 8 : 0,
-                        ),
-                        child: RideModeCard(
-                          mode: mode,
-                          isSelected: controllerState.rideMode == mode,
-                          isConnected: isConnected,
-                          onTap: () => onModeSelected(mode),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-}
-
-class _FaultBanner extends StatelessWidget {
-  final ControllerState state;
-  const _FaultBanner({required this.state});
-
-  String get _message {
-    final faults = <String>[];
-    if (state.motorHallError) faults.add('Motor Hall Error');
-    if (state.throttleError) faults.add('Throttle Error');
-    if (state.motorTempProtect) faults.add('Motor Overheat');
-    if (state.controllerTempProtect) faults.add('Controller Overheat');
-    return faults.join(' • ');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFF1744).withOpacity(0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFF1744).withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber, color: Color(0xFFFF1744), size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _message,
-              style: const TextStyle(
-                color: Color(0xFFFF1744),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+                value: normalized,
+                minHeight: 12,
+                backgroundColor: const Color(0xFF263039),
+                valueColor: AlwaysStoppedAnimation(color)),
           ),
         ],
       ),
@@ -636,162 +755,17 @@ class _FaultBanner extends StatelessWidget {
   }
 }
 
-class _DongleCard extends StatelessWidget {
-  final DiscoveredDongle dongle;
-  final bool isConnecting;
-  final VoidCallback onTap;
-
-  const _DongleCard({
-    required this.dongle,
-    required this.isConnecting,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isConnecting ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF111518),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF2A3548)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF00E5FF).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.bluetooth,
-                color: Color(0xFF00E5FF),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    dongle.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    dongle.device.remoteId.str,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.35),
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              children: [
-                Text(
-                  '${dongle.rssi} dBm',
-                  style: const TextStyle(
-                    color: Color(0xFF4A5568),
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                isConnecting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF00E5FF),
-                        ),
-                      )
-                    : const Icon(
-                        Icons.chevron_right,
-                        color: Color(0xFF4A5568),
-                        size: 20,
-                      ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem {
-  final IconData icon;
-  final String label;
-  const _NavItem({required this.icon, required this.label});
-}
-
-class _BottomNav extends StatelessWidget {
-  final List<_NavItem> items;
-  final int selectedIndex;
-  final ValueChanged<int> onTap;
-
-  const _BottomNav({
-    required this.items,
-    required this.selectedIndex,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0D1117),
-        border: Border(top: BorderSide(color: Color(0xFF1A2030))),
-      ),
-      child: Row(
-        children: [
-          for (int i = 0; i < items.length; i++)
-            Expanded(
-              child: GestureDetector(
-                onTap: () => onTap(i),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        items[i].icon,
-                        size: 22,
-                        color: i == selectedIndex
-                            ? const Color(0xFF00E5FF)
-                            : const Color(0xFF2A3548),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        items[i].label,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                          color: i == selectedIndex
-                              ? const Color(0xFF00E5FF)
-                              : const Color(0xFF2A3548),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
+String _metricLabel(DashboardMetric metric) => switch (metric) {
+      DashboardMetric.speed => 'Geschwindigkeit',
+      DashboardMetric.power => 'Leistung',
+      DashboardMetric.voltage => 'Spannung',
+      DashboardMetric.current => 'Strom',
+      DashboardMetric.soc => 'Batterie',
+      DashboardMetric.range => 'Reichweite',
+      DashboardMetric.profile => 'Profil',
+      DashboardMetric.gear => 'Gang',
+      DashboardMetric.motorTemperature => 'Motortemperatur',
+      DashboardMetric.controllerTemperature => 'Controllertemperatur',
+      DashboardMetric.errors => 'Fehler',
+      DashboardMetric.connection => 'Verbindung',
+    };

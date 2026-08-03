@@ -157,7 +157,7 @@ Unsicherheit und degradiert kontrolliert bei schlechten Daten.
 
 ## T069 - Simulation und Dashboard-Integration abschliessen
 
-**Abhaengigkeiten:** T057, T062 bis T068  
+**Abhaengigkeiten:** T058, T062 bis T068
 **Hardware erforderlich:** Reale Fahrdaten fuer finale Abnahme
 
 ### Arbeitsumfang

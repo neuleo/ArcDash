@@ -35,7 +35,9 @@ class StatsState {
 class StatsNotifier extends StateNotifier<StatsState> {
   final Ref _ref;
   Timer? _sampleTimer;
+  Timer? _disconnectGraceTimer;
   DateTime? _lastSampleTime;
+  DateTime? _stationarySince;
 
   StatsNotifier(this._ref) : super(const StatsState()) {
     _loadPastSessions();
@@ -48,36 +50,60 @@ class StatsNotifier extends StateNotifier<StatsState> {
       (_, next) {
         final cs = next.valueOrNull;
         if (cs == DongleConnectionState.connected) {
-          _startTracking();
+          _disconnectGraceTimer?.cancel();
+          _startSampling();
         } else if (cs == DongleConnectionState.disconnected) {
-          _stopTracking();
+          _sampleTimer?.cancel();
+          _sampleTimer = null;
+          _disconnectGraceTimer?.cancel();
+          _disconnectGraceTimer = Timer(
+            const Duration(seconds: 15),
+            _finalizeSession,
+          );
         }
       },
+      fireImmediately: true,
     );
   }
 
-  void _startTracking() {
-    if (state.isTracking) return;
+  void _startSampling() {
+    if (_sampleTimer != null) return;
+    _lastSampleTime = DateTime.now();
+    _sampleTimer =
+        Timer.periodic(const Duration(seconds: 1), (_) => _takeSample());
+  }
+
+  void _beginSession(DateTime now) {
     final session = RideSession(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      startTime: DateTime.now(),
+      id: now.millisecondsSinceEpoch.toString(),
+      startTime: now,
     );
     state = state.copyWith(currentSession: session, isTracking: true);
-    _lastSampleTime = DateTime.now();
-
-    _sampleTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _takeSample();
-    });
   }
 
   void _takeSample() {
-    final session = state.currentSession;
-    if (session == null) return;
-
     final controller = _ref.read(controllerProvider);
     final now = DateTime.now();
-    final delta = now.difference(_lastSampleTime!).inMilliseconds / 1000.0;
+    final lastSample = _lastSampleTime;
     _lastSampleTime = now;
+    if (state.currentSession == null) {
+      if (controller.speedKph < 1.5) return;
+      _beginSession(now);
+    }
+    final session = state.currentSession!;
+    final delta = lastSample == null
+        ? 0.0
+        : now.difference(lastSample).inMilliseconds / 1000.0;
+
+    if (controller.speedKph < 1) {
+      _stationarySince ??= now;
+      if (now.difference(_stationarySince!) >= const Duration(minutes: 5)) {
+        unawaited(_finalizeSession().then((_) => _startSampling()));
+        return;
+      }
+    } else {
+      _stationarySince = null;
+    }
 
     session.addSample(
       speedKph: controller.speedKph,
@@ -94,15 +120,16 @@ class StatsNotifier extends StateNotifier<StatsState> {
     );
   }
 
-  void _stopTracking() {
+  Future<void> _finalizeSession() async {
     _sampleTimer?.cancel();
     _sampleTimer = null;
+    _stationarySince = null;
 
     final session = state.currentSession;
     if (session == null) return;
     session.end();
 
-    _saveSession(session);
+    await _saveSession(session);
     state = state.copyWith(clearCurrentSession: true, isTracking: false);
     _loadPastSessions();
   }
@@ -128,6 +155,7 @@ class StatsNotifier extends StateNotifier<StatsState> {
   @override
   void dispose() {
     _sampleTimer?.cancel();
+    _disconnectGraceTimer?.cancel();
     super.dispose();
   }
 }

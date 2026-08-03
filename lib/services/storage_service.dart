@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/models/ride_stats.dart';
+import 'package:arcdash/models/dashboard_layout.dart';
 import 'package:csv/csv.dart';
 
 const _prefKeyUseMph = 'use_mph';
@@ -14,14 +15,50 @@ const _prefKeyFirstConnect = 'first_connect_done';
 
 class StorageService {
   late SharedPreferences _prefs;
+  bool _initialized = false;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    _initialized = true;
+  }
+
+  bool get isInitialized => _initialized;
+
+  DashboardLayout loadDashboardLayout() {
+    if (!_initialized) return DashboardLayout.defaults();
+    final encoded = _prefs.getString('dashboard_layout');
+    if (encoded == null) return DashboardLayout.defaults();
+    try {
+      return DashboardLayout.fromJson(jsonDecode(encoded));
+    } catch (_) {
+      return DashboardLayout.defaults();
+    }
+  }
+
+  Future<void> saveDashboardLayout(DashboardLayout layout) async {
+    if (!_initialized) return;
+    layout.portrait.validate();
+    layout.landscape.validate();
+    await _prefs.setString('dashboard_layout', jsonEncode(layout.toJson()));
   }
 
   // --- Unit preference ---
-  bool get useMph => _prefs.getBool(_prefKeyUseMph) ?? false;
-  Future<void> setUseMph(bool v) => _prefs.setBool(_prefKeyUseMph, v);
+  bool get useMph => _initialized && (_prefs.getBool(_prefKeyUseMph) ?? false);
+  Future<void> setUseMph(bool v) async {
+    if (_initialized) await _prefs.setBool(_prefKeyUseMph, v);
+  }
+
+  Future<void> resetDashboardLayout() async {
+    if (_initialized) await _prefs.remove('dashboard_layout');
+  }
+
+  Future<void> clearRideSessions() async {
+    if (_initialized) await _prefs.remove(_prefKeyRideSessions);
+  }
+
+  Future<void> clearProfiles() async {
+    if (_initialized) await _prefs.remove(_prefKeyProfiles);
+  }
 
   // --- Stock backup ---
   bool get hasStockBackup => _prefs.containsKey(_prefKeyStockBackup);
@@ -81,6 +118,7 @@ class StorageService {
 
   // --- Ride sessions ---
   Future<void> saveRideSession(RideSession session) async {
+    if (!_initialized) return;
     final sessions = _loadSessionJsonList();
     sessions.add(session.toJson());
     // Keep only last 50 sessions
@@ -91,6 +129,7 @@ class StorageService {
   }
 
   List<Map<String, dynamic>> _loadSessionJsonList() {
+    if (!_initialized) return [];
     final s = _prefs.getString(_prefKeyRideSessions);
     if (s == null) return [];
     try {

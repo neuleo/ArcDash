@@ -17,6 +17,12 @@ Alle Texte sind **knapp, klar und instruktiv**. Die App erklärt in kurzer, vers
   - **Rot** — Gefahr, Fehler oder blockierte Aktion (z. B. Bewegung während eines Schreibversuchs).
 - Der **Leistungsindikator** verfärbt sich je nach aktueller Leistung und wird bei Rekuperation grün — als visuelles Highlight des Dashboards.
 - Optimiert für Ablesbarkeit bei Sonneneinstrahlung und Bedienung mit Handschuhen.
+- Das Dashboard besitzt getrennt konfigurierbare Hoch- und Querformatlayouts.
+  Werte koennen hinzugefuegt, entfernt, verschoben und skaliert werden, ohne dass
+  der Bearbeitungsmodus waehrend der normalen Fahrt versehentlich aktiv wird.
+- Das Raster passt sich an die Geraetegroesse an. Gespeichert werden relative
+  Rasterpositionen statt Pixelwerte; kritische Inhalte duerfen weder abgeschnitten
+  noch durch Navigation oder Systemleisten verdeckt werden.
 
 ## Safety Communication
 

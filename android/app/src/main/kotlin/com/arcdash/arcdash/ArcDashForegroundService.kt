@@ -18,7 +18,7 @@ class ArcDashForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, notification("Controller service ready"))
+        startForeground(NOTIFICATION_ID, notification("Controller-Verbindung aktiv"))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -41,7 +41,7 @@ class ArcDashForegroundService : Service() {
                 "ArcDash Controller",
                 NotificationManager.IMPORTANCE_LOW,
             )
-            channel.description = "BLE controller connection status"
+            channel.description = "Status der BLE-Controllerverbindung"
             getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
         }

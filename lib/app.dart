@@ -1,19 +1,22 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/screens/connection_screen.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
 import 'package:arcdash/screens/debug_screen.dart';
 import 'package:arcdash/screens/settings_screen.dart';
 import 'package:arcdash/screens/stats_screen.dart';
-import 'package:arcdash/screens/tuning_screen.dart';
+import 'package:arcdash/providers/stats_provider.dart';
 
-class ArcDashApp extends StatelessWidget {
+class ArcDashApp extends ConsumerWidget {
   const ArcDashApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Session recording must not depend on opening the rides screen.
+    ref.watch(statsProvider);
     // Force dark status bar icons on light backgrounds (none here, but good practice)
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -27,11 +30,13 @@ class ArcDashApp extends StatelessWidget {
       title: 'ArcDash',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
+      locale: const Locale('de'),
+      supportedLocales: const [Locale('de'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       initialRoute: '/dashboard',
       routes: {
         '/': (_) => const ConnectionScreen(),
         '/dashboard': (_) => const DashboardScreen(),
-        '/tuning': (_) => const TuningScreen(),
         '/stats': (_) => const StatsScreen(),
         '/settings': (_) => const SettingsScreen(),
         '/debug': (_) => const DebugScreen(),
@@ -56,44 +61,44 @@ class ArcDashApp extends StatelessWidget {
         onPrimary: Color(0xFF080B0E),
         onSurface: Colors.white,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).copyWith(
-        displayLarge: GoogleFonts.rajdhani(
+      textTheme: base.textTheme.copyWith(
+        displayLarge: const TextStyle(
           fontSize: 72,
           fontWeight: FontWeight.w700,
           color: Colors.white,
           letterSpacing: -2,
         ),
-        displayMedium: GoogleFonts.rajdhani(
+        displayMedium: const TextStyle(
           fontSize: 48,
           fontWeight: FontWeight.w700,
           color: Colors.white,
         ),
-        headlineLarge: GoogleFonts.rajdhani(
+        headlineLarge: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w700,
           color: Colors.white,
           letterSpacing: 1,
         ),
-        headlineMedium: GoogleFonts.inter(
+        headlineMedium: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: Colors.white,
         ),
-        titleLarge: GoogleFonts.inter(
+        titleLarge: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: Colors.white,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: const TextStyle(
           fontSize: 13,
           color: Colors.white70,
         ),
-        labelSmall: GoogleFonts.inter(
+        labelSmall: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.5,
@@ -104,7 +109,7 @@ class ArcDashApp extends StatelessWidget {
         backgroundColor: const Color(0xFF0D1117),
         foregroundColor: Colors.white,
         elevation: 0,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w800,
           letterSpacing: 3,
@@ -128,10 +133,11 @@ class ArcDashApp extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: accentCyan,
           foregroundColor: const Color(0xFF080B0E),
+          minimumSize: const Size(48, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: const TextStyle(
             fontWeight: FontWeight.w800,
             letterSpacing: 1.5,
           ),
@@ -153,7 +159,7 @@ class ArcDashApp extends StatelessWidget {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: surfaceColor,
-        contentTextStyle: GoogleFonts.inter(color: Colors.white),
+        contentTextStyle: const TextStyle(color: Colors.white),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -163,12 +169,12 @@ class ArcDashApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: Color(0xFF2A3548)),
         ),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w800,
           color: Colors.white,
         ),
-        contentTextStyle: GoogleFonts.inter(
+        contentTextStyle: const TextStyle(
           fontSize: 13,
           color: Colors.white70,
           height: 1.6,

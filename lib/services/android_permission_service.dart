@@ -4,15 +4,18 @@ enum RuntimePermission {
   bluetoothScan,
   bluetoothConnect,
   location,
+  notifications,
 }
 
 class AndroidPermissionPolicy {
   static Set<RuntimePermission> requiredForSdk(int sdk) {
     if (sdk >= 31) {
-      return {
+      final permissions = <RuntimePermission>{
         RuntimePermission.bluetoothScan,
         RuntimePermission.bluetoothConnect,
       };
+      if (sdk >= 33) permissions.add(RuntimePermission.notifications);
+      return permissions;
     }
     return {RuntimePermission.location};
   }
@@ -64,6 +67,8 @@ class PermissionHandlerRequester implements PermissionRequester {
         handler.Permission.bluetoothConnect.request(),
       RuntimePermission.location =>
         handler.Permission.locationWhenInUse.request(),
+      RuntimePermission.notifications =>
+        handler.Permission.notification.request(),
     };
     return status.isGranted;
   }

@@ -1,0 +1,81 @@
+name: Development APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: latest-development-release
+  cancel-in-progress: true
+
+jobs:
+  build-and-release:
+    name: Build and publish latest development APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build pinned Flutter image
+        run: docker build --tag arcdash-flutter-ci .
+
+      - name: Resolve dependencies
+        run: >-
+          docker run --rm
+          --volume "$GITHUB_WORKSPACE:/app"
+          --workdir /app
+          --env CI=true
+          arcdash-flutter-ci
+          flutter pub get
+
+      - name: Run tests
+        run: >-
+          docker run --rm
+          --volume "$GITHUB_WORKSPACE:/app"
+          --workdir /app
+          --env CI=true
+          arcdash-flutter-ci
+          flutter test
+
+      - name: Build development APK
+        run: >-
+          docker run --rm
+          --volume "$GITHUB_WORKSPACE:/app"
+          --workdir /app
+          --env CI=true
+          arcdash-flutter-ci
+          flutter build apk --debug
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          cp build/app/outputs/flutter-apk/app-debug.apk release-assets/ArcDash-development.apk
+          sha256sum release-assets/ArcDash-development.apk > release-assets/ArcDash-development.apk.sha256
+
+      - name: Create rolling release if missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view latest-development >/dev/null 2>&1; then
+            gh release create latest-development \
+              --prerelease \
+              --target "$GITHUB_SHA" \
+              --title "ArcDash Latest Development" \
+              --notes "Automatisch erstellte Read-only-Entwicklungsversion. Nicht als stabil signiertes Produktionsrelease verwenden."
+          fi
+
+      - name: Update rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit latest-development \
+            --prerelease \
+            --title "ArcDash Latest Development" \
+            --notes "Automatischer Build von Commit ${GITHUB_SHA}. Workflow-Lauf: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Read-only-Entwicklungsversion; Parameter-Writes sind nicht freigegeben."
+          gh release upload latest-development release-assets/* --clobber

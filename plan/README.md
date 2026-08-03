@@ -99,23 +99,23 @@ erhalten.
 ## Phase 6: Android-Hintergrundbetrieb
 
 - [x] **T046** Foreground-Service-Architektur festlegen (`95ef4ea`) ([Details](./07-android-hintergrundbetrieb.md#t046---foreground-service-architektur-festlegen))
-- [~] **T047** Android-Service und Berechtigungen konfigurieren ([Details](./07-android-hintergrundbetrieb.md#t047---android-service-und-berechtigungen-konfigurieren))
+- [!] **T047** Android-Service und Berechtigungen konfigurieren (BLOCKIERT: Android-12-bis-14-Geräteabnahme fehlt; Code und APK-Build vorbereitet) ([Details](./07-android-hintergrundbetrieb.md#t047---android-service-und-berechtigungen-konfigurieren))
 - [ ] **T048** BLE-Session in den Service integrieren ([Details](./07-android-hintergrundbetrieb.md#t048---ble-session-in-den-service-integrieren))
-- [~] **T049** Native Flutter-Kommandobruecke bauen ([Details](./07-android-hintergrundbetrieb.md#t049---native-flutter-kommandobruecke-bauen))
-- [~] **T050** Sicheren MacroDroid-Vertrag definieren ([Details](./07-android-hintergrundbetrieb.md#t050---sicheren-macrodroid-vertrag-definieren))
+- [!] **T049** Native Flutter-Kommandobruecke bauen (BLOCKIERT: T048 und T047 fehlen) ([Details](./07-android-hintergrundbetrieb.md#t049---native-flutter-kommandobruecke-bauen))
+- [!] **T050** Sicheren MacroDroid-Vertrag definieren (BLOCKIERT: T049 fehlt) ([Details](./07-android-hintergrundbetrieb.md#t050---sicheren-macrodroid-vertrag-definieren))
 - [!] **T051** Street Legal bei ausgeschaltetem Bildschirm anwenden (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t051---street-legal-bei-ausgeschaltetem-bildschirm-anwenden))
 - [!] **T052** Hintergrund-Feedback implementieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t052---hintergrund-feedback-implementieren))
 - [!] **T053** Android-Lifecycle-Matrix validieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t053---android-lifecycle-matrix-validieren))
 
 ## Phase 7: Dashboard und Telemetrie
 
-- [ ] **T054** Designsystem, Navigation und Lokalisierung aufbauen ([Details](./08-dashboard-und-telemetrie.md#t054---designsystem-navigation-und-lokalisierung-aufbauen))
-- [ ] **T055** Telemetriequalitaet und Stale-State implementieren ([Details](./08-dashboard-und-telemetrie.md#t055---telemetriequalitaet-und-stale-state-implementieren))
-- [ ] **T056** GPS-Geschwindigkeit mit Fallback implementieren ([Details](./08-dashboard-und-telemetrie.md#t056---gps-geschwindigkeit-mit-fallback-implementieren))
-- [ ] **T057** AMOLED-Dashboard und Leistungsbogen bauen ([Details](./08-dashboard-und-telemetrie.md#t057---amoled-dashboard-und-leistungsbogen-bauen))
-- [ ] **T058** Profil, DNR, Temperaturen und Fehler darstellen ([Details](./08-dashboard-und-telemetrie.md#t058---profil-dnr-temperaturen-und-fehler-darstellen))
-- [ ] **T059** Einheiten und Accessibility umsetzen ([Details](./08-dashboard-und-telemetrie.md#t059---einheiten-und-accessibility-umsetzen))
-- [ ] **T060** Verbindungs-UX vereinheitlichen ([Details](./08-dashboard-und-telemetrie.md#t060---verbindungs-ux-vereinheitlichen))
+- [~] **T054** App-Shell, Designsystem, Navigation und Lokalisierung neu aufbauen (NEUABNAHME: bisherige UI wird ersetzt) ([Details](./08-dashboard-und-telemetrie.md#t054---app-shell-designsystem-navigation-und-lokalisierung-neu-aufbauen))
+- [x] **T055** Telemetriequalitaet und Stale-State implementieren ([Details](./08-dashboard-und-telemetrie.md#t055---telemetriequalitaet-und-stale-state-implementieren))
+- [!] **T056** GPS-Geschwindigkeit mit Fallback implementieren (BLOCKIERT: Android-Geräteabnahme mit Standortberechtigung fehlt; Simulation und Fallbacklogik getestet) ([Details](./08-dashboard-und-telemetrie.md#t056---gps-geschwindigkeit-mit-fallback-implementieren))
+- [ ] **T057** Versioniertes Dashboard-Layoutmodell und Persistenz bauen ([Details](./08-dashboard-und-telemetrie.md#t057---versioniertes-dashboard-layoutmodell-und-persistenz-bauen))
+- [ ] **T058** Dashboard-Renderer und konfigurierbare Werte von Grund auf bauen ([Details](./08-dashboard-und-telemetrie.md#t058---dashboard-renderer-und-konfigurierbare-werte-von-grund-auf-bauen))
+- [ ] **T059** Dashboard-Editor fuer Hoch- und Querformat bauen ([Details](./08-dashboard-und-telemetrie.md#t059---dashboard-editor-fuer-hoch--und-querformat-bauen))
+- [ ] **T060** Dashboard-Polish, Accessibility und Verbindungs-UX abschliessen ([Details](./08-dashboard-und-telemetrie.md#t060---dashboard-polish-accessibility-und-verbindungs-ux-abschliessen))
 
 ## Phase 8: Reichweitenprognose
 

@@ -26,6 +26,17 @@ void main() {
     );
   });
 
+  test('Android 13+ also requests notification permission', () {
+    expect(
+      AndroidPermissionPolicy.requiredForSdk(33),
+      {
+        RuntimePermission.bluetoothScan,
+        RuntimePermission.bluetoothConnect,
+        RuntimePermission.notifications,
+      },
+    );
+  });
+
   test('permission denial returns a non-granted result without scanning',
       () async {
     final requester = _FakeRequester(
@@ -40,6 +51,7 @@ void main() {
     expect(requester.requested, [
       RuntimePermission.bluetoothScan,
       RuntimePermission.bluetoothConnect,
+      RuntimePermission.notifications,
     ]);
   });
 

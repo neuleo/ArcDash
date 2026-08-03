@@ -39,7 +39,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     if (adapterState != BluetoothAdapterState.on) {
       if (mounted) {
         setState(() => _isScanning = false);
-        _showError('Bluetooth is off. Please enable Bluetooth and try again.');
+        _showError('Bluetooth ist ausgeschaltet. Bitte aktiviere Bluetooth.');
       }
       return;
     }
@@ -57,7 +57,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
       if (success) {
         Navigator.of(context).pushReplacementNamed('/dashboard');
       } else {
-        _showError('Connection failed. Make sure the dongle is powered on.');
+        _showError('Verbindung fehlgeschlagen. Ist der Dongle eingeschaltet?');
       }
     }
   }
@@ -111,7 +111,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'BIKETUNES',
+                        'ARCDASH',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 22,
@@ -120,7 +120,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                         ),
                       ),
                       Text(
-                        'Tuner Connect',
+                        'CONTROLLER VERBINDEN',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.4),
                           fontSize: 12,
@@ -163,7 +163,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                             ),
                           )
                         : const Icon(Icons.refresh, size: 16),
-                    label: Text(_isScanning ? 'Scanning...' : 'Scan'),
+                    label: Text(_isScanning ? 'Suche läuft...' : 'Suchen'),
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF00E5FF),
                       textStyle: const TextStyle(
@@ -345,7 +345,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            isScanning ? 'Searching for dongles...' : 'No dongles found',
+            isScanning ? 'Dongles werden gesucht...' : 'Keine Dongles gefunden',
             style: const TextStyle(
               color: Color(0xFF4A5568),
               fontSize: 15,
@@ -356,7 +356,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             isScanning
                 ? 'Make sure your bike is on and\nthe dongle is connected'
-                : 'Tap Scan to search again',
+                : 'Tippe auf Suchen, um es erneut zu versuchen',
             style: const TextStyle(
               color: Color(0xFF2A3548),
               fontSize: 13,

@@ -9,3 +9,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Public non-production key required for update-compatible development APKs.
+!dev-keystore.jks

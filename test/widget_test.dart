@@ -9,6 +9,7 @@ import 'package:arcdash/utils/packet_parser.dart';
 import 'package:arcdash/utils/unit_converter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   testWidgets('ArcDash starts on the dashboard route', (tester) async {
@@ -23,6 +24,83 @@ void main() {
     );
 
     expect(find.byType(DashboardScreen), findsOneWidget);
+  });
+
+  testWidgets('dashboard exposes an explicit layout editor', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Dashboard bearbeiten'));
+    await tester.pump();
+
+    expect(find.byTooltip('Wert hinzufügen'), findsOneWidget);
+    expect(find.text('Hoch'), findsOneWidget);
+    expect(find.text('Quer'), findsOneWidget);
+  });
+
+  testWidgets('dashboard renders a cockpit dial instead of text cards',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(),
+      ),
+    );
+
+    expect(find.text('RIDE COMPUTER'), findsOneWidget);
+    expect(find.byKey(const Key('speed-dial')), findsOneWidget);
+    expect(find.text('Cockpit'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('cockpit layout renders in landscape without overflow',
+      (tester) async {
+    tester.view.physicalSize = const Size(900, 500);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(),
+      ),
+    );
+
+    expect(find.byType(DashboardScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('uses offline localization and glove-friendly controls',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(),
+      ),
+    );
+
+    final appFinder = find.byType(MaterialApp);
+    final materialApp = tester.widget<MaterialApp>(appFinder);
+
+    expect(materialApp.supportedLocales, const [Locale('de'), Locale('en')]);
+    expect(materialApp.locale, const Locale('de'));
   });
 
   test('CRC validates generated packets and rejects mutations', () {

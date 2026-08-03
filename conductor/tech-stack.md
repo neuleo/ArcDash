@@ -75,7 +75,7 @@ angehoben. Unbekannte Versionen werden nie stillschweigend geladen.
 
 ## Utilities
 
-- **intl** — Datums-/Zahlenformatierung.
+- **intl** (`^0.20.2`, durch Flutter-Lokalisierung vorgegeben) — Datums-/Zahlenformatierung.
 - **google_fonts** — Font-Theming.
 
 ## Testing & Linting

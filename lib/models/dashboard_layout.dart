@@ -1,0 +1,331 @@
+import 'dart:convert';
+
+enum DashboardOrientation { portrait, landscape }
+
+enum DashboardMetric {
+  speed,
+  power,
+  voltage,
+  current,
+  soc,
+  range,
+  profile,
+  gear,
+  motorTemperature,
+  controllerTemperature,
+  errors,
+  connection,
+}
+
+enum DashboardTileKind { value, status, arc }
+
+class DashboardTile {
+  final String id;
+  final DashboardMetric metric;
+  final DashboardTileKind kind;
+  final int column;
+  final int row;
+  final int width;
+  final int height;
+
+  const DashboardTile({
+    required this.id,
+    required this.metric,
+    required this.kind,
+    required this.column,
+    required this.row,
+    required this.width,
+    required this.height,
+  });
+
+  DashboardTile copyWith({
+    int? column,
+    int? row,
+    int? width,
+    int? height,
+  }) =>
+      DashboardTile(
+        id: id,
+        metric: metric,
+        kind: kind,
+        column: column ?? this.column,
+        row: row ?? this.row,
+        width: width ?? this.width,
+        height: height ?? this.height,
+      );
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'metric': metric.name,
+        'kind': kind.name,
+        'column': column,
+        'row': row,
+        'width': width,
+        'height': height,
+      };
+
+  factory DashboardTile.fromJson(Object? value) {
+    if (value is! Map) throw const FormatException('invalid dashboard tile');
+    final metric =
+        DashboardMetric.values.where((e) => e.name == value['metric']);
+    final kind = DashboardTileKind.values.where((e) => e.name == value['kind']);
+    final fields = [
+      value['column'],
+      value['row'],
+      value['width'],
+      value['height']
+    ];
+    if (value['id'] is! String ||
+        metric.length != 1 ||
+        kind.length != 1 ||
+        fields.any((field) => field is! int)) {
+      throw const FormatException('invalid dashboard tile');
+    }
+    return DashboardTile(
+      id: value['id'] as String,
+      metric: metric.single,
+      kind: kind.single,
+      column: value['column'] as int,
+      row: value['row'] as int,
+      width: value['width'] as int,
+      height: value['height'] as int,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is DashboardTile &&
+      jsonEncode(toJson()) == jsonEncode(other.toJson());
+
+  @override
+  int get hashCode => jsonEncode(toJson()).hashCode;
+}
+
+class DashboardOrientationLayout {
+  final int columns;
+  final int rows;
+  final List<DashboardTile> tiles;
+
+  const DashboardOrientationLayout({
+    required this.columns,
+    required this.rows,
+    required this.tiles,
+  });
+
+  DashboardOrientationLayout copyWith({List<DashboardTile>? tiles}) =>
+      DashboardOrientationLayout(
+        columns: columns,
+        rows: rows,
+        tiles: tiles ?? this.tiles,
+      );
+
+  void validate() {
+    if (columns < 1 ||
+        rows < 1 ||
+        tiles.map((tile) => tile.id).toSet().length != tiles.length) {
+      throw const FormatException('invalid dashboard layout');
+    }
+    for (final tile in tiles) {
+      if (tile.column < 0 ||
+          tile.row < 0 ||
+          tile.width < 1 ||
+          tile.height < 1 ||
+          tile.column + tile.width > columns ||
+          tile.row + tile.height > rows) {
+        throw const FormatException('dashboard tile outside grid');
+      }
+    }
+    for (var index = 0; index < tiles.length; index++) {
+      for (var other = index + 1; other < tiles.length; other++) {
+        final first = tiles[index];
+        final second = tiles[other];
+        final separated = first.column + first.width <= second.column ||
+            second.column + second.width <= first.column ||
+            first.row + first.height <= second.row ||
+            second.row + second.height <= first.row;
+        if (!separated) {
+          throw const FormatException('overlapping dashboard tiles');
+        }
+      }
+    }
+  }
+
+  Map<String, Object?> toJson() => {
+        'columns': columns,
+        'rows': rows,
+        'tiles': tiles.map((tile) => tile.toJson()).toList(),
+      };
+
+  factory DashboardOrientationLayout.fromJson(Object? value) {
+    if (value is! Map ||
+        value['columns'] is! int ||
+        value['rows'] is! int ||
+        value['tiles'] is! List) {
+      throw const FormatException('invalid dashboard layout');
+    }
+    final layout = DashboardOrientationLayout(
+      columns: value['columns'] as int,
+      rows: value['rows'] as int,
+      tiles: (value['tiles'] as List).map(DashboardTile.fromJson).toList(),
+    );
+    layout.validate();
+    return layout;
+  }
+}
+
+class DashboardLayout {
+  static const schemaVersion = 2;
+  final DashboardOrientationLayout portrait;
+  final DashboardOrientationLayout landscape;
+
+  const DashboardLayout({required this.portrait, required this.landscape});
+
+  static DashboardLayout defaults() => DashboardLayout(
+        portrait: DashboardOrientationLayout(
+          columns: 4,
+          rows: 8,
+          tiles: const [
+            DashboardTile(
+                id: 'speed',
+                metric: DashboardMetric.speed,
+                kind: DashboardTileKind.arc,
+                column: 0,
+                row: 0,
+                width: 4,
+                height: 4),
+            DashboardTile(
+                id: 'power',
+                metric: DashboardMetric.power,
+                kind: DashboardTileKind.arc,
+                column: 0,
+                row: 4,
+                width: 4,
+                height: 2),
+            DashboardTile(
+                id: 'soc',
+                metric: DashboardMetric.soc,
+                kind: DashboardTileKind.value,
+                column: 0,
+                row: 6,
+                width: 2,
+                height: 1),
+            DashboardTile(
+                id: 'range',
+                metric: DashboardMetric.range,
+                kind: DashboardTileKind.value,
+                column: 2,
+                row: 6,
+                width: 2,
+                height: 1),
+            DashboardTile(
+                id: 'profile',
+                metric: DashboardMetric.profile,
+                kind: DashboardTileKind.status,
+                column: 0,
+                row: 7,
+                width: 2,
+                height: 1),
+            DashboardTile(
+                id: 'errors',
+                metric: DashboardMetric.errors,
+                kind: DashboardTileKind.status,
+                column: 2,
+                row: 7,
+                width: 2,
+                height: 1),
+          ],
+        ),
+        landscape: DashboardOrientationLayout(
+          columns: 8,
+          rows: 4,
+          tiles: const [
+            DashboardTile(
+                id: 'speed',
+                metric: DashboardMetric.speed,
+                kind: DashboardTileKind.arc,
+                column: 0,
+                row: 0,
+                width: 4,
+                height: 4),
+            DashboardTile(
+                id: 'power',
+                metric: DashboardMetric.power,
+                kind: DashboardTileKind.arc,
+                column: 4,
+                row: 0,
+                width: 4,
+                height: 2),
+            DashboardTile(
+                id: 'soc',
+                metric: DashboardMetric.soc,
+                kind: DashboardTileKind.value,
+                column: 4,
+                row: 2,
+                width: 2,
+                height: 1),
+            DashboardTile(
+                id: 'range',
+                metric: DashboardMetric.range,
+                kind: DashboardTileKind.value,
+                column: 6,
+                row: 2,
+                width: 2,
+                height: 1),
+            DashboardTile(
+                id: 'profile',
+                metric: DashboardMetric.profile,
+                kind: DashboardTileKind.status,
+                column: 4,
+                row: 3,
+                width: 2,
+                height: 1),
+            DashboardTile(
+                id: 'errors',
+                metric: DashboardMetric.errors,
+                kind: DashboardTileKind.status,
+                column: 6,
+                row: 3,
+                width: 2,
+                height: 1),
+          ],
+        ),
+      );
+
+  List<DashboardTile> forOrientation(DashboardOrientation orientation) =>
+      orientation == DashboardOrientation.portrait
+          ? portrait.tiles
+          : landscape.tiles;
+
+  DashboardOrientationLayout layoutFor(DashboardOrientation orientation) =>
+      orientation == DashboardOrientation.portrait ? portrait : landscape;
+
+  DashboardLayout withLayout(DashboardOrientation orientation,
+          DashboardOrientationLayout layout) =>
+      orientation == DashboardOrientation.portrait
+          ? DashboardLayout(portrait: layout, landscape: landscape)
+          : DashboardLayout(portrait: portrait, landscape: layout);
+
+  Map<String, Object?> toJson() => {
+        'version': schemaVersion,
+        'portrait': portrait.toJson(),
+        'landscape': landscape.toJson(),
+      };
+
+  factory DashboardLayout.fromJson(Object? value) {
+    if (value is! Map || value['version'] != schemaVersion) {
+      throw const FormatException('unknown dashboard schema');
+    }
+    return DashboardLayout(
+      portrait: DashboardOrientationLayout.fromJson(value['portrait']),
+      landscape: DashboardOrientationLayout.fromJson(value['landscape']),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is DashboardLayout &&
+      jsonEncode(toJson()) == jsonEncode(other.toJson());
+
+  @override
+  int get hashCode => jsonEncode(toJson()).hashCode;
+}
