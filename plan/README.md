@@ -127,7 +127,7 @@ erhalten.
 - [x] **T066** Verbrauchsfenster und Fahrstil modellieren (`b7be018`) ([Details](./09-reichweitenprognose.md#t066---verbrauchsfenster-und-fahrstil-modellieren))
 - [x] **T067** Unsicherheitsintervall berechnen (`b7be018`) ([Details](./09-reichweitenprognose.md#t067---unsicherheitsintervall-berechnen))
 - [x] **T068** Lernzustand persistieren (`3e49604`) ([Details](./09-reichweitenprognose.md#t068---lernzustand-persistieren))
-- [ ] **T069** Simulation und Dashboard-Integration abschliessen ([Details](./09-reichweitenprognose.md#t069---simulation-und-dashboard-integration-abschliessen))
+- [x] **T069** Simulation und Dashboard-Integration abschliessen (`aafc4ec`) ([Details](./09-reichweitenprognose.md#t069---simulation-und-dashboard-integration-abschliessen))
 
 ## Phase 9: Sessions, Fehler und Einstellungen
 
