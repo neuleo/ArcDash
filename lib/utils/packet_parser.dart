@@ -158,8 +158,8 @@ class PacketParser {
   static List<List<int>> extractPackets(List<int> buffer) {
     final packets = <List<int>>[];
     int i = 0;
-    while (i < buffer.length - 15) {
-      if (buffer[i] == 0xAA) {
+    while (i <= buffer.length - 8) {
+      if (buffer[i] == 0xAA && i <= buffer.length - 16) {
         final candidate = buffer.sublist(i, i + 16);
         if (CrcCalculator.verifyCRC(candidate, 16)) {
           packets.add(candidate);
@@ -168,7 +168,7 @@ class PacketParser {
         }
       }
       // Also check for 8-byte write ack packets starting with 0xAA
-      if (buffer[i] == 0xAA && i < buffer.length - 7) {
+      if (buffer[i] == 0xAA) {
         final candidate8 = buffer.sublist(i, i + 8);
         if (CrcCalculator.verifyCRC(candidate8, 8)) {
           packets.add(candidate8);
