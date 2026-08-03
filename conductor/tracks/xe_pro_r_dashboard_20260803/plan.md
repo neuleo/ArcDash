@@ -30,7 +30,7 @@
     - [x] Pflichtinformationen kompakt im unteren Bereich anordnen
     - [x] Layout validieren und Tests in den Green-Zustand bringen
 
-- [ ] Task: Conductor - Automated Phase Verification 'Phase 1: Dashboard-Datenmodell und Layoutvertrag' (Protocol in workflow.md)
+- [x] ace8c17 Task: Conductor - Automated Phase Verification 'Phase 1: Dashboard-Datenmodell und Layoutvertrag' (Protocol in workflow.md) [checkpoint: ace8c17]
 
 ## Phase 2: R-inspiriertes Fahrdisplay
 
