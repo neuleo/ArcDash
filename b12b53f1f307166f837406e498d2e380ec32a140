@@ -1,0 +1,4 @@
+Task: Set up protocol-layer test infrastructure
+- Created test/utils/, test/services/, and test/helpers/
+- Added shared protocol test helpers and test files
+- Verified full test suite execution inside Docker container
