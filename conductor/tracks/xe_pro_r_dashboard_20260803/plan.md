@@ -21,14 +21,14 @@
     - [x] Fehlende, veraltete, ungültige und getrennte Daten eindeutig abbilden
     - [x] Tests erneut ausführen und den Green-Zustand bestätigen
 
-- [~] Task: R-inspiriertes Querformat-Standardlayout testgetrieben definieren
-    - [ ] Tests für das neue Querformat-Standardlayout und das unveränderte unabhängige Hochformatlayout schreiben
-    - [ ] Prüfen, dass Geschwindigkeit, Leistungsbogen, Akku, Reichweite, Temperaturen, Trip und Modus enthalten sind
-    - [ ] Tests ausführen und das erwartete Fehlschlagen bestätigen
-    - [ ] Relatives Raster für das R-inspirierte Querformatlayout definieren
-    - [ ] Zentrale Geschwindigkeit und oberen Leistungsbogen anordnen
-    - [ ] Pflichtinformationen kompakt im unteren Bereich anordnen
-    - [ ] Layout validieren und Tests in den Green-Zustand bringen
+- [x] aa5d862 Task: R-inspiriertes Querformat-Standardlayout testgetrieben definieren
+    - [x] Tests für das neue Querformat-Standardlayout und das unveränderte unabhängige Hochformatlayout schreiben
+    - [x] Prüfen, dass Geschwindigkeit, Leistungsbogen, Akku, Reichweite, Temperaturen, Trip und Modus enthalten sind
+    - [x] Tests ausführen und das erwartete Fehlschlagen bestätigen
+    - [x] Relatives Raster für das R-inspirierte Querformatlayout definieren
+    - [x] Zentrale Geschwindigkeit und oberen Leistungsbogen anordnen
+    - [x] Pflichtinformationen kompakt im unteren Bereich anordnen
+    - [x] Layout validieren und Tests in den Green-Zustand bringen
 
 - [ ] Task: Conductor - Automated Phase Verification 'Phase 1: Dashboard-Datenmodell und Layoutvertrag' (Protocol in workflow.md)
 
