@@ -1,0 +1,5 @@
+Task: R-inspiriertes Querformat-Standardlayout testgetrieben definieren
+- Querformat-Standardraster auf 12x6 erweitert
+- Oberer Leistungsbogen (12x2), zentrale Geschwindigkeit (6x4), linke/rechte Status- & Telemetrieblöcke (SOC, Reichweite, Trip, Profil, Temp, Fehler, Verbindung)
+- Test suite verdeutlicht Unabhängigkeit zum Hochformat
+- Alle 207 Tests grün
