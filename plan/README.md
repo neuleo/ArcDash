@@ -112,8 +112,8 @@ erhalten.
 - [x] **T054** App-Shell, Designsystem, Navigation und Lokalisierung neu aufbauen (`ff506b0`) ([Details](./08-dashboard-und-telemetrie.md#t054---app-shell-designsystem-navigation-und-lokalisierung-neu-aufbauen))
 - [x] **T055** Telemetriequalitaet und Stale-State implementieren ([Details](./08-dashboard-und-telemetrie.md#t055---telemetriequalitaet-und-stale-state-implementieren))
 - [!] **T056** GPS-Geschwindigkeit mit Fallback implementieren (BLOCKIERT: Android-Geräteabnahme mit Standortberechtigung fehlt; Simulation und Fallbacklogik getestet) ([Details](./08-dashboard-und-telemetrie.md#t056---gps-geschwindigkeit-mit-fallback-implementieren))
-- [~] **T057** Versioniertes Dashboard-Layoutmodell und Persistenz bauen ([Details](./08-dashboard-und-telemetrie.md#t057---versioniertes-dashboard-layoutmodell-und-persistenz-bauen))
-- [ ] **T058** Dashboard-Renderer und konfigurierbare Werte von Grund auf bauen ([Details](./08-dashboard-und-telemetrie.md#t058---dashboard-renderer-und-konfigurierbare-werte-von-grund-auf-bauen))
+- [x] **T057** Versioniertes Dashboard-Layoutmodell und Persistenz bauen (`ccdaec8`) ([Details](./08-dashboard-und-telemetrie.md#t057---versioniertes-dashboard-layoutmodell-und-persistenz-bauen))
+- [~] **T058** Dashboard-Renderer und konfigurierbare Werte von Grund auf bauen ([Details](./08-dashboard-und-telemetrie.md#t058---dashboard-renderer-und-konfigurierbare-werte-von-grund-auf-bauen))
 - [ ] **T059** Dashboard-Editor fuer Hoch- und Querformat bauen ([Details](./08-dashboard-und-telemetrie.md#t059---dashboard-editor-fuer-hoch--und-querformat-bauen))
 - [ ] **T060** Dashboard-Polish, Accessibility und Verbindungs-UX abschliessen ([Details](./08-dashboard-und-telemetrie.md#t060---dashboard-polish-accessibility-und-verbindungs-ux-abschliessen))
 
