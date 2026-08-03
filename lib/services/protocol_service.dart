@@ -93,7 +93,7 @@ class ProtocolService {
     final factor = 0.00376991136 *
         (wheelRadius * 1270.0 + wheelWidth * wheelRatio) /
         rateRatio;
-    if (factor <= 0) return 0;
+    if (factor <= 0 || factor.isNaN || factor.isInfinite) return 0;
     return (kph / factor).round().clamp(0, 0xFFFF);
   }
 
