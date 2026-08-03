@@ -1,0 +1,4 @@
+Task: Unit tests for packet extraction and status parsing
+- Added unit tests for PacketParser (extractPackets, parseStatusPacket, LE readers, readPhaseCurrent, toHexString)
+- Fixed extractPackets loop condition to correctly extract 8-byte ACK packets near buffer end
+- All parsing unit tests passing
