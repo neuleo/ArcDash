@@ -43,4 +43,24 @@ void main() {
 
     expect(() => invalid.validate(), throwsFormatException);
   });
+
+  test('schema 2 keeps previously valid compact power tiles loadable', () {
+    const layout = DashboardOrientationLayout(
+      columns: 1,
+      rows: 1,
+      tiles: [
+        DashboardTile(
+          id: 'power',
+          metric: DashboardMetric.power,
+          kind: DashboardTileKind.arc,
+          column: 0,
+          row: 0,
+          width: 1,
+          height: 1,
+        ),
+      ],
+    );
+
+    expect(layout.validate, returnsNormally);
+  });
 }

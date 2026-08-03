@@ -5,6 +5,7 @@ enum DashboardOrientation { portrait, landscape }
 enum DashboardMetric {
   speed,
   power,
+  regeneration,
   voltage,
   current,
   soc,
@@ -18,6 +19,97 @@ enum DashboardMetric {
 }
 
 enum DashboardTileKind { value, status, arc }
+
+class DashboardMeasurementDefinition {
+  final DashboardTileKind kind;
+  final int minimumWidth;
+  final int minimumHeight;
+  final Duration maxAge;
+  final double? minimum;
+  final double? maximum;
+
+  const DashboardMeasurementDefinition({
+    required this.kind,
+    this.minimumWidth = 1,
+    this.minimumHeight = 1,
+    this.maxAge = const Duration(seconds: 2),
+    this.minimum,
+    this.maximum,
+  });
+}
+
+const dashboardMeasurementCatalog =
+    <DashboardMetric, DashboardMeasurementDefinition>{
+  DashboardMetric.speed: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.arc,
+    minimumWidth: 3,
+    minimumHeight: 3,
+    minimum: 0,
+    maximum: 120,
+  ),
+  DashboardMetric.power: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.arc,
+    minimum: -60,
+    maximum: 60,
+  ),
+  DashboardMetric.regeneration: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    minimum: -60,
+    maximum: 60,
+  ),
+  DashboardMetric.voltage: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    maxAge: Duration(seconds: 5),
+    minimum: 0,
+    maximum: 150,
+  ),
+  DashboardMetric.current: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    minimum: -600,
+    maximum: 600,
+  ),
+  DashboardMetric.soc: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    maxAge: Duration(seconds: 10),
+    minimum: 0,
+    maximum: 100,
+  ),
+  DashboardMetric.range: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    maxAge: Duration(seconds: 10),
+    minimum: 0,
+  ),
+  DashboardMetric.profile: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.status,
+  ),
+  DashboardMetric.gear: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    maxAge: Duration(seconds: 5),
+    minimum: 0,
+    maximum: 3,
+  ),
+  DashboardMetric.motorTemperature: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    maxAge: Duration(seconds: 10),
+    minimum: -50,
+    maximum: 250,
+  ),
+  DashboardMetric.controllerTemperature: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.value,
+    maxAge: Duration(seconds: 10),
+    minimum: -50,
+    maximum: 250,
+  ),
+  DashboardMetric.errors: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.status,
+    maxAge: Duration(seconds: 5),
+    minimum: 0,
+    maximum: 1,
+  ),
+  DashboardMetric.connection: DashboardMeasurementDefinition(
+    kind: DashboardTileKind.status,
+  ),
+};
 
 class DashboardTile {
   final String id;
@@ -135,20 +227,13 @@ class DashboardOrientationLayout {
           tile.row + tile.height > rows) {
         throw const FormatException('dashboard tile outside grid');
       }
-      final requiredKind = switch (tile.metric) {
-        DashboardMetric.speed || DashboardMetric.power => DashboardTileKind.arc,
-        DashboardMetric.profile ||
-        DashboardMetric.errors ||
-        DashboardMetric.connection =>
-          DashboardTileKind.status,
-        _ => DashboardTileKind.value,
-      };
-      if (tile.kind != requiredKind) {
+      final definition = dashboardMeasurementCatalog[tile.metric];
+      if (definition == null || tile.kind != definition.kind) {
         throw const FormatException('unsupported dashboard tile kind');
       }
-      if (tile.metric == DashboardMetric.speed &&
-          (tile.width < 3 || tile.height < 3)) {
-        throw const FormatException('speed dial is too small');
+      if (tile.width < definition.minimumWidth ||
+          tile.height < definition.minimumHeight) {
+        throw const FormatException('dashboard tile is too small');
       }
     }
     for (var index = 0; index < tiles.length; index++) {

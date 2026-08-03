@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
+import 'package:arcdash/models/telemetry_quality.dart' as quality;
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart'
     show DongleConnectionState;
@@ -108,10 +109,21 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     if (update == null) return;
 
     var next = state;
+    final samples = Map<ControllerTelemetry, quality.TelemetrySample>.of(
+      state.telemetrySamples,
+    );
+    void record(ControllerTelemetry field, num value) {
+      samples[field] = quality.TelemetrySample(
+        value: value.toDouble(),
+        source: quality.TelemetrySource.controller,
+        capturedAt: update.capturedAt,
+      );
+    }
 
     if (update.measureSpeed != null) {
       final kph = _speedFromRaw(update.measureSpeed!);
-      next = next.copyWith(speedKph: kph, lastUpdate: DateTime.now());
+      next = next.copyWith(speedKph: kph, lastUpdate: update.capturedAt);
+      record(ControllerTelemetry.speed, kph);
     }
     if (update.forward != null) next = next.copyWith(isForward: update.forward);
     if (update.reverse != null && update.reverse!) {
@@ -127,21 +139,35 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       next = next.copyWith(motorTempProtect: update.motorTempProtect);
     if (update.controllerTempProtect != null)
       next = next.copyWith(controllerTempProtect: update.controllerTempProtect);
+    if (update.gear != null) record(ControllerTelemetry.gear, update.gear!);
+    if (update.measureSpeed != null) {
+      record(ControllerTelemetry.errors, next.hasAnyFault ? 1 : 0);
+    }
 
-    if (update.voltageV != null)
+    if (update.voltageV != null) {
       next = next.copyWith(voltageV: update.voltageV);
-    if (update.currentA != null)
+      record(ControllerTelemetry.voltage, update.voltageV!);
+    }
+    if (update.currentA != null) {
       next = next.copyWith(currentA: update.currentA);
+      record(ControllerTelemetry.current, update.currentA!);
+    }
     if (update.phaseACurrA != null)
       next = next.copyWith(phaseACurrA: update.phaseACurrA);
     if (update.phaseCCurrA != null)
       next = next.copyWith(phaseCCurrA: update.phaseCCurrA);
-    if (update.motorTempC != null)
+    if (update.motorTempC != null) {
       next = next.copyWith(motorTempC: update.motorTempC);
-    if (update.battCapPercent != null)
+      record(ControllerTelemetry.motorTemperature, update.motorTempC!);
+    }
+    if (update.battCapPercent != null) {
       next = next.copyWith(battCapPercent: update.battCapPercent);
-    if (update.mosTempC != null)
+      record(ControllerTelemetry.soc, update.battCapPercent!);
+    }
+    if (update.mosTempC != null) {
       next = next.copyWith(controllerTempC: update.mosTempC);
+      record(ControllerTelemetry.controllerTemperature, update.mosTempC!);
+    }
 
     if (update.wheelRadius != null)
       next = next.copyWith(wheelRadius: update.wheelRadius);
@@ -162,7 +188,11 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       next = next.copyWith(fullBattCoeff: update.fullBattCoeff);
 
     // Recompute derived fields
-    state = next.withComputedFields();
+    next = next.withComputedFields();
+    if (update.voltageV != null || update.currentA != null) {
+      record(ControllerTelemetry.power, next.powerKw);
+    }
+    state = next.copyWith(telemetrySamples: Map.unmodifiable(samples));
 
     // Save stock backup on first connect if not already done
     if (!_storage.firstConnectDone && update.maxLineCurrRaw != null) {
@@ -202,7 +232,10 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       'command': 'set_ride_mode',
     });
     if (!written) return;
-    state = state.copyWith(rideMode: mode, lastUpdate: DateTime.now());
+    state = state.copyWith(
+      rideMode: mode,
+      lastUpdate: DateTime.now(),
+    );
   }
 
   @override

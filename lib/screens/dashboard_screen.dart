@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/models/dashboard_layout.dart';
+import 'package:arcdash/models/telemetry_quality.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
@@ -19,8 +20,10 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   DashboardLayout _dashboard = DashboardLayout.defaults();
   Timer? _saveTimer;
+  Timer? _freshnessTimer;
   bool _editing = false;
   bool _loaded = false;
+  DateTime _now = DateTime.now();
   DashboardOrientation _editingOrientation = DashboardOrientation.portrait;
 
   @override
@@ -29,11 +32,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (_loaded) return;
     _loaded = true;
     _dashboard = ref.read(storageServiceProvider).loadDashboardLayout();
+    _freshnessTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _now = DateTime.now());
+    });
   }
 
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _freshnessTimer?.cancel();
     super.dispose();
   }
 
@@ -90,11 +97,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _resizeTile(DashboardTile tile) {
     final layout = _dashboard.layoutFor(_activeOrientation);
     final index = layout.tiles.indexOf(tile);
-    final nextWidth = tile.width == 1
-        ? 2
-        : tile.width == 2
-            ? 3
-            : 1;
+    final minimumWidth = dashboardMeasurementCatalog[tile.metric]!.minimumWidth;
+    final nextWidth =
+        tile.width >= 3 ? minimumWidth : math.max(tile.width + 1, minimumWidth);
     final resized = tile.copyWith(width: nextWidth);
     final tiles = [...layout.tiles]..[index] = resized;
     try {
@@ -146,23 +151,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _addMetric(DashboardMetric metric) {
     final layout = _dashboard.layoutFor(_activeOrientation);
     if (layout.tiles.any((tile) => tile.metric == metric)) return;
-    final kind =
-        metric == DashboardMetric.power || metric == DashboardMetric.speed
-            ? DashboardTileKind.arc
-            : metric == DashboardMetric.connection ||
-                    metric == DashboardMetric.errors
-                ? DashboardTileKind.status
-                : DashboardTileKind.value;
+    final definition = dashboardMeasurementCatalog[metric]!;
     for (var row = 0; row < layout.rows; row++) {
       for (var column = 0; column < layout.columns; column++) {
         final tile = DashboardTile(
           id: metric.name,
           metric: metric,
-          kind: kind,
+          kind: definition.kind,
           column: column,
           row: row,
-          width: 1,
-          height: 1,
+          width: definition.minimumWidth,
+          height: definition.minimumHeight,
         );
         if (_fits(tile, layout)) {
           _updateCurrent(layout.copyWith(tiles: [...layout.tiles, tile]));
@@ -203,7 +202,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('ARCDASH'),
+            const Text('ARCDASH'),
             Text(strings.text(AppText.rideComputer),
                 style: const TextStyle(
                     fontSize: 9, letterSpacing: 1.8, color: Colors.white38)),
@@ -238,10 +237,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 onReset: _resetCurrent,
               ),
             Expanded(
-              child: _DashboardCanvas(
+              child: DashboardRenderer(
                 layout: layout,
                 state: state,
                 connected: connected,
+                now: _now,
                 editing: _editing,
                 onRemove: _removeTile,
                 onMove: _moveTile,
@@ -327,23 +327,26 @@ class _EditorBar extends StatelessWidget {
       );
 }
 
-class _DashboardCanvas extends StatelessWidget {
+class DashboardRenderer extends StatelessWidget {
   final DashboardOrientationLayout layout;
   final ControllerState state;
   final bool connected;
+  final DateTime now;
   final bool editing;
-  final ValueChanged<DashboardTile> onRemove;
-  final void Function(DashboardTile, int) onMove;
-  final ValueChanged<DashboardTile> onResize;
+  final ValueChanged<DashboardTile>? onRemove;
+  final void Function(DashboardTile, int)? onMove;
+  final ValueChanged<DashboardTile>? onResize;
 
-  const _DashboardCanvas({
+  const DashboardRenderer({
+    super.key,
     required this.layout,
     required this.state,
     required this.connected,
-    required this.editing,
-    required this.onRemove,
-    required this.onMove,
-    required this.onResize,
+    required this.now,
+    this.editing = false,
+    this.onRemove,
+    this.onMove,
+    this.onResize,
   });
 
   @override
@@ -362,14 +365,18 @@ class _DashboardCanvas extends StatelessWidget {
                   child: _TileFrame(
                     tile: tile,
                     editing: editing,
-                    onRemove: () => onRemove(tile),
-                    onMoveLeft: () => onMove(tile, -10),
-                    onMoveRight: () => onMove(tile, 10),
-                    onMoveUp: () => onMove(tile, -1),
-                    onMoveDown: () => onMove(tile, 1),
-                    onResize: () => onResize(tile),
+                    onRemove: () => onRemove?.call(tile),
+                    onMoveLeft: () => onMove?.call(tile, -10),
+                    onMoveRight: () => onMove?.call(tile, 10),
+                    onMoveUp: () => onMove?.call(tile, -1),
+                    onMoveDown: () => onMove?.call(tile, 1),
+                    onResize: () => onResize?.call(tile),
                     child: _MetricView(
-                        tile: tile, state: state, connected: connected),
+                      tile: tile,
+                      state: state,
+                      connected: connected,
+                      now: now,
+                    ),
                   ),
                 ),
             ],
@@ -485,26 +492,36 @@ class _MetricView extends StatelessWidget {
   final DashboardTile tile;
   final ControllerState state;
   final bool connected;
+  final DateTime now;
 
-  const _MetricView(
-      {required this.tile, required this.state, required this.connected});
+  const _MetricView({
+    required this.tile,
+    required this.state,
+    required this.connected,
+    required this.now,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final reading = _reading(context, tile.metric);
+    final quality = _quality(tile.metric);
+    final reading = _reading(context, tile.metric, quality);
     final strings = AppStrings.of(context);
     final label = strings.metric(tile.metric.name);
     if (tile.metric == DashboardMetric.speed) {
-      return _SpeedDial(speedKph: state.speedKph, connected: connected);
+      return _SpeedDial(speedKph: state.speedKph, quality: quality);
     }
     if (tile.metric == DashboardMetric.power) {
-      return _PowerMeter(powerKw: state.powerKw, connected: connected);
+      return _PowerMeter(powerKw: state.powerKw, quality: quality);
     }
-    final valueColor = tile.metric == DashboardMetric.errors
-        ? state.hasAnyFault
-            ? const Color(0xFFFF5470)
-            : const Color(0xFF54E39E)
-        : Colors.white;
+    final valueColor = quality != TelemetryFreshness.fresh
+        ? const Color(0xFFFFB45C)
+        : tile.metric == DashboardMetric.errors
+            ? state.hasAnyFault
+                ? const Color(0xFFFF5470)
+                : const Color(0xFF54E39E)
+            : tile.metric == DashboardMetric.regeneration
+                ? const Color(0xFF54E39E)
+                : Colors.white;
     return LayoutBuilder(builder: (context, constraints) {
       final compact = constraints.maxHeight < 90 ||
           MediaQuery.textScalerOf(context).scale(1) > 1.3;
@@ -540,17 +557,70 @@ class _MetricView extends StatelessWidget {
     });
   }
 
-  String _reading(BuildContext context, DashboardMetric metric) {
-    if (!connected && metric != DashboardMetric.connection) return '—';
+  TelemetryFreshness? _quality(DashboardMetric metric) {
+    if (metric == DashboardMetric.connection) return TelemetryFreshness.fresh;
+    final field = switch (metric) {
+      DashboardMetric.speed => ControllerTelemetry.speed,
+      DashboardMetric.power ||
+      DashboardMetric.regeneration =>
+        ControllerTelemetry.power,
+      DashboardMetric.voltage => ControllerTelemetry.voltage,
+      DashboardMetric.current => ControllerTelemetry.current,
+      DashboardMetric.soc => ControllerTelemetry.soc,
+      DashboardMetric.range => ControllerTelemetry.range,
+      DashboardMetric.profile => ControllerTelemetry.profile,
+      DashboardMetric.gear => ControllerTelemetry.gear,
+      DashboardMetric.motorTemperature => ControllerTelemetry.motorTemperature,
+      DashboardMetric.controllerTemperature =>
+        ControllerTelemetry.controllerTemperature,
+      DashboardMetric.errors => ControllerTelemetry.errors,
+      DashboardMetric.connection => null,
+    };
+    final sample = field == null ? null : state.sample(field);
+    if (sample == null) {
+      return connected ? null : TelemetryFreshness.disconnected;
+    }
+    final definition = dashboardMeasurementCatalog[metric]!;
+    final effectiveNow =
+        sample.capturedAt.isAfter(now) ? sample.capturedAt : now;
+    return sample.quality(
+      now: effectiveNow,
+      connected: connected,
+      maxAge: definition.maxAge,
+      minimum: definition.minimum,
+      maximum: definition.maximum,
+    );
+  }
+
+  String _reading(BuildContext context, DashboardMetric metric,
+      TelemetryFreshness? quality) {
+    final strings = AppStrings.of(context);
+    if (metric != DashboardMetric.connection &&
+        quality != TelemetryFreshness.fresh) {
+      return strings.text(switch (quality) {
+        null => AppText.missing,
+        TelemetryFreshness.stale => AppText.stale,
+        TelemetryFreshness.invalid => AppText.invalid,
+        TelemetryFreshness.disconnected => AppText.disconnected,
+        TelemetryFreshness.fresh => AppText.unknown,
+      });
+    }
     return switch (metric) {
       DashboardMetric.speed => '${state.speedKph.toStringAsFixed(0)} km/h',
       DashboardMetric.power => '${state.powerKw.toStringAsFixed(1)} kW',
+      DashboardMetric.regeneration =>
+        '${math.max(-state.powerKw, 0).toStringAsFixed(1)} kW',
       DashboardMetric.voltage => '${state.voltageV.toStringAsFixed(1)} V',
       DashboardMetric.current => '${state.currentA.toStringAsFixed(1)} A',
-      DashboardMetric.soc => '${state.batteryPercent.toStringAsFixed(0)} %',
-      DashboardMetric.range => '— km',
+      DashboardMetric.soc => '${state.battCapPercent} %',
+      DashboardMetric.range =>
+        '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
       DashboardMetric.profile => state.rideMode.displayName,
-      DashboardMetric.gear => state.gear == 0 ? '—' : state.gear.toString(),
+      DashboardMetric.gear => !state.isForward
+          ? 'R'
+          : state.gear == 0
+              ? 'N'
+              : 'D${state.gear}',
       DashboardMetric.motorTemperature =>
         '${state.motorTempC.toStringAsFixed(0)} °C',
       DashboardMetric.controllerTemperature =>
@@ -607,16 +677,16 @@ class _ConnectionPill extends StatelessWidget {
 
 class _SpeedDial extends StatelessWidget {
   final double speedKph;
-  final bool connected;
+  final TelemetryFreshness? quality;
 
-  const _SpeedDial({required this.speedKph, required this.connected});
+  const _SpeedDial({required this.speedKph, required this.quality});
 
   @override
   Widget build(BuildContext context) => Semantics(
         key: const Key('speed-dial'),
-        label: connected
+        label: quality == TelemetryFreshness.fresh
             ? 'Geschwindigkeit ${speedKph.round()} Kilometer pro Stunde'
-            : 'Geschwindigkeit unbekannt, nicht verbunden',
+            : 'Geschwindigkeit ${_qualityLabel(context, quality)}',
         child: LayoutBuilder(
           builder: (context, constraints) => Stack(
             alignment: Alignment.center,
@@ -624,12 +694,17 @@ class _SpeedDial extends StatelessWidget {
               Positioned.fill(
                   child: CustomPaint(
                       painter: _SpeedDialPainter(
-                          speedKph: connected ? speedKph : 0,
-                          active: connected))),
+                          speedKph: quality == TelemetryFreshness.fresh
+                              ? speedKph
+                              : 0,
+                          active: quality == TelemetryFreshness.fresh))),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(connected ? speedKph.round().toString() : '–',
+                  Text(
+                      quality == TelemetryFreshness.fresh
+                          ? speedKph.round().toString()
+                          : '–',
                       style: TextStyle(
                           fontSize: math.min(constraints.maxHeight * 0.29, 82),
                           height: 0.9,
@@ -645,9 +720,11 @@ class _SpeedDial extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                       AppStrings.of(context).text(
-                          connected ? AppText.controller : AppText.noData),
+                          quality == TelemetryFreshness.fresh
+                              ? AppText.controller
+                              : _qualityText(quality)),
                       style: TextStyle(
-                          color: connected
+                          color: quality == TelemetryFreshness.fresh
                               ? const Color(0xFF00E5FF)
                               : const Color(0xFFFFB45C),
                           fontSize: 9,
@@ -712,23 +789,28 @@ class _SpeedDialPainter extends CustomPainter {
 
 class _PowerMeter extends StatelessWidget {
   final double powerKw;
-  final bool connected;
+  final TelemetryFreshness? quality;
 
-  const _PowerMeter({required this.powerKw, required this.connected});
+  const _PowerMeter({required this.powerKw, required this.quality});
 
   @override
   Widget build(BuildContext context) {
     final regen = powerKw < 0;
-    final color = !connected
+    final fresh = quality == TelemetryFreshness.fresh;
+    final color = !fresh
         ? Colors.white24
         : regen
             ? const Color(0xFF54E39E)
-            : const Color(0xFF00E5FF);
-    final normalized = connected ? (powerKw.abs() / 20).clamp(0.0, 1.0) : 0.0;
+            : powerKw >= 15
+                ? const Color(0xFFFF5470)
+                : powerKw >= 8
+                    ? const Color(0xFFFFB45C)
+                    : const Color(0xFF00E5FF);
+    final normalized = fresh ? (powerKw.abs() / 20).clamp(0.0, 1.0) : 0.0;
     return Semantics(
-      label: connected
+      label: fresh
           ? '${regen ? 'Rekuperation' : 'Leistung'} ${powerKw.abs().toStringAsFixed(1)} Kilowatt'
-          : 'Leistung unbekannt',
+          : 'Leistung ${_qualityLabel(context, quality)}',
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -752,9 +834,9 @@ class _PowerMeter extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                    connected
+                    fresh
                         ? '${powerKw.abs().toStringAsFixed(1)} kW'
-                        : '– kW',
+                        : AppStrings.of(context).text(_qualityText(quality)),
                     maxLines: 1,
                     overflow: TextOverflow.fade,
                     softWrap: false,
@@ -777,3 +859,14 @@ class _PowerMeter extends StatelessWidget {
     );
   }
 }
+
+AppText _qualityText(TelemetryFreshness? quality) => switch (quality) {
+      null => AppText.missing,
+      TelemetryFreshness.stale => AppText.stale,
+      TelemetryFreshness.invalid => AppText.invalid,
+      TelemetryFreshness.disconnected => AppText.disconnected,
+      TelemetryFreshness.fresh => AppText.controller,
+    };
+
+String _qualityLabel(BuildContext context, TelemetryFreshness? quality) =>
+    AppStrings.of(context).text(_qualityText(quality));
