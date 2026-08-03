@@ -25,11 +25,11 @@ All commands run inside the Docker container (`make test`, `make codegen`, etc.)
 
 ## Phase 3: Packet Building Tests (ProtocolService)
 
-- [ ] Task: Unit tests for packet building and system commands
-    - [ ] Write failing tests for `buildWritePacket`, `buildWritePacket16`, `buildSysCmd`, `setMaxLineCurrPacket`, `setMaxSpeedPacket`, `setThrottleResponsePacket`, `kphToMaxSpeedRaw`, and `verifyWriteAck`, covering normal, boundary, and invalid inputs
-    - [ ] Implement/fix `ProtocolService` to make the tests pass (Green phase)
-    - [ ] Run `make test` and confirm all packet-building tests pass
-- [ ] Task: Conductor - User Manual Verification 'Packet Building Tests' (Protocol in workflow.md)
+- [x] Task: Unit tests for packet building and system commands 09c7e71
+    - [x] Write failing tests for `buildWritePacket`, `buildWritePacket16`, `buildSysCmd`, `setMaxLineCurrPacket`, `setMaxSpeedPacket`, `setThrottleResponsePacket`, `kphToMaxSpeedRaw`, and `verifyWriteAck`, covering normal, boundary, and invalid inputs
+    - [x] Implement/fix `ProtocolService` to make the tests pass (Green phase)
+    - [x] Run `make test` and confirm all packet-building tests pass
+- [x] Task: Conductor - User Manual Verification 'Packet Building Tests' (Protocol in workflow.md) [checkpoint: 09c7e71]
 
 ## Phase 4: Packet Parsing Tests (PacketParser)
 
