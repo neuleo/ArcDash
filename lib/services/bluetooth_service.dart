@@ -89,27 +89,47 @@ class DongleService implements BleTransport {
       final sub = FlutterBluePlus.scanResults.listen((scanResults) {
         for (final r in scanResults) {
           final name = r.device.platformName.toLowerCase();
-          // Accept all devices that passed the BLE service UUID filter,
-          // plus name-pattern check as a secondary validation.
-          final matchesName = name.isNotEmpty &&
-              (name.contains('yuanq') ||
-                  name.contains('foc') ||
-                  name.contains('fardriver') ||
-                  name.contains('control') ||
-                  name.contains('ffe0') ||
-                  name.contains('nd'));
+          final advName = r.advertisementData.advName.toLowerCase();
+          final fullName = '$name $advName';
+
+          // Accept all devices that match typical FarDriver/OEM naming patterns,
+          // or expose known UART service UUIDs, or accept any visible BLE device
+          // with a non-empty name during scanning so no dongle gets hidden.
+          final matchesName = fullName.isNotEmpty &&
+              (fullName.contains('yuanq') ||
+                  fullName.contains('foc') ||
+                  fullName.contains('fardriver') ||
+                  fullName.contains('control') ||
+                  fullName.contains('dmc') ||
+                  fullName.contains('ffe0') ||
+                  fullName.contains('ff00') ||
+                  fullName.contains('nd') ||
+                  fullName.contains('bt') ||
+                  fullName.contains('jdy') ||
+                  fullName.contains('hm') ||
+                  fullName.contains('at') ||
+                  fullName.contains('uart') ||
+                  fullName.contains('ble'));
+
           final matchesService = r.advertisementData.serviceUuids.any((u) {
             final s = u.toString().toLowerCase();
             return s.contains('ff00') ||
                 s.contains('ffe0') ||
+                s.contains('fff0') ||
                 s.contains('49535343');
           });
-          if (matchesName || matchesService) {
+
+          // Show all devices with a name, or matching known service UUIDs
+          if (r.device.platformName.isNotEmpty || matchesName || matchesService) {
+            final displayName = r.device.platformName.isNotEmpty
+                ? r.device.platformName
+                : (r.advertisementData.advName.isNotEmpty
+                    ? r.advertisementData.advName
+                    : 'FarDriver Dongle (${r.device.remoteId.str})');
+
             results[r.device.remoteId.str] = DiscoveredDongle(
               device: r.device,
-              name: r.device.platformName.isNotEmpty
-                  ? r.device.platformName
-                  : 'FarDriver Dongle',
+              name: displayName,
               rssi: r.rssi,
             );
             _scanResultsController.add(results.values.toList());

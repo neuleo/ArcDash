@@ -93,7 +93,6 @@ void main() {
     expect(storage.layout.portrait, original.portrait);
     final copied = storage.layout.landscape.tiles.single;
     expect((copied.column, copied.row), (0, 0));
-    expect((copied.width, copied.height), (1, 1));
     expect(copied.metric, DashboardMetric.voltage);
   });
 

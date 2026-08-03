@@ -245,7 +245,7 @@ ControllerState _stateFor(DashboardMetric metric, DateTime now) {
     DashboardMetric.controllerTemperature =>
       ControllerTelemetry.controllerTemperature,
     DashboardMetric.errors => ControllerTelemetry.errors,
-    DashboardMetric.connection => null,
+    DashboardMetric.connection || DashboardMetric.trip => null,
   };
   final power = metric == DashboardMetric.regeneration ? -4.2 : 4.2;
   final sampleValue = switch (metric) {
@@ -260,7 +260,7 @@ ControllerState _stateFor(DashboardMetric metric, DateTime now) {
     DashboardMetric.motorTemperature => 61,
     DashboardMetric.controllerTemperature => 54,
     DashboardMetric.errors => 1,
-    DashboardMetric.connection => 1,
+    DashboardMetric.connection || DashboardMetric.trip => 1,
   };
   return ControllerState(
     lastUpdate: now,
