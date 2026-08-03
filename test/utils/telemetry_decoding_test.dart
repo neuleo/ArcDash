@@ -36,7 +36,10 @@ void main() {
       // d[6], d[7] = measureSpeed uint16LE
       final raw = List<int>.filled(12, 0);
       raw[0] = 0x01 | (0x02 << 2); // forward = true, gear = 2
-      raw[2] = 0x01 | 0x02 | 0x40 | 0x80; // hall, throttle, motorTempProtect, ctrlTempProtect
+      raw[2] = 0x01 |
+          0x02 |
+          0x40 |
+          0x80; // hall, throttle, motorTempProtect, ctrlTempProtect
       raw[3] = 0x80; // brake = true
       raw[6] = 0xE8; // measureSpeed = 1000 (0x03E8)
       raw[7] = 0x03;
@@ -178,12 +181,14 @@ void main() {
       expect(update.fullBattCoeff, 840);
     });
 
-    test('returns null for unknown/unsupported address or invalid rawData length', () {
+    test(
+        'returns null for unknown/unsupported address or invalid rawData length',
+        () {
       final raw = List<int>.filled(12, 0);
       final packetUnknown = _createParsedPacket(0xFF, raw);
       expect(PacketParser.extractTelemetry(packetUnknown), isNull);
 
-      final packetShort = ParsedPacket(
+      const packetShort = ParsedPacket(
         address: 0xE2,
         rawData: [0x01, 0x02],
         fullPacket: [],

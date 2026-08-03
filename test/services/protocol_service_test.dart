@@ -17,7 +17,8 @@ void main() {
     });
 
     test('buildWritePacket16 and buildSysCmd construct expected payloads', () {
-      final sysCmdPacket = ProtocolService.buildSysCmd(SysCmd.nonFollowingStatus);
+      final sysCmdPacket =
+          ProtocolService.buildSysCmd(SysCmd.nonFollowingStatus);
       expect(sysCmdPacket.length, 8);
       expect(sysCmdPacket[2], FardriverAddr.sysCmd);
       expect(sysCmdPacket[4], 0x88);
@@ -51,7 +52,8 @@ void main() {
       expect(rawVal, (1 & 0x03) << 2);
     });
 
-    test('kphToMaxSpeedRaw calculates raw RPM and handles zero/negative factor', () {
+    test('kphToMaxSpeedRaw calculates raw RPM and handles zero/negative factor',
+        () {
       final rawRpm = ProtocolService.kphToMaxSpeedRaw(
         kph: 50.0,
         wheelRadius: 10,
@@ -73,9 +75,14 @@ void main() {
 
     test('verifyWriteAck validates write acknowledgments', () {
       final packet = ProtocolService.buildWritePacket(0x15, 1000);
-      expect(ProtocolService.verifyWriteAck(packet, expectedAddress: 0x15, expectedValue: 1000), isTrue);
-      expect(ProtocolService.verifyWriteAck(packet, expectedAddress: 0x19), isFalse);
-      expect(ProtocolService.verifyWriteAck(packet, expectedValue: 2000), isFalse);
+      expect(
+          ProtocolService.verifyWriteAck(packet,
+              expectedAddress: 0x15, expectedValue: 1000),
+          isTrue);
+      expect(ProtocolService.verifyWriteAck(packet, expectedAddress: 0x19),
+          isFalse);
+      expect(
+          ProtocolService.verifyWriteAck(packet, expectedValue: 2000), isFalse);
 
       final invalidShort = [0xAA, 0x46];
       expect(ProtocolService.verifyWriteAck(invalidShort), isFalse);

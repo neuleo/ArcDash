@@ -19,7 +19,9 @@ void main() {
       expect(UnitConverter.fahrenheitToCelsius(212.0), 100.0);
     });
 
-    test('measureSpeedToKph calculates speed accurately and handles zero rateRatio', () {
+    test(
+        'measureSpeedToKph calculates speed accurately and handles zero rateRatio',
+        () {
       final kph = UnitConverter.measureSpeedToKph(
         measureSpeed: 1000,
         wheelRadius: 10,

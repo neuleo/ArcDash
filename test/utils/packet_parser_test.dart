@@ -5,7 +5,8 @@ import 'package:arcdash/utils/crc_calculator.dart';
 
 void main() {
   group('PacketParser', () {
-    test('extractPackets extracts 16-byte and 8-byte valid packets from stream', () {
+    test('extractPackets extracts 16-byte and 8-byte valid packets from stream',
+        () {
       final p16 = Uint8List(16);
       p16[0] = 0xAA;
       p16[1] = 0x00; // mapped address ID 0 -> 0xE2
@@ -64,7 +65,14 @@ void main() {
     });
 
     test('readPhaseCurrent converts 24-bit value to phase current', () {
-      final data = [0x00, 0x00, 0x00, 0x00, 0x00, 0x64]; // raw = 100 -> sqrt(100) = 10 -> 19.53125 A
+      final data = [
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x64
+      ]; // raw = 100 -> sqrt(100) = 10 -> 19.53125 A
       final curr = PacketParser.readPhaseCurrent(data, 3);
       expect(curr, closeTo(19.53125, 0.001));
     });

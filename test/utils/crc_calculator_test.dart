@@ -15,9 +15,8 @@ void main() {
     });
 
     test('verifyCRC checks known good vector and rejects corrupted vector', () {
-      final validBuffer = Uint8List.fromList([
-        0xAA, 0x08, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00
-      ]);
+      final validBuffer =
+          Uint8List.fromList([0xAA, 0x08, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00]);
       CrcCalculator.computeCRC(validBuffer, 8);
       expect(CrcCalculator.verifyCRC(validBuffer, 8), isTrue);
 
@@ -29,7 +28,7 @@ void main() {
     test('handles edge case inputs gracefully', () {
       final shortBuffer = [0xAA];
       expect(CrcCalculator.verifyCRC(shortBuffer, 1), isFalse);
-      
+
       // Should not throw when computeCRC length is invalid
       CrcCalculator.computeCRC(shortBuffer, 1);
       expect(shortBuffer.length, 1);
