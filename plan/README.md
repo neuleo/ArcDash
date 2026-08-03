@@ -141,7 +141,7 @@ erhalten.
 ## Phase 10: Qualitaet und Release
 
 - [x] **T076** Kernmodule auf mehr als 80 Prozent Coverage bringen (`f402a7b`) ([Details](./11-qualitaet-und-release.md#t076---kernmodule-auf-mehr-als-80-prozent-coverage-bringen))
-- [ ] **T077** Widget-, Golden- und Accessibility-Tests ergaenzen ([Details](./11-qualitaet-und-release.md#t077---widget--golden--und-accessibility-tests-ergaenzen))
+- [x] **T077** Widget-, Golden- und Accessibility-Tests ergaenzen (`b48faf6`) ([Details](./11-qualitaet-und-release.md#t077---widget--golden--und-accessibility-tests-ergaenzen))
 - [ ] **T078** Kritische Flutter-Integrationstests erstellen ([Details](./11-qualitaet-und-release.md#t078---kritische-flutter-integrationstests-erstellen))
 - [ ] **T079** Android-Instrumentationstests erstellen ([Details](./11-qualitaet-und-release.md#t079---android-instrumentationstests-erstellen))
 - [ ] **T080** Hardware-in-the-loop-Matrix durchfuehren ([Details](./11-qualitaet-und-release.md#t080---hardware-in-the-loop-matrix-durchfuehren))
