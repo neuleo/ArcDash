@@ -1,0 +1,4 @@
+Task: Unit tests for packet building and system commands
+- Added comprehensive unit tests for ProtocolService
+- Fixed double.round() crash in kphToMaxSpeedRaw on zero factor
+- Verified all packet building tests pass
