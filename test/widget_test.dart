@@ -2,6 +2,7 @@ import 'package:arcdash/app.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
+import 'package:arcdash/screens/app_shell.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/utils/crc_calculator.dart';
@@ -24,6 +25,26 @@ void main() {
     );
 
     expect(find.byType(DashboardScreen), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
+  });
+
+  testWidgets('app shell keeps primary navigation available', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(),
+      ),
+    );
+
+    await tester.tap(find.text('Fahrten'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('STATS'), findsOneWidget);
+    expect(find.text('Cockpit'), findsOneWidget);
+    expect(find.text('Einstellungen'), findsOneWidget);
   });
 
   testWidgets('dashboard exposes an explicit layout editor', (tester) async {

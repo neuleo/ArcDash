@@ -4,10 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/screens/connection_screen.dart';
-import 'package:arcdash/screens/dashboard_screen.dart';
+import 'package:arcdash/screens/app_shell.dart';
 import 'package:arcdash/screens/debug_screen.dart';
-import 'package:arcdash/screens/settings_screen.dart';
-import 'package:arcdash/screens/stats_screen.dart';
 import 'package:arcdash/providers/stats_provider.dart';
 
 class ArcDashApp extends ConsumerWidget {
@@ -36,9 +34,7 @@ class ArcDashApp extends ConsumerWidget {
       initialRoute: '/dashboard',
       routes: {
         '/': (_) => const ConnectionScreen(),
-        '/dashboard': (_) => const DashboardScreen(),
-        '/stats': (_) => const StatsScreen(),
-        '/settings': (_) => const SettingsScreen(),
+        '/dashboard': (_) => const AppShell(),
         '/debug': (_) => const DebugScreen(),
       },
     );

@@ -248,24 +248,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _editing
-          ? null
-          : NavigationBar(
-              selectedIndex: 0,
-              onDestinationSelected: (index) {
-                if (index == 1) Navigator.of(context).pushNamed('/stats');
-                if (index == 2) Navigator.of(context).pushNamed('/settings');
-              },
-              destinations: const [
-                NavigationDestination(
-                    icon: Icon(Icons.speed), label: 'Cockpit'),
-                NavigationDestination(
-                    icon: Icon(Icons.route_outlined), label: 'Fahrten'),
-                NavigationDestination(
-                    icon: Icon(Icons.settings_outlined),
-                    label: 'Einstellungen'),
-              ],
-            ),
     );
   }
 
