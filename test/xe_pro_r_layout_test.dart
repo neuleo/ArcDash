@@ -2,7 +2,9 @@ import 'package:arcdash/models/dashboard_layout.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('R-inspired landscape default layout contains all mandatory metrics and valid structure', () {
+  test(
+      'R-inspired landscape default layout contains all mandatory metrics and valid structure',
+      () {
     final layout = DashboardLayout.defaults();
     final landscape = layout.landscape;
 
@@ -24,12 +26,14 @@ void main() {
 
     expect(metricsInLandscape.containsAll(requiredMetrics), true);
 
-    final powerTile = landscape.tiles.firstWhere((t) => t.metric == DashboardMetric.power);
+    final powerTile =
+        landscape.tiles.firstWhere((t) => t.metric == DashboardMetric.power);
     expect(powerTile.row, 0);
     expect(powerTile.width, 12);
     expect(powerTile.kind, DashboardTileKind.arc);
 
-    final speedTile = landscape.tiles.firstWhere((t) => t.metric == DashboardMetric.speed);
+    final speedTile =
+        landscape.tiles.firstWhere((t) => t.metric == DashboardMetric.speed);
     expect(speedTile.column >= 3 && speedTile.column <= 4, true);
     expect(speedTile.row, 2);
   });

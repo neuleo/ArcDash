@@ -120,7 +120,9 @@ class DongleService implements BleTransport {
           });
 
           // Show all devices with a name, or matching known service UUIDs
-          if (r.device.platformName.isNotEmpty || matchesName || matchesService) {
+          if (r.device.platformName.isNotEmpty ||
+              matchesName ||
+              matchesService) {
             final displayName = r.device.platformName.isNotEmpty
                 ? r.device.platformName
                 : (r.advertisementData.advName.isNotEmpty

@@ -92,7 +92,9 @@ void main() {
     expect(legacy.unit, DashboardUnit.automatic);
   });
 
-  test('supports bar and circle tile kinds and validates compatible combinations', () {
+  test(
+      'supports bar and circle tile kinds and validates compatible combinations',
+      () {
     final tileBar = DashboardTile(
       id: 'power_bar',
       metric: DashboardMetric.power,
@@ -163,4 +165,3 @@ void main() {
     expect(() => layoutSmall.validate(), throwsFormatException);
   });
 }
-

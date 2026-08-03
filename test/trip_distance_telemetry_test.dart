@@ -17,7 +17,8 @@ void main() {
     expect(def.allowedKinds.contains(DashboardTileKind.compact), true);
   });
 
-  testWidgets('renders trip distance when fresh and handles missing or disconnected',
+  testWidgets(
+      'renders trip distance when fresh and handles missing or disconnected',
       (tester) async {
     final stateWithTrip = ControllerState(
       lastUpdate: now,
@@ -31,7 +32,8 @@ void main() {
       },
     );
 
-    await tester.pumpWidget(_buildApp(stateWithTrip, connected: true, now: now));
+    await tester
+        .pumpWidget(_buildApp(stateWithTrip, connected: true, now: now));
     expect(find.text('14.5 km'), findsOneWidget);
 
     final stateMissingTrip = ControllerState(
@@ -39,10 +41,12 @@ void main() {
       tripDistanceKm: null,
     );
 
-    await tester.pumpWidget(_buildApp(stateMissingTrip, connected: true, now: now));
+    await tester
+        .pumpWidget(_buildApp(stateMissingTrip, connected: true, now: now));
     expect(find.text('Fehlt'), findsOneWidget);
 
-    await tester.pumpWidget(_buildApp(stateWithTrip, connected: false, now: now));
+    await tester
+        .pumpWidget(_buildApp(stateWithTrip, connected: false, now: now));
     expect(find.text('Getrennt'), findsOneWidget);
   });
 
@@ -65,7 +69,8 @@ void main() {
   });
 }
 
-Widget _buildApp(ControllerState state, {required bool connected, required DateTime now}) {
+Widget _buildApp(ControllerState state,
+    {required bool connected, required DateTime now}) {
   const layout = DashboardOrientationLayout(
     columns: 4,
     rows: 4,
