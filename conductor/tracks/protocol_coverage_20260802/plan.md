@@ -33,11 +33,11 @@ All commands run inside the Docker container (`make test`, `make codegen`, etc.)
 
 ## Phase 4: Packet Parsing Tests (PacketParser)
 
-- [ ] Task: Unit tests for packet extraction and status parsing
-    - [ ] Write failing tests for `extractPackets` (16-byte status + 8-byte write ack, CRC rejection, stream offset handling), `parseStatusPacket`, `readInt16LE`, `readUint16LE`, `readPhaseCurrent`, `toHexString`, and the `flashReadAddr` id mapping (id < 0x37)
-    - [ ] Implement/fix `PacketParser` to make the tests pass (Green phase)
-    - [ ] Run `make test` and confirm all parsing tests pass
-- [ ] Task: Conductor - User Manual Verification 'Packet Parsing Tests' (Protocol in workflow.md)
+- [x] Task: Unit tests for packet extraction and status parsing 3d000a5
+    - [x] Write failing tests for `extractPackets` (16-byte status + 8-byte write ack, CRC rejection, stream offset handling), `parseStatusPacket`, `readInt16LE`, `readUint16LE`, `readPhaseCurrent`, `toHexString`, and the `flashReadAddr` id mapping (id < 0x37)
+    - [x] Implement/fix `PacketParser` to make the tests pass (Green phase)
+    - [x] Run `make test` and confirm all parsing tests pass
+- [x] Task: Conductor - User Manual Verification 'Packet Parsing Tests' (Protocol in workflow.md) [checkpoint: 3d000a5]
 
 ## Phase 5: Telemetry Decoding Tests
 
