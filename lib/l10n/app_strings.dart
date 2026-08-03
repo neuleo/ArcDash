@@ -358,6 +358,7 @@ const _germanMetrics = {
   'controllerTemperature': 'Controllertemperatur',
   'errors': 'Fehler',
   'connection': 'Verbindung',
+  'trip': 'Trip-Distanz',
 };
 
 const _englishMetrics = {
@@ -374,6 +375,7 @@ const _englishMetrics = {
   'controllerTemperature': 'Controller temperature',
   'errors': 'Errors',
   'connection': 'Connection',
+  'trip': 'Trip distance',
 };
 
 class _AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

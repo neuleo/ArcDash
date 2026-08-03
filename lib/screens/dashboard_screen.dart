@@ -812,6 +812,7 @@ class _MetricView extends StatelessWidget {
         ControllerTelemetry.controllerTemperature,
       DashboardMetric.errors => ControllerTelemetry.errors,
       DashboardMetric.connection => null,
+      DashboardMetric.trip => ControllerTelemetry.trip,
     };
     final sample = field == null ? null : state.sample(field);
     if (sample == null) {
@@ -871,6 +872,11 @@ class _MetricView extends StatelessWidget {
       DashboardMetric.connection => connected
           ? AppStrings.of(context).text(AppText.connected)
           : AppStrings.of(context).text(AppText.disconnected),
+      DashboardMetric.trip => state.tripDistanceKm == null
+          ? strings.text(AppText.missing)
+          : _imperial
+              ? '${(state.tripDistanceKm! * 0.621371).toStringAsFixed(1)} mi'
+              : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
     };
   }
 

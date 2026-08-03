@@ -16,6 +16,7 @@ enum DashboardMetric {
   controllerTemperature,
   errors,
   connection,
+  trip,
 }
 
 enum DashboardTileKind { value, compact, status, arc, bar, circle }
@@ -204,6 +205,17 @@ const dashboardMeasurementCatalog =
   DashboardMetric.connection: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.status,
     allowedKinds: {DashboardTileKind.value},
+  ),
+  DashboardMetric.trip: DashboardMeasurementDefinition(
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
+    allowedUnits: {
+      DashboardUnit.automatic,
+      DashboardUnit.metric,
+      DashboardUnit.imperial,
+    },
+    maxAge: Duration(seconds: 10),
+    minimum: 0,
   ),
 };
 

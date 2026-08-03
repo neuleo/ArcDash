@@ -13,6 +13,7 @@ enum ControllerTelemetry {
   motorTemperature,
   controllerTemperature,
   errors,
+  trip,
 }
 
 enum RideMode { eco, trail, sport, race }
@@ -85,6 +86,7 @@ class ControllerState {
   final double batteryPercent;
   final double rangeKm;
   final double rangeUncertaintyKm;
+  final double? tripDistanceKm;
 
   // Session state
   final RideMode rideMode;
@@ -119,6 +121,7 @@ class ControllerState {
     this.batteryPercent = 0.0,
     this.rangeKm = 0.0,
     this.rangeUncertaintyKm = 0.0,
+    this.tripDistanceKm,
     this.rideMode = RideMode.trail,
     this.telemetrySamples = const {},
     required this.lastUpdate,
@@ -163,6 +166,7 @@ class ControllerState {
     double? batteryPercent,
     double? rangeKm,
     double? rangeUncertaintyKm,
+    double? tripDistanceKm,
     RideMode? rideMode,
     DateTime? lastUpdate,
     Map<ControllerTelemetry, TelemetrySample>? telemetrySamples,
@@ -196,6 +200,7 @@ class ControllerState {
       batteryPercent: batteryPercent ?? this.batteryPercent,
       rangeKm: rangeKm ?? this.rangeKm,
       rangeUncertaintyKm: rangeUncertaintyKm ?? this.rangeUncertaintyKm,
+      tripDistanceKm: tripDistanceKm ?? this.tripDistanceKm,
       rideMode: rideMode ?? this.rideMode,
       lastUpdate: lastUpdate ?? this.lastUpdate,
       telemetrySamples: telemetrySamples ?? this.telemetrySamples,
