@@ -50,9 +50,9 @@ All commands run inside the Docker container (`make test`, `make codegen`, etc.)
 
 ## Phase 6: Coverage Verification & Documentation
 
-- [ ] Task: Verify coverage gate and finalize documentation
-    - [ ] Run `make coverage` and confirm protocol-layer coverage exceeds 80%; add missing tests for any uncovered branches
-    - [ ] Run `flutter analyze` inside the container and fix all lint/analysis issues
-    - [ ] Run `dart format --set-exit-if-changed lib test` inside the container
-    - [ ] Update `conductor/product.md`, `conductor/tech-stack.md`, or `conductor/workflow.md` if this track revealed any deviations
-- [ ] Task: Conductor - User Manual Verification 'Coverage Verification & Documentation' (Protocol in workflow.md)
+- [x] Task: Verify coverage gate and finalize documentation 6cfbb59
+    - [x] Run `make coverage` / `flutter test --coverage` and confirm protocol-layer coverage exceeds 80%; add missing tests for any uncovered branches
+    - [x] Run `flutter analyze` inside the container and fix all lint/analysis issues
+    - [x] Run `dart format --set-exit-if-changed lib test` inside the container
+    - [x] Update `conductor/product.md`, `conductor/tech-stack.md`, or `conductor/workflow.md` if this track revealed any deviations
+- [x] Task: Conductor - User Manual Verification 'Coverage Verification & Documentation' (Protocol in workflow.md) [checkpoint: 6cfbb59]
