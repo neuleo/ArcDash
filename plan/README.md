@@ -133,7 +133,7 @@ erhalten.
 
 - [x] **T070** Serviceweiten Session-Lifecycle implementieren (`1f94641`) ([Details](./10-sessions-fehler-einstellungen.md#t070---serviceweiten-session-lifecycle-implementieren))
 - [x] **T071** Sessionmetriken aggregieren (`d5f66f9`) ([Details](./10-sessions-fehler-einstellungen.md#t071---sessionmetriken-aggregieren))
-- [ ] **T072** Sessionhistorie persistieren ([Details](./10-sessions-fehler-einstellungen.md#t072---sessionhistorie-persistieren))
+- [x] **T072** Sessionhistorie persistieren (`72ccb54`) ([Details](./10-sessions-fehler-einstellungen.md#t072---sessionhistorie-persistieren))
 - [ ] **T073** Sessionexport und Sharing implementieren ([Details](./10-sessions-fehler-einstellungen.md#t073---sessionexport-und-sharing-implementieren))
 - [ ] **T074** Fehlerkatalog und Fehlerhistorie bauen ([Details](./10-sessions-fehler-einstellungen.md#t074---fehlerkatalog-und-fehlerhistorie-bauen))
 - [ ] **T075** Einstellungen und Datenverwaltung konsolidieren ([Details](./10-sessions-fehler-einstellungen.md#t075---einstellungen-und-datenverwaltung-konsolidieren))
