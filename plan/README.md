@@ -135,7 +135,7 @@ erhalten.
 - [x] **T071** Sessionmetriken aggregieren (`d5f66f9`) ([Details](./10-sessions-fehler-einstellungen.md#t071---sessionmetriken-aggregieren))
 - [x] **T072** Sessionhistorie persistieren (`72ccb54`) ([Details](./10-sessions-fehler-einstellungen.md#t072---sessionhistorie-persistieren))
 - [x] **T073** Sessionexport und Sharing implementieren (`ee922aa`) ([Details](./10-sessions-fehler-einstellungen.md#t073---sessionexport-und-sharing-implementieren))
-- [ ] **T074** Fehlerkatalog und Fehlerhistorie bauen ([Details](./10-sessions-fehler-einstellungen.md#t074---fehlerkatalog-und-fehlerhistorie-bauen))
+- [~] **T074** Fehlerkatalog und Fehlerhistorie bauen ([Details](./10-sessions-fehler-einstellungen.md#t074---fehlerkatalog-und-fehlerhistorie-bauen))
 - [ ] **T075** Einstellungen und Datenverwaltung konsolidieren ([Details](./10-sessions-fehler-einstellungen.md#t075---einstellungen-und-datenverwaltung-konsolidieren))
 
 ## Phase 10: Qualitaet und Release
