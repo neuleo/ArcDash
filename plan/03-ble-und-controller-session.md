@@ -75,6 +75,21 @@ sofort den aktuellen Zustand.
   melden, ueber einen kontrollierten Namens-/Manuell-Auswahl-Fallback.
 - Pruefe Characteristic-Properties und waehle Write-Modus passend zur Hardware.
 - Speichere das explizit bestaetigte Zielgeraet, nicht irgendeinen Namensmatch.
+- Bilde das reale Zielgeraet der Arctic Leopard Xe Pro S ab (BLE-Scan-Beleg in
+  `reference/`):
+  - Gerätename `CONTROLDMC88`, MAC `C0:07:AD:88:00:6B` (anonymisieren in Fixtures)
+  - Service `0000FF00-0000-1000-8000-00805F9B34FB`
+  - Characteristic `0000FFEC-0000-1000-8000-00805F9B34FB`
+  - Properties `READ`, `NOTIFY`, `WRITE WITHOUT RESPONSE`
+  - Die bisherige FFE0/FFE1- und `49535343`-Annahme aus BikeTunes gilt fuer diese
+    Hardware nicht; sie ist als Fallback zu erhalten, nicht als Standard.
+- Scan ohne ausschliesslichen `withServices`-Filter auf FFE0/`49535343`
+  durchfuehren, damit Geräte erkannt werden, die ihre Service-UUID nicht im
+  Advertisement melden; anschliessend per Name filtern und Services nach dem
+  Verbinden dynamisch aus `discoverServices()` ermitteln.
+- Auf der echten Hardware verifizieren, dass das bekannte FarDriver-Protokoll
+  (Paketformat, CRC, Adressen) unveraendert ueber `FFEC` laeuft; Abweichungen
+  dokumentieren und T009/T010 zurueckmelden.
 
 ### Tests und Akzeptanz
 

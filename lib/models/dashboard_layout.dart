@@ -18,10 +18,14 @@ enum DashboardMetric {
   connection,
 }
 
-enum DashboardTileKind { value, status, arc }
+enum DashboardTileKind { value, compact, status, arc }
+
+enum DashboardUnit { automatic, metric, imperial }
 
 class DashboardMeasurementDefinition {
-  final DashboardTileKind kind;
+  final DashboardTileKind defaultKind;
+  final Set<DashboardTileKind> allowedKinds;
+  final Set<DashboardUnit> allowedUnits;
   final int minimumWidth;
   final int minimumHeight;
   final Duration maxAge;
@@ -29,85 +33,112 @@ class DashboardMeasurementDefinition {
   final double? maximum;
 
   const DashboardMeasurementDefinition({
-    required this.kind,
+    required this.defaultKind,
+    this.allowedKinds = const {},
+    this.allowedUnits = const {DashboardUnit.automatic},
     this.minimumWidth = 1,
     this.minimumHeight = 1,
     this.maxAge = const Duration(seconds: 2),
     this.minimum,
     this.maximum,
   });
+
+  DashboardTileKind get kind => defaultKind;
+
+  bool allowsKind(DashboardTileKind kind) =>
+      kind == defaultKind || allowedKinds.contains(kind);
 }
 
 const dashboardMeasurementCatalog =
     <DashboardMetric, DashboardMeasurementDefinition>{
   DashboardMetric.speed: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.arc,
+    defaultKind: DashboardTileKind.arc,
+    allowedKinds: {DashboardTileKind.value},
+    allowedUnits: {
+      DashboardUnit.automatic,
+      DashboardUnit.metric,
+      DashboardUnit.imperial,
+    },
     minimumWidth: 3,
     minimumHeight: 3,
     minimum: 0,
     maximum: 120,
   ),
   DashboardMetric.power: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.arc,
+    defaultKind: DashboardTileKind.arc,
+    allowedKinds: {DashboardTileKind.value, DashboardTileKind.compact},
     minimum: -60,
     maximum: 60,
   ),
   DashboardMetric.regeneration: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
     minimum: -60,
     maximum: 60,
   ),
   DashboardMetric.voltage: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
     maxAge: Duration(seconds: 5),
     minimum: 0,
     maximum: 150,
   ),
   DashboardMetric.current: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
     minimum: -600,
     maximum: 600,
   ),
   DashboardMetric.soc: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
     maxAge: Duration(seconds: 10),
     minimum: 0,
     maximum: 100,
   ),
   DashboardMetric.range: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
+    allowedUnits: {
+      DashboardUnit.automatic,
+      DashboardUnit.metric,
+      DashboardUnit.imperial,
+    },
     maxAge: Duration(seconds: 10),
     minimum: 0,
   ),
   DashboardMetric.profile: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.status,
+    defaultKind: DashboardTileKind.status,
   ),
   DashboardMetric.gear: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
     maxAge: Duration(seconds: 5),
     minimum: 0,
     maximum: 3,
   ),
   DashboardMetric.motorTemperature: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
     maxAge: Duration(seconds: 10),
     minimum: -50,
     maximum: 250,
   ),
   DashboardMetric.controllerTemperature: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.value,
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {DashboardTileKind.compact},
     maxAge: Duration(seconds: 10),
     minimum: -50,
     maximum: 250,
   ),
   DashboardMetric.errors: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.status,
+    defaultKind: DashboardTileKind.status,
     maxAge: Duration(seconds: 5),
     minimum: 0,
     maximum: 1,
   ),
   DashboardMetric.connection: DashboardMeasurementDefinition(
-    kind: DashboardTileKind.status,
+    defaultKind: DashboardTileKind.status,
   ),
 };
 
@@ -119,6 +150,7 @@ class DashboardTile {
   final int row;
   final int width;
   final int height;
+  final DashboardUnit unit;
 
   const DashboardTile({
     required this.id,
@@ -128,6 +160,7 @@ class DashboardTile {
     required this.row,
     required this.width,
     required this.height,
+    this.unit = DashboardUnit.automatic,
   });
 
   DashboardTile copyWith({
@@ -135,15 +168,18 @@ class DashboardTile {
     int? row,
     int? width,
     int? height,
+    DashboardTileKind? kind,
+    DashboardUnit? unit,
   }) =>
       DashboardTile(
         id: id,
         metric: metric,
-        kind: kind,
+        kind: kind ?? this.kind,
         column: column ?? this.column,
         row: row ?? this.row,
         width: width ?? this.width,
         height: height ?? this.height,
+        unit: unit ?? this.unit,
       );
 
   Map<String, Object?> toJson() => {
@@ -154,6 +190,7 @@ class DashboardTile {
         'row': row,
         'width': width,
         'height': height,
+        if (unit != DashboardUnit.automatic) 'unit': unit.name,
       };
 
   factory DashboardTile.fromJson(Object? value) {
@@ -161,6 +198,8 @@ class DashboardTile {
     final metric =
         DashboardMetric.values.where((e) => e.name == value['metric']);
     final kind = DashboardTileKind.values.where((e) => e.name == value['kind']);
+    final unitName = value['unit'];
+    final units = DashboardUnit.values.where((e) => e.name == unitName);
     final fields = [
       value['column'],
       value['row'],
@@ -170,7 +209,8 @@ class DashboardTile {
     if (value['id'] is! String ||
         metric.length != 1 ||
         kind.length != 1 ||
-        fields.any((field) => field is! int)) {
+        fields.any((field) => field is! int) ||
+        (unitName != null && units.length != 1)) {
       throw const FormatException('invalid dashboard tile');
     }
     return DashboardTile(
@@ -181,6 +221,7 @@ class DashboardTile {
       row: value['row'] as int,
       width: value['width'] as int,
       height: value['height'] as int,
+      unit: unitName == null ? DashboardUnit.automatic : units.single,
     );
   }
 
@@ -228,8 +269,11 @@ class DashboardOrientationLayout {
         throw const FormatException('dashboard tile outside grid');
       }
       final definition = dashboardMeasurementCatalog[tile.metric];
-      if (definition == null || tile.kind != definition.kind) {
+      if (definition == null || !definition.allowsKind(tile.kind)) {
         throw const FormatException('unsupported dashboard tile kind');
+      }
+      if (!definition.allowedUnits.contains(tile.unit)) {
+        throw const FormatException('unsupported dashboard unit');
       }
       if (tile.width < definition.minimumWidth ||
           tile.height < definition.minimumHeight) {

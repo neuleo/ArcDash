@@ -9,6 +9,7 @@ import 'package:arcdash/models/telemetry_quality.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
+import 'package:arcdash/services/storage_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -19,6 +20,9 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   DashboardLayout _dashboard = DashboardLayout.defaults();
+  DashboardLayout? _editorBaseline;
+  late final StorageService _storage;
+  Future<void> _saveChain = Future.value();
   Timer? _saveTimer;
   Timer? _freshnessTimer;
   bool _editing = false;
@@ -31,7 +35,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.didChangeDependencies();
     if (_loaded) return;
     _loaded = true;
-    _dashboard = ref.read(storageServiceProvider).loadDashboardLayout();
+    _storage = ref.read(storageServiceProvider);
+    _dashboard = _storage.loadDashboardLayout();
     _freshnessTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
@@ -39,7 +44,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   void dispose() {
-    _saveTimer?.cancel();
+    if (_saveTimer?.isActive ?? false) {
+      _saveTimer!.cancel();
+      unawaited(_enqueueSave(_dashboard));
+    }
     _freshnessTimer?.cancel();
     super.dispose();
   }
@@ -47,8 +55,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _scheduleSave() {
     _saveTimer?.cancel();
     _saveTimer = Timer(const Duration(milliseconds: 350), () {
-      ref.read(storageServiceProvider).saveDashboardLayout(_dashboard);
+      unawaited(_enqueueSave(_dashboard));
     });
+  }
+
+  Future<void> _enqueueSave(DashboardLayout layout) {
+    _saveChain = _saveChain
+        .catchError((_) {})
+        .then((_) => _storage.saveDashboardLayout(layout));
+    return _saveChain;
+  }
+
+  void _enterEditor() {
+    setState(() {
+      _editorBaseline = _dashboard;
+      _editing = true;
+      _editingOrientation = _currentOrientation;
+    });
+  }
+
+  Future<void> _saveAndCloseEditor() async {
+    _saveTimer?.cancel();
+    await _enqueueSave(_dashboard);
+    if (!mounted) return;
+    setState(() {
+      _editing = false;
+      _editorBaseline = null;
+    });
+  }
+
+  Future<void> _discardEditor() async {
+    final baseline = _editorBaseline;
+    if (baseline == null) return;
+    _saveTimer?.cancel();
+    setState(() {
+      _dashboard = baseline;
+      _editing = false;
+      _editorBaseline = null;
+    });
+    await _enqueueSave(baseline);
   }
 
   DashboardOrientation get _currentOrientation =>
@@ -73,43 +118,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ));
   }
 
-  void _moveTile(DashboardTile tile, int direction) {
+  void _moveTile(DashboardTile tile, int columnDelta, int rowDelta) {
     final layout = _dashboard.layoutFor(_activeOrientation);
     final index = layout.tiles.indexOf(tile);
     if (index < 0) return;
-    final moved = direction.abs() > 1
-        ? tile.copyWith(column: tile.column + direction.sign)
-        : tile.copyWith(row: tile.row + direction);
+    final moved = tile.copyWith(
+      column: tile.column + columnDelta,
+      row: tile.row + rowDelta,
+    );
     final tiles = [...layout.tiles]..[index] = moved;
     try {
       final next = layout.copyWith(tiles: tiles);
       next.validate();
       _updateCurrent(next);
     } on FormatException {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Diese Position ist belegt oder außerhalb des Rasters.')),
-      );
+      _showEditorError(AppText.invalidPosition);
     }
   }
 
-  void _resizeTile(DashboardTile tile) {
+  void _resizeTile(DashboardTile tile, int widthDelta, int heightDelta) {
     final layout = _dashboard.layoutFor(_activeOrientation);
     final index = layout.tiles.indexOf(tile);
-    final minimumWidth = dashboardMeasurementCatalog[tile.metric]!.minimumWidth;
-    final nextWidth =
-        tile.width >= 3 ? minimumWidth : math.max(tile.width + 1, minimumWidth);
-    final resized = tile.copyWith(width: nextWidth);
+    final resized = tile.copyWith(
+      width: tile.width + widthDelta,
+      height: tile.height + heightDelta,
+    );
     final tiles = [...layout.tiles]..[index] = resized;
     try {
       final next = layout.copyWith(tiles: tiles);
       next.validate();
       _updateCurrent(next);
     } on FormatException {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Diese Größe passt nicht in das Layout.')),
-      );
+      _showEditorError(AppText.invalidSize);
     }
   }
 
@@ -123,14 +163,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ? DashboardOrientation.landscape
         : DashboardOrientation.portrait;
     final targetGrid = _dashboard.layoutFor(target);
-    final tiles = source.tiles
-        .map((tile) => tile.copyWith(
-              column: tile.column.clamp(0, targetGrid.columns - 1),
-              row: tile.row.clamp(0, targetGrid.rows - 1),
-              width: tile.width.clamp(1, targetGrid.columns),
-              height: tile.height.clamp(1, targetGrid.rows),
-            ))
-        .toList();
+    final transposed =
+        source.columns == targetGrid.rows && source.rows == targetGrid.columns;
+    final tiles = source.tiles.map((tile) {
+      if (transposed) {
+        return tile.copyWith(
+          column: tile.row,
+          row: tile.column,
+          width: tile.height,
+          height: tile.width,
+        );
+      }
+      return tile.copyWith(
+        column: (tile.column * targetGrid.columns / source.columns).floor(),
+        row: (tile.row * targetGrid.rows / source.rows).floor(),
+        width: math.max(
+          1,
+          (tile.width * targetGrid.columns / source.columns).round(),
+        ),
+        height: math.max(
+          1,
+          (tile.height * targetGrid.rows / source.rows).round(),
+        ),
+      );
+    }).toList();
     try {
       final copied = DashboardOrientationLayout(
         columns: targetGrid.columns,
@@ -141,10 +197,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       setState(() => _dashboard = _dashboard.withLayout(target, copied));
       _scheduleSave();
     } on FormatException {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Das Layout passt nicht in diese Ausrichtung.')),
-      );
+      _showEditorError(AppText.copyFailed);
     }
   }
 
@@ -164,13 +217,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           height: definition.minimumHeight,
         );
         if (_fits(tile, layout)) {
-          _updateCurrent(layout.copyWith(tiles: [...layout.tiles, tile]));
-          return;
+          final next = layout.copyWith(tiles: [...layout.tiles, tile]);
+          try {
+            next.validate();
+            _updateCurrent(next);
+            return;
+          } on FormatException {
+            continue;
+          }
         }
       }
     }
+    _showEditorError(AppText.noGridSpace);
+  }
+
+  void _setTileKind(DashboardTile tile, DashboardTileKind kind) {
+    _replaceTile(tile, tile.copyWith(kind: kind));
+  }
+
+  void _setTileUnit(DashboardTile tile, DashboardUnit unit) {
+    _replaceTile(tile, tile.copyWith(unit: unit));
+  }
+
+  void _replaceTile(DashboardTile tile, DashboardTile replacement) {
+    final layout = _dashboard.layoutFor(_activeOrientation);
+    final index = layout.tiles.indexOf(tile);
+    if (index < 0) return;
+    final tiles = [...layout.tiles]..[index] = replacement;
+    final next = layout.copyWith(tiles: tiles);
+    try {
+      next.validate();
+      _updateCurrent(next);
+    } on FormatException {
+      _showEditorError(AppText.invalidSize);
+    }
+  }
+
+  void _showEditorError(AppText message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Im Raster ist kein Platz mehr.')),
+      SnackBar(content: Text(AppStrings.of(context).text(message))),
     );
   }
 
@@ -215,11 +300,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           IconButton(
             tooltip: strings
-                .text(_editing ? AppText.closeEditor : AppText.editDashboard),
-            onPressed: () => setState(() {
-              _editing = !_editing;
-              _editingOrientation = orientation;
-            }),
+                .text(_editing ? AppText.saveDashboard : AppText.editDashboard),
+            onPressed: _editing ? _saveAndCloseEditor : _enterEditor,
             icon: Icon(_editing ? Icons.check : Icons.tune),
           ),
         ],
@@ -235,6 +317,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 onAdd: () => _showMetricPicker(),
                 onCopy: _copyOrientation,
                 onReset: _resetCurrent,
+                onDiscard: _discardEditor,
               ),
             Expanded(
               child: DashboardRenderer(
@@ -246,6 +329,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 onRemove: _removeTile,
                 onMove: _moveTile,
                 onResize: _resizeTile,
+                onKindChanged: _setTileKind,
+                onUnitChanged: _setTileUnit,
+                useImperialUnits: _storage.useMph,
               ),
             ),
           ],
@@ -281,6 +367,7 @@ class _EditorBar extends StatelessWidget {
   final VoidCallback onAdd;
   final VoidCallback onCopy;
   final VoidCallback onReset;
+  final VoidCallback onDiscard;
 
   const _EditorBar({
     required this.orientation,
@@ -288,41 +375,59 @@ class _EditorBar extends StatelessWidget {
     required this.onAdd,
     required this.onCopy,
     required this.onReset,
+    required this.onDiscard,
   });
 
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
         color: const Color(0xFF11151A),
-        child: Row(
-          children: [
-            SegmentedButton<DashboardOrientation>(
-              segments: [
-                ButtonSegment(
-                    value: DashboardOrientation.portrait,
-                    label: Text(AppStrings.of(context).text(AppText.portrait))),
-                ButtonSegment(
-                    value: DashboardOrientation.landscape,
-                    label:
-                        Text(AppStrings.of(context).text(AppText.landscape))),
-              ],
-              selected: {orientation},
-              onSelectionChanged: (value) => onOrientationChanged(value.single),
-            ),
-            const Spacer(),
-            IconButton(
-                tooltip: AppStrings.of(context).text(AppText.addValue),
-                onPressed: onAdd,
-                icon: const Icon(Icons.add_box_outlined)),
-            IconButton(
-                tooltip: AppStrings.of(context).text(AppText.copyOrientation),
-                onPressed: onCopy,
-                icon: const Icon(Icons.copy)),
-            IconButton(
-                tooltip: AppStrings.of(context).text(AppText.defaultLayout),
-                onPressed: onReset,
-                icon: const Icon(Icons.restart_alt)),
-          ],
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              SegmentedButton<DashboardOrientation>(
+                segments: [
+                  ButtonSegment(
+                      value: DashboardOrientation.portrait,
+                      label:
+                          Text(AppStrings.of(context).text(AppText.portrait))),
+                  ButtonSegment(
+                      value: DashboardOrientation.landscape,
+                      label:
+                          Text(AppStrings.of(context).text(AppText.landscape))),
+                ],
+                selected: {orientation},
+                onSelectionChanged: (value) =>
+                    onOrientationChanged(value.single),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                  tooltip: AppStrings.of(context).text(AppText.addValue),
+                  constraints:
+                      const BoxConstraints.tightFor(width: 48, height: 48),
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.add_box_outlined)),
+              IconButton(
+                  tooltip: AppStrings.of(context).text(AppText.copyOrientation),
+                  constraints:
+                      const BoxConstraints.tightFor(width: 48, height: 48),
+                  onPressed: onCopy,
+                  icon: const Icon(Icons.copy)),
+              IconButton(
+                  tooltip: AppStrings.of(context).text(AppText.defaultLayout),
+                  constraints:
+                      const BoxConstraints.tightFor(width: 48, height: 48),
+                  onPressed: onReset,
+                  icon: const Icon(Icons.restart_alt)),
+              IconButton(
+                  tooltip: AppStrings.of(context).text(AppText.discardChanges),
+                  constraints:
+                      const BoxConstraints.tightFor(width: 48, height: 48),
+                  onPressed: onDiscard,
+                  icon: const Icon(Icons.undo)),
+            ],
+          ),
         ),
       );
 }
@@ -332,10 +437,13 @@ class DashboardRenderer extends StatelessWidget {
   final ControllerState state;
   final bool connected;
   final DateTime now;
+  final bool useImperialUnits;
   final bool editing;
   final ValueChanged<DashboardTile>? onRemove;
-  final void Function(DashboardTile, int)? onMove;
-  final ValueChanged<DashboardTile>? onResize;
+  final void Function(DashboardTile, int, int)? onMove;
+  final void Function(DashboardTile, int, int)? onResize;
+  final void Function(DashboardTile, DashboardTileKind)? onKindChanged;
+  final void Function(DashboardTile, DashboardUnit)? onUnitChanged;
 
   const DashboardRenderer({
     super.key,
@@ -347,6 +455,9 @@ class DashboardRenderer extends StatelessWidget {
     this.onRemove,
     this.onMove,
     this.onResize,
+    this.onKindChanged,
+    this.onUnitChanged,
+    this.useImperialUnits = false,
   });
 
   @override
@@ -356,6 +467,15 @@ class DashboardRenderer extends StatelessWidget {
           final cellHeight = constraints.maxHeight / layout.rows;
           return Stack(
             children: [
+              if (editing)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _DashboardGridPainter(
+                      columns: layout.columns,
+                      rows: layout.rows,
+                    ),
+                  ),
+                ),
               for (final tile in layout.tiles)
                 Positioned(
                   left: tile.column * cellWidth + 6,
@@ -366,16 +486,22 @@ class DashboardRenderer extends StatelessWidget {
                     tile: tile,
                     editing: editing,
                     onRemove: () => onRemove?.call(tile),
-                    onMoveLeft: () => onMove?.call(tile, -10),
-                    onMoveRight: () => onMove?.call(tile, 10),
-                    onMoveUp: () => onMove?.call(tile, -1),
-                    onMoveDown: () => onMove?.call(tile, 1),
-                    onResize: () => onResize?.call(tile),
+                    onMoveLeft: () => onMove?.call(tile, -1, 0),
+                    onMoveRight: () => onMove?.call(tile, 1, 0),
+                    onMoveUp: () => onMove?.call(tile, 0, -1),
+                    onMoveDown: () => onMove?.call(tile, 0, 1),
+                    onWider: () => onResize?.call(tile, 1, 0),
+                    onNarrower: () => onResize?.call(tile, -1, 0),
+                    onTaller: () => onResize?.call(tile, 0, 1),
+                    onShorter: () => onResize?.call(tile, 0, -1),
+                    onKindChanged: (kind) => onKindChanged?.call(tile, kind),
+                    onUnitChanged: (unit) => onUnitChanged?.call(tile, unit),
                     child: _MetricView(
                       tile: tile,
                       state: state,
                       connected: connected,
                       now: now,
+                      useImperialUnits: useImperialUnits,
                     ),
                   ),
                 ),
@@ -383,6 +509,32 @@ class DashboardRenderer extends StatelessWidget {
           );
         },
       );
+}
+
+class _DashboardGridPainter extends CustomPainter {
+  final int columns;
+  final int rows;
+
+  const _DashboardGridPainter({required this.columns, required this.rows});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF263943)
+      ..strokeWidth = 1;
+    for (var column = 1; column < columns; column++) {
+      final x = size.width * column / columns;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var row = 1; row < rows; row++) {
+      final y = size.height * row / rows;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashboardGridPainter oldDelegate) =>
+      oldDelegate.columns != columns || oldDelegate.rows != rows;
 }
 
 class _TileFrame extends StatelessWidget {
@@ -394,7 +546,12 @@ class _TileFrame extends StatelessWidget {
   final VoidCallback onMoveRight;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
-  final VoidCallback onResize;
+  final VoidCallback onWider;
+  final VoidCallback onNarrower;
+  final VoidCallback onTaller;
+  final VoidCallback onShorter;
+  final ValueChanged<DashboardTileKind> onKindChanged;
+  final ValueChanged<DashboardUnit> onUnitChanged;
 
   const _TileFrame({
     required this.tile,
@@ -405,7 +562,12 @@ class _TileFrame extends StatelessWidget {
     required this.onMoveRight,
     required this.onMoveUp,
     required this.onMoveDown,
-    required this.onResize,
+    required this.onWider,
+    required this.onNarrower,
+    required this.onTaller,
+    required this.onShorter,
+    required this.onKindChanged,
+    required this.onUnitChanged,
   });
 
   @override
@@ -449,35 +611,86 @@ class _TileFrame extends StatelessWidget {
                     _TileCommand.right => onMoveRight(),
                     _TileCommand.up => onMoveUp(),
                     _TileCommand.down => onMoveDown(),
-                    _TileCommand.resize => onResize(),
+                    _TileCommand.wider => onWider(),
+                    _TileCommand.narrower => onNarrower(),
+                    _TileCommand.taller => onTaller(),
+                    _TileCommand.shorter => onShorter(),
+                    _TileCommand.largeValue =>
+                      onKindChanged(DashboardTileKind.value),
+                    _TileCommand.compactValue =>
+                      onKindChanged(DashboardTileKind.compact),
+                    _TileCommand.arcDisplay =>
+                      onKindChanged(DashboardTileKind.arc),
+                    _TileCommand.unitAutomatic =>
+                      onUnitChanged(DashboardUnit.automatic),
+                    _TileCommand.unitMetric =>
+                      onUnitChanged(DashboardUnit.metric),
+                    _TileCommand.unitImperial =>
+                      onUnitChanged(DashboardUnit.imperial),
                     _TileCommand.remove => onRemove(),
                   },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                        value: _TileCommand.left,
-                        child: Text(
-                            AppStrings.of(context).text(AppText.moveLeft))),
-                    PopupMenuItem(
-                        value: _TileCommand.right,
-                        child: Text(
-                            AppStrings.of(context).text(AppText.moveRight))),
-                    PopupMenuItem(
-                        value: _TileCommand.up,
-                        child:
-                            Text(AppStrings.of(context).text(AppText.moveUp))),
-                    PopupMenuItem(
-                        value: _TileCommand.down,
-                        child: Text(
-                            AppStrings.of(context).text(AppText.moveDown))),
-                    PopupMenuItem(
-                        value: _TileCommand.resize,
-                        child:
-                            Text(AppStrings.of(context).text(AppText.resize))),
-                    PopupMenuItem(
-                        value: _TileCommand.remove,
-                        child:
-                            Text(AppStrings.of(context).text(AppText.remove))),
-                  ],
+                  itemBuilder: (context) {
+                    final strings = AppStrings.of(context);
+                    final definition =
+                        dashboardMeasurementCatalog[tile.metric]!;
+                    return [
+                      PopupMenuItem(
+                          value: _TileCommand.left,
+                          child: Text(
+                              AppStrings.of(context).text(AppText.moveLeft))),
+                      PopupMenuItem(
+                          value: _TileCommand.right,
+                          child: Text(
+                              AppStrings.of(context).text(AppText.moveRight))),
+                      PopupMenuItem(
+                          value: _TileCommand.up,
+                          child: Text(
+                              AppStrings.of(context).text(AppText.moveUp))),
+                      PopupMenuItem(
+                          value: _TileCommand.down,
+                          child: Text(
+                              AppStrings.of(context).text(AppText.moveDown))),
+                      PopupMenuItem(
+                          value: _TileCommand.wider,
+                          child: Text(strings.text(AppText.wider))),
+                      PopupMenuItem(
+                          value: _TileCommand.narrower,
+                          child: Text(strings.text(AppText.narrower))),
+                      PopupMenuItem(
+                          value: _TileCommand.taller,
+                          child: Text(strings.text(AppText.taller))),
+                      PopupMenuItem(
+                          value: _TileCommand.shorter,
+                          child: Text(strings.text(AppText.shorter))),
+                      if (definition.allowsKind(DashboardTileKind.value))
+                        PopupMenuItem(
+                            value: _TileCommand.largeValue,
+                            child: Text(strings.text(AppText.largeValue))),
+                      if (definition.allowsKind(DashboardTileKind.compact))
+                        PopupMenuItem(
+                            value: _TileCommand.compactValue,
+                            child: Text(strings.text(AppText.compactValue))),
+                      if (definition.allowsKind(DashboardTileKind.arc))
+                        PopupMenuItem(
+                            value: _TileCommand.arcDisplay,
+                            child: Text(strings.text(AppText.arcDisplay))),
+                      if (definition.allowedUnits.length > 1) ...[
+                        PopupMenuItem(
+                            value: _TileCommand.unitAutomatic,
+                            child: Text(strings.text(AppText.unitAutomatic))),
+                        PopupMenuItem(
+                            value: _TileCommand.unitMetric,
+                            child: Text(strings.text(AppText.unitMetric))),
+                        PopupMenuItem(
+                            value: _TileCommand.unitImperial,
+                            child: Text(strings.text(AppText.unitImperial))),
+                      ],
+                      PopupMenuItem(
+                          value: _TileCommand.remove,
+                          child: Text(
+                              AppStrings.of(context).text(AppText.remove))),
+                    ];
+                  },
                   icon: const Icon(Icons.more_vert),
                 ),
               ),
@@ -486,19 +699,37 @@ class _TileFrame extends StatelessWidget {
       );
 }
 
-enum _TileCommand { left, right, up, down, resize, remove }
+enum _TileCommand {
+  left,
+  right,
+  up,
+  down,
+  wider,
+  narrower,
+  taller,
+  shorter,
+  largeValue,
+  compactValue,
+  arcDisplay,
+  unitAutomatic,
+  unitMetric,
+  unitImperial,
+  remove,
+}
 
 class _MetricView extends StatelessWidget {
   final DashboardTile tile;
   final ControllerState state;
   final bool connected;
   final DateTime now;
+  final bool useImperialUnits;
 
   const _MetricView({
     required this.tile,
     required this.state,
     required this.connected,
     required this.now,
+    required this.useImperialUnits,
   });
 
   @override
@@ -507,10 +738,16 @@ class _MetricView extends StatelessWidget {
     final reading = _reading(context, tile.metric, quality);
     final strings = AppStrings.of(context);
     final label = strings.metric(tile.metric.name);
-    if (tile.metric == DashboardMetric.speed) {
-      return _SpeedDial(speedKph: state.speedKph, quality: quality);
+    if (tile.metric == DashboardMetric.speed &&
+        tile.kind == DashboardTileKind.arc) {
+      return _SpeedDial(
+        speedKph: state.speedKph,
+        quality: quality,
+        imperial: _imperial,
+      );
     }
-    if (tile.metric == DashboardMetric.power) {
+    if (tile.metric == DashboardMetric.power &&
+        tile.kind == DashboardTileKind.arc) {
       return _PowerMeter(powerKw: state.powerKw, quality: quality);
     }
     final valueColor = quality != TelemetryFreshness.fresh
@@ -535,7 +772,7 @@ class _MetricView extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: valueColor,
-            fontSize: compact
+            fontSize: compact || tile.kind == DashboardTileKind.compact
                 ? 17
                 : tile.kind == DashboardTileKind.status
                     ? 18
@@ -606,15 +843,18 @@ class _MetricView extends StatelessWidget {
       });
     }
     return switch (metric) {
-      DashboardMetric.speed => '${state.speedKph.toStringAsFixed(0)} km/h',
+      DashboardMetric.speed => _imperial
+          ? '${(state.speedKph * 0.621371).toStringAsFixed(0)} mph'
+          : '${state.speedKph.toStringAsFixed(0)} km/h',
       DashboardMetric.power => '${state.powerKw.toStringAsFixed(1)} kW',
       DashboardMetric.regeneration =>
         '${math.max(-state.powerKw, 0).toStringAsFixed(1)} kW',
       DashboardMetric.voltage => '${state.voltageV.toStringAsFixed(1)} V',
       DashboardMetric.current => '${state.currentA.toStringAsFixed(1)} A',
       DashboardMetric.soc => '${state.battCapPercent} %',
-      DashboardMetric.range =>
-        '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
+      DashboardMetric.range => _imperial
+          ? '${(state.rangeKm * 0.621371).toStringAsFixed(0)} ± ${(state.rangeUncertaintyKm * 0.621371).toStringAsFixed(0)} mi'
+          : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
       DashboardMetric.profile => state.rideMode.displayName,
       DashboardMetric.gear => !state.isForward
           ? 'R'
@@ -633,6 +873,10 @@ class _MetricView extends StatelessWidget {
           : AppStrings.of(context).text(AppText.disconnected),
     };
   }
+
+  bool get _imperial =>
+      tile.unit == DashboardUnit.imperial ||
+      (tile.unit == DashboardUnit.automatic && useImperialUnits);
 }
 
 class _ConnectionPill extends StatelessWidget {
@@ -678,64 +922,72 @@ class _ConnectionPill extends StatelessWidget {
 class _SpeedDial extends StatelessWidget {
   final double speedKph;
   final TelemetryFreshness? quality;
+  final bool imperial;
 
-  const _SpeedDial({required this.speedKph, required this.quality});
+  const _SpeedDial({
+    required this.speedKph,
+    required this.quality,
+    required this.imperial,
+  });
 
   @override
-  Widget build(BuildContext context) => Semantics(
-        key: const Key('speed-dial'),
-        label: quality == TelemetryFreshness.fresh
-            ? 'Geschwindigkeit ${speedKph.round()} Kilometer pro Stunde'
-            : 'Geschwindigkeit ${_qualityLabel(context, quality)}',
-        child: LayoutBuilder(
-          builder: (context, constraints) => Stack(
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                  child: CustomPaint(
-                      painter: _SpeedDialPainter(
-                          speedKph: quality == TelemetryFreshness.fresh
-                              ? speedKph
-                              : 0,
-                          active: quality == TelemetryFreshness.fresh))),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                      quality == TelemetryFreshness.fresh
-                          ? speedKph.round().toString()
-                          : '–',
-                      style: TextStyle(
-                          fontSize: math.min(constraints.maxHeight * 0.29, 82),
-                          height: 0.9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -3)),
-                  const SizedBox(height: 8),
-                  const Text('km/h',
-                      style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 2)),
-                  const SizedBox(height: 8),
-                  Text(
-                      AppStrings.of(context).text(
-                          quality == TelemetryFreshness.fresh
-                              ? AppText.controller
-                              : _qualityText(quality)),
-                      style: TextStyle(
-                          color: quality == TelemetryFreshness.fresh
-                              ? const Color(0xFF00E5FF)
-                              : const Color(0xFFFFB45C),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5)),
-                ],
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) {
+    final speed = imperial ? speedKph * 0.621371 : speedKph;
+    final unit = imperial ? 'mph' : 'km/h';
+    return Semantics(
+      key: const Key('speed-dial'),
+      label: quality == TelemetryFreshness.fresh
+          ? '${AppStrings.of(context).metric('speed')} ${speed.round()} $unit'
+          : 'Geschwindigkeit ${_qualityLabel(context, quality)}',
+      child: LayoutBuilder(
+        builder: (context, constraints) => Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(
+                child: CustomPaint(
+                    painter: _SpeedDialPainter(
+                        speedKph:
+                            quality == TelemetryFreshness.fresh ? speedKph : 0,
+                        active: quality == TelemetryFreshness.fresh))),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                    quality == TelemetryFreshness.fresh
+                        ? speed.round().toString()
+                        : '–',
+                    style: TextStyle(
+                        fontSize: math.min(constraints.maxHeight * 0.29, 82),
+                        height: 0.9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -3)),
+                const SizedBox(height: 8),
+                Text(unit,
+                    style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2)),
+                const SizedBox(height: 8),
+                Text(
+                    AppStrings.of(context).text(
+                        quality == TelemetryFreshness.fresh
+                            ? AppText.controller
+                            : _qualityText(quality)),
+                    style: TextStyle(
+                        color: quality == TelemetryFreshness.fresh
+                            ? const Color(0xFF00E5FF)
+                            : const Color(0xFFFFB45C),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5)),
+              ],
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _SpeedDialPainter extends CustomPainter {

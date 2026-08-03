@@ -63,4 +63,32 @@ void main() {
 
     expect(layout.validate, returnsNormally);
   });
+
+  test('optional display kind and unit round-trip without breaking old tiles',
+      () {
+    const customized = DashboardTile(
+      id: 'speed',
+      metric: DashboardMetric.speed,
+      kind: DashboardTileKind.value,
+      unit: DashboardUnit.imperial,
+      column: 0,
+      row: 0,
+      width: 3,
+      height: 3,
+    );
+    final decoded = DashboardTile.fromJson(customized.toJson());
+    final legacy = DashboardTile.fromJson({
+      'id': 'voltage',
+      'metric': 'voltage',
+      'kind': 'value',
+      'column': 0,
+      'row': 0,
+      'width': 1,
+      'height': 1,
+    });
+
+    expect(decoded, customized);
+    expect(decoded.unit, DashboardUnit.imperial);
+    expect(legacy.unit, DashboardUnit.automatic);
+  });
 }
