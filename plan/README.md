@@ -132,7 +132,7 @@ erhalten.
 ## Phase 9: Sessions, Fehler und Einstellungen
 
 - [x] **T070** Serviceweiten Session-Lifecycle implementieren (`1f94641`) ([Details](./10-sessions-fehler-einstellungen.md#t070---serviceweiten-session-lifecycle-implementieren))
-- [ ] **T071** Sessionmetriken aggregieren ([Details](./10-sessions-fehler-einstellungen.md#t071---sessionmetriken-aggregieren))
+- [x] **T071** Sessionmetriken aggregieren (`d5f66f9`) ([Details](./10-sessions-fehler-einstellungen.md#t071---sessionmetriken-aggregieren))
 - [ ] **T072** Sessionhistorie persistieren ([Details](./10-sessions-fehler-einstellungen.md#t072---sessionhistorie-persistieren))
 - [ ] **T073** Sessionexport und Sharing implementieren ([Details](./10-sessions-fehler-einstellungen.md#t073---sessionexport-und-sharing-implementieren))
 - [ ] **T074** Fehlerkatalog und Fehlerhistorie bauen ([Details](./10-sessions-fehler-einstellungen.md#t074---fehlerkatalog-und-fehlerhistorie-bauen))
