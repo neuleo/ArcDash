@@ -1,3 +1,5 @@
+library navigation_interfaces;
+
 /// Domain models and interfaces for Version 2 Navigation, Routing, Elevation, and Energy estimation.
 /// Keeps Version 1 range prediction decoupled from specific routing or mapping providers.
 
