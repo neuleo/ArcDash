@@ -1,0 +1,4 @@
+Task: Unit tests for CRC calculation and verification
+- Added unit tests for CrcCalculator.computeCRC and CrcCalculator.verifyCRC
+- Verified edge cases and corrupted CRC detection
+- All CRC unit tests passing
