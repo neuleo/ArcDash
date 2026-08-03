@@ -146,12 +146,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _addMetric(DashboardMetric metric) {
     final layout = _dashboard.layoutFor(_activeOrientation);
     if (layout.tiles.any((tile) => tile.metric == metric)) return;
-    final kind = metric == DashboardMetric.power
-        ? DashboardTileKind.arc
-        : metric == DashboardMetric.connection ||
-                metric == DashboardMetric.errors
-            ? DashboardTileKind.status
-            : DashboardTileKind.value;
+    final kind =
+        metric == DashboardMetric.power || metric == DashboardMetric.speed
+            ? DashboardTileKind.arc
+            : metric == DashboardMetric.connection ||
+                    metric == DashboardMetric.errors
+                ? DashboardTileKind.status
+                : DashboardTileKind.value;
     for (var row = 0; row < layout.rows; row++) {
       for (var column = 0; column < layout.columns; column++) {
         final tile = DashboardTile(

@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/models/ride_stats.dart';
 import 'package:arcdash/models/dashboard_layout.dart';
+import 'package:arcdash/services/dashboard_layout_repository.dart';
+import 'package:arcdash/services/versioned_json_repository.dart';
 import 'package:csv/csv.dart';
 
 const _prefKeyUseMph = 'use_mph';
@@ -16,30 +18,42 @@ const _prefKeyFirstConnect = 'first_connect_done';
 class StorageService {
   late SharedPreferences _prefs;
   bool _initialized = false;
+  DashboardLayout _dashboardLayout = DashboardLayout.defaults();
+  DashboardLayoutRepository? _dashboardRepository;
+  DashboardLayoutLoadStatus dashboardLayoutStatus =
+      DashboardLayoutLoadStatus.missing;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    final directory = await getApplicationSupportDirectory();
+    _dashboardRepository = DashboardLayoutRepository(VersionedJsonRepository(
+      store:
+          AtomicJsonFileStore(File('${directory.path}/dashboard-layout.json')),
+      type: DashboardLayoutRepository.documentType,
+      schemaVersion: DashboardLayoutRepository.documentVersion,
+    ));
+    final loaded = await _dashboardRepository!.load();
+    _dashboardLayout = loaded.layout;
+    dashboardLayoutStatus = loaded.status;
+    if (loaded.status == DashboardLayoutLoadStatus.missing) {
+      await _migrateLegacyDashboardLayout();
+    }
     _initialized = true;
   }
 
   bool get isInitialized => _initialized;
 
   DashboardLayout loadDashboardLayout() {
-    if (!_initialized) return DashboardLayout.defaults();
-    final encoded = _prefs.getString('dashboard_layout');
-    if (encoded == null) return DashboardLayout.defaults();
-    try {
-      return DashboardLayout.fromJson(jsonDecode(encoded));
-    } catch (_) {
-      return DashboardLayout.defaults();
-    }
+    return _dashboardLayout;
   }
 
   Future<void> saveDashboardLayout(DashboardLayout layout) async {
-    if (!_initialized) return;
     layout.portrait.validate();
     layout.landscape.validate();
-    await _prefs.setString('dashboard_layout', jsonEncode(layout.toJson()));
+    _dashboardLayout = layout;
+    if (!_initialized) return;
+    await _dashboardRepository!.save(layout);
+    dashboardLayoutStatus = DashboardLayoutLoadStatus.loaded;
   }
 
   // --- Unit preference ---
@@ -49,7 +63,26 @@ class StorageService {
   }
 
   Future<void> resetDashboardLayout() async {
-    if (_initialized) await _prefs.remove('dashboard_layout');
+    _dashboardLayout = DashboardLayout.defaults();
+    if (_initialized) {
+      await _dashboardRepository!.save(_dashboardLayout);
+      await _prefs.remove('dashboard_layout');
+      dashboardLayoutStatus = DashboardLayoutLoadStatus.loaded;
+    }
+  }
+
+  Future<void> _migrateLegacyDashboardLayout() async {
+    final encoded = _prefs.getString('dashboard_layout');
+    if (encoded == null) return;
+    try {
+      final legacy = DashboardLayout.fromJson(jsonDecode(encoded));
+      await _dashboardRepository!.save(legacy);
+      _dashboardLayout = legacy;
+      dashboardLayoutStatus = DashboardLayoutLoadStatus.loaded;
+      await _prefs.remove('dashboard_layout');
+    } on Object {
+      dashboardLayoutStatus = DashboardLayoutLoadStatus.corrupt;
+    }
   }
 
   Future<void> clearRideSessions() async {

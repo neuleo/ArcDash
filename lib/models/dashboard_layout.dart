@@ -126,13 +126,29 @@ class DashboardOrientationLayout {
       throw const FormatException('invalid dashboard layout');
     }
     for (final tile in tiles) {
-      if (tile.column < 0 ||
+      if (tile.id.trim().isEmpty ||
+          tile.column < 0 ||
           tile.row < 0 ||
           tile.width < 1 ||
           tile.height < 1 ||
           tile.column + tile.width > columns ||
           tile.row + tile.height > rows) {
         throw const FormatException('dashboard tile outside grid');
+      }
+      final requiredKind = switch (tile.metric) {
+        DashboardMetric.speed || DashboardMetric.power => DashboardTileKind.arc,
+        DashboardMetric.profile ||
+        DashboardMetric.errors ||
+        DashboardMetric.connection =>
+          DashboardTileKind.status,
+        _ => DashboardTileKind.value,
+      };
+      if (tile.kind != requiredKind) {
+        throw const FormatException('unsupported dashboard tile kind');
+      }
+      if (tile.metric == DashboardMetric.speed &&
+          (tile.width < 3 || tile.height < 3)) {
+        throw const FormatException('speed dial is too small');
       }
     }
     for (var index = 0; index < tiles.length; index++) {
