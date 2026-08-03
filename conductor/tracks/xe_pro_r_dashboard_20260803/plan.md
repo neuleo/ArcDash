@@ -11,15 +11,15 @@
     - [x] Tests erneut ausführen und den Green-Zustand bestätigen
     - [x] Model-Code refaktorieren und relevante Tests erneut ausführen
 
-- [ ] Task: Trip-Distanz und Dashboard-Telemetrie testgetrieben anbinden
-    - [ ] Tests für Trip-Distanz, fehlende Session-Daten und Datenqualität schreiben
-    - [ ] Tests für die Aktualisierung der Restreichweite bei geändertem Fahrmodus beziehungsweise Prognosewert schreiben
-    - [ ] Tests ausführen und das erwartete Fehlschlagen bestätigen
-    - [ ] Trip-Distanz als auswählbare Dashboard-Metrik ergänzen
-    - [ ] Bestehende Session-Distanz als Datenquelle verwenden
-    - [ ] Bestehende Reichweitenprognose einschließlich Unsicherheit und Fahrmodusänderungen anbinden
-    - [ ] Fehlende, veraltete, ungültige und getrennte Daten eindeutig abbilden
-    - [ ] Tests erneut ausführen und den Green-Zustand bestätigen
+- [x] 65cd4db Task: Trip-Distanz und Dashboard-Telemetrie testgetrieben anbinden
+    - [x] Tests für Trip-Distanz, fehlende Session-Daten und Datenqualität schreiben
+    - [x] Tests für die Aktualisierung der Restreichweite bei geändertem Fahrmodus beziehungsweise Prognosewert schreiben
+    - [x] Tests ausführen und das erwartete Fehlschlagen bestätigen
+    - [x] Trip-Distanz als auswählbare Dashboard-Metrik ergänzen
+    - [x] Bestehende Session-Distanz als Datenquelle verwenden
+    - [x] Bestehende Reichweitenprognose einschließlich Unsicherheit und Fahrmodusänderungen anbinden
+    - [x] Fehlende, veraltete, ungültige und getrennte Daten eindeutig abbilden
+    - [x] Tests erneut ausführen und den Green-Zustand bestätigen
 
 - [ ] Task: R-inspiriertes Querformat-Standardlayout testgetrieben definieren
     - [ ] Tests für das neue Querformat-Standardlayout und das unveränderte unabhängige Hochformatlayout schreiben
