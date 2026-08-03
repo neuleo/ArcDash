@@ -91,4 +91,76 @@ void main() {
     expect(decoded.unit, DashboardUnit.imperial);
     expect(legacy.unit, DashboardUnit.automatic);
   });
+
+  test('supports bar and circle tile kinds and validates compatible combinations', () {
+    final tileBar = DashboardTile(
+      id: 'power_bar',
+      metric: DashboardMetric.power,
+      kind: DashboardTileKind.bar,
+      column: 0,
+      row: 0,
+      width: 4,
+      height: 2,
+    );
+    final tileCircle = DashboardTile(
+      id: 'speed_circle',
+      metric: DashboardMetric.speed,
+      kind: DashboardTileKind.circle,
+      column: 0,
+      row: 0,
+      width: 3,
+      height: 3,
+    );
+
+    final layoutBar = DashboardOrientationLayout(
+      columns: 4,
+      rows: 4,
+      tiles: [tileBar],
+    );
+    final layoutCircle = DashboardOrientationLayout(
+      columns: 4,
+      rows: 4,
+      tiles: [tileCircle],
+    );
+
+    expect(layoutBar.validate, returnsNormally);
+    expect(layoutCircle.validate, returnsNormally);
+
+    final invalidKindTile = DashboardTile(
+      id: 'connection_arc',
+      metric: DashboardMetric.connection,
+      kind: DashboardTileKind.arc,
+      column: 0,
+      row: 0,
+      width: 2,
+      height: 2,
+    );
+    final invalidLayout = DashboardOrientationLayout(
+      columns: 4,
+      rows: 4,
+      tiles: [invalidKindTile],
+    );
+
+    expect(() => invalidLayout.validate(), throwsFormatException);
+  });
+
+  test('validates tile minimum dimensions per tile kind', () {
+    final tooSmallArc = DashboardTile(
+      id: 'speed_arc_small',
+      metric: DashboardMetric.speed,
+      kind: DashboardTileKind.arc,
+      column: 0,
+      row: 0,
+      width: 1,
+      height: 1,
+    );
+    final layoutSmall = DashboardOrientationLayout(
+      columns: 4,
+      rows: 4,
+      tiles: [tooSmallArc],
+    );
+
+    expect(() => layoutSmall.validate(), throwsFormatException);
+  });
 }
+

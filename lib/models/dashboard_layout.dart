@@ -18,7 +18,7 @@ enum DashboardMetric {
   connection,
 }
 
-enum DashboardTileKind { value, compact, status, arc }
+enum DashboardTileKind { value, compact, status, arc, bar, circle }
 
 enum DashboardUnit { automatic, metric, imperial }
 
@@ -47,13 +47,36 @@ class DashboardMeasurementDefinition {
 
   bool allowsKind(DashboardTileKind kind) =>
       kind == defaultKind || allowedKinds.contains(kind);
+
+  int minimumWidthFor(DashboardTileKind kind) {
+    if (kind == DashboardTileKind.compact ||
+        kind == DashboardTileKind.value ||
+        kind == DashboardTileKind.status) {
+      return 1;
+    }
+    return minimumWidth;
+  }
+
+  int minimumHeightFor(DashboardTileKind kind) {
+    if (kind == DashboardTileKind.compact ||
+        kind == DashboardTileKind.value ||
+        kind == DashboardTileKind.status) {
+      return 1;
+    }
+    return minimumHeight;
+  }
 }
 
 const dashboardMeasurementCatalog =
     <DashboardMetric, DashboardMeasurementDefinition>{
   DashboardMetric.speed: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.arc,
-    allowedKinds: {DashboardTileKind.value},
+    allowedKinds: {
+      DashboardTileKind.value,
+      DashboardTileKind.compact,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     allowedUnits: {
       DashboardUnit.automatic,
       DashboardUnit.metric,
@@ -66,39 +89,68 @@ const dashboardMeasurementCatalog =
   ),
   DashboardMetric.power: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.arc,
-    allowedKinds: {DashboardTileKind.value, DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.value,
+      DashboardTileKind.compact,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     minimum: -60,
     maximum: 60,
   ),
   DashboardMetric.regeneration: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     minimum: -60,
     maximum: 60,
   ),
   DashboardMetric.voltage: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     maxAge: Duration(seconds: 5),
     minimum: 0,
     maximum: 150,
   ),
   DashboardMetric.current: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     minimum: -600,
     maximum: 600,
   ),
   DashboardMetric.soc: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     maxAge: Duration(seconds: 10),
     minimum: 0,
     maximum: 100,
   ),
   DashboardMetric.range: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+    },
     allowedUnits: {
       DashboardUnit.automatic,
       DashboardUnit.metric,
@@ -109,36 +161,49 @@ const dashboardMeasurementCatalog =
   ),
   DashboardMetric.profile: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.status,
+    allowedKinds: {DashboardTileKind.value, DashboardTileKind.compact},
   ),
   DashboardMetric.gear: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {DashboardTileKind.compact, DashboardTileKind.circle},
     maxAge: Duration(seconds: 5),
     minimum: 0,
     maximum: 3,
   ),
   DashboardMetric.motorTemperature: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     maxAge: Duration(seconds: 10),
     minimum: -50,
     maximum: 250,
   ),
   DashboardMetric.controllerTemperature: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.value,
-    allowedKinds: {DashboardTileKind.compact},
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
     maxAge: Duration(seconds: 10),
     minimum: -50,
     maximum: 250,
   ),
   DashboardMetric.errors: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.status,
+    allowedKinds: {DashboardTileKind.value},
     maxAge: Duration(seconds: 5),
     minimum: 0,
     maximum: 1,
   ),
   DashboardMetric.connection: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.status,
+    allowedKinds: {DashboardTileKind.value},
   ),
 };
 
@@ -275,8 +340,8 @@ class DashboardOrientationLayout {
       if (!definition.allowedUnits.contains(tile.unit)) {
         throw const FormatException('unsupported dashboard unit');
       }
-      if (tile.width < definition.minimumWidth ||
-          tile.height < definition.minimumHeight) {
+      if (tile.width < definition.minimumWidthFor(tile.kind) ||
+          tile.height < definition.minimumHeightFor(tile.kind)) {
         throw const FormatException('dashboard tile is too small');
       }
     }
