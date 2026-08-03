@@ -41,12 +41,12 @@ All commands run inside the Docker container (`make test`, `make codegen`, etc.)
 
 ## Phase 5: Telemetry Decoding Tests
 
-- [ ] Task: Unit tests for telemetry extraction and unit conversion
-    - [ ] Write failing tests for `extractTelemetry` for every supported address (0xE2 speed/status, 0xE8 voltage/current, 0xEE phase currents, 0xF4 motor temp/SOC, 0xD6 MOSFET temp, 0xD0 wheel geometry, 0x12 max speed, 0x18 max line current, 0x0C battery calibration) and for unknown addresses returning null
-    - [ ] Write failing tests for `UnitConverter` (kph/mph, temperature, `measureSpeedToKph`, `powerKw`, `batteryPercent`, `estimatedRangeKm`, formatting)
-    - [ ] Implement/fix `PacketParser`/`UnitConverter` to make the tests pass (Green phase)
-    - [ ] Run `make test` and confirm all telemetry tests pass
-- [ ] Task: Conductor - User Manual Verification 'Telemetry Decoding Tests' (Protocol in workflow.md)
+- [x] Task: Unit tests for telemetry extraction and unit conversion 1eb0cd0
+    - [x] Write failing tests for `extractTelemetry` for every supported address (0xE2 speed/status, 0xE8 voltage/current, 0xEE phase currents, 0xF4 motor temp/SOC, 0xD6 MOSFET temp, 0xD0 wheel geometry, 0x12 max speed, 0x18 max line current, 0x0C battery calibration) and for unknown addresses returning null
+    - [x] Write failing tests for `UnitConverter` (kph/mph, temperature, `measureSpeedToKph`, `powerKw`, `batteryPercent`, `estimatedRangeKm`, formatting)
+    - [x] Implement/fix `PacketParser`/`UnitConverter` to make the tests pass (Green phase)
+    - [x] Run `make test` and confirm all telemetry tests pass
+- [x] Task: Conductor - User Manual Verification 'Telemetry Decoding Tests' (Protocol in workflow.md) [checkpoint: 1eb0cd0]
 
 ## Phase 6: Coverage Verification & Documentation
 
