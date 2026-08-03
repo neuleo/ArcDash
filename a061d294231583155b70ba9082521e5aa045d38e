@@ -1,0 +1,1 @@
+Task: T074 - Fehlerkatalog und Fehlerhistorie bauen\n- FaultCatalog mit deutschen Titeln, Beschreibungen, Schweregraden und Sicherheitshinweisen\n- FaultHistoryRepository mit bounded History und Occurrence/Resolution Events\n- Alle 4 Tests gruen (known faults, unknown codes, history recording, max limit)\n- 1 Testfix: safetyGuideline Wording angepasst
