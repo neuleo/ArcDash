@@ -21,7 +21,7 @@
     - [x] Fehlende, veraltete, ungültige und getrennte Daten eindeutig abbilden
     - [x] Tests erneut ausführen und den Green-Zustand bestätigen
 
-- [ ] Task: R-inspiriertes Querformat-Standardlayout testgetrieben definieren
+- [~] Task: R-inspiriertes Querformat-Standardlayout testgetrieben definieren
     - [ ] Tests für das neue Querformat-Standardlayout und das unveränderte unabhängige Hochformatlayout schreiben
     - [ ] Prüfen, dass Geschwindigkeit, Leistungsbogen, Akku, Reichweite, Temperaturen, Trip und Modus enthalten sind
     - [ ] Tests ausführen und das erwartete Fehlschlagen bestätigen
