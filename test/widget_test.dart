@@ -132,6 +132,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('primary shell remains usable at 200 percent text scale',
+      (tester) async {
+    tester.view.physicalSize = const Size(430, 900);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(),
+      ),
+    );
+
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('uses offline localization and glove-friendly controls',
       (tester) async {
     await tester.pumpWidget(

@@ -505,7 +505,8 @@ class _MetricView extends StatelessWidget {
             : const Color(0xFF54E39E)
         : Colors.white;
     return LayoutBuilder(builder: (context, constraints) {
-      final compact = constraints.maxHeight < 70;
+      final compact = constraints.maxHeight < 90 ||
+          MediaQuery.textScalerOf(context).scale(1) > 1.3;
       final labelWidget = Text(label.toUpperCase(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -735,19 +736,30 @@ class _PowerMeter extends StatelessWidget {
               Icon(regen ? Icons.battery_charging_full : Icons.bolt,
                   color: color, size: 18),
               const SizedBox(width: 8),
-              Text(
-                  AppStrings.of(context)
-                      .text(regen ? AppText.regeneration : AppText.power),
-                  style: TextStyle(
-                      color: color,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.5)),
-              const Spacer(),
-              Text(
-                  connected ? '${powerKw.abs().toStringAsFixed(1)} kW' : '– kW',
-                  style: const TextStyle(
-                      fontSize: 26, fontWeight: FontWeight.w900)),
+              Expanded(
+                child: Text(
+                    AppStrings.of(context)
+                        .text(regen ? AppText.regeneration : AppText.power),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: color,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5)),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                    connected
+                        ? '${powerKw.abs().toStringAsFixed(1)} kW'
+                        : '– kW',
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
+                    style: const TextStyle(
+                        fontSize: 26, fontWeight: FontWeight.w900)),
+              ),
             ],
           ),
           const SizedBox(height: 14),
