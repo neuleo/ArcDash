@@ -143,11 +143,11 @@ erhalten.
 - [x] **T076** Kernmodule auf mehr als 80 Prozent Coverage bringen (`f402a7b`) ([Details](./11-qualitaet-und-release.md#t076---kernmodule-auf-mehr-als-80-prozent-coverage-bringen))
 - [x] **T077** Widget-, Golden- und Accessibility-Tests ergaenzen (`b48faf6`) ([Details](./11-qualitaet-und-release.md#t077---widget--golden--und-accessibility-tests-ergaenzen))
 - [x] **T078** Kritische Flutter-Integrationstests erstellen (`d860695`) ([Details](./11-qualitaet-und-release.md#t078---kritische-flutter-integrationstests-erstellen))
-- [ ] **T079** Android-Instrumentationstests erstellen ([Details](./11-qualitaet-und-release.md#t079---android-instrumentationstests-erstellen))
-- [ ] **T080** Hardware-in-the-loop-Matrix durchfuehren ([Details](./11-qualitaet-und-release.md#t080---hardware-in-the-loop-matrix-durchfuehren))
-- [ ] **T081** Performance und Akkuverbrauch pruefen ([Details](./11-qualitaet-und-release.md#t081---performance-und-akkuverbrauch-pruefen))
-- [ ] **T082** Release-Sicherheit fertigstellen ([Details](./11-qualitaet-und-release.md#t082---release-sicherheit-fertigstellen))
-- [ ] **T083** CI und Version-1-Abnahme einrichten ([Details](./11-qualitaet-und-release.md#t083---ci-und-version-1-abnahme-einrichten))
+- [!] **T079** Android-Instrumentationstests erstellen (BLOCKIERT: Android-Emulator/Gerät für Ausführung fehlt) ([Details](./11-qualitaet-und-release.md#t079---android-instrumentationstests-erstellen))
+- [!] **T080** Hardware-in-the-loop-Matrix durchfuehren (BLOCKIERT: Reale Fardriver-Hardware & BLE-Verbindung fehlen) ([Details](./11-qualitaet-und-release.md#t080---hardware-in-the-loop-matrix-durchfuehren))
+- [!] **T081** Performance und Akkuverbrauch pruefen (BLOCKIERT: Reale Hardware & Profiling-Umgebung fehlen) ([Details](./11-qualitaet-und-release.md#t081---performance-und-akkuverbrauch-pruefen))
+- [x] **T082** Release-Sicherheit fertigstellen (`7a89b01`) ([Details](./11-qualitaet-und-release.md#t082---release-sicherheit-fertigstellen))
+- [x] **T083** CI und Version-1-Abnahme einrichten (`7a89b01`) ([Details](./11-qualitaet-und-release.md#t083---ci-und-version-1-abnahme-einrichten))
 
 ## Phase 11: Version 2 vorbereiten
 

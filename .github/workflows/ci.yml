@@ -1,0 +1,29 @@
+name: ArcDash CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cirrusci/flutter:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify code formatting
+        run: dart format --set-exit-if-changed lib test
+
+      - name: Run static code analysis
+        run: flutter analyze
+
+      - name: Run all Flutter unit and integration tests with coverage
+        run: flutter test --coverage
+
+      - name: Build Android APK (Debug)
+        run: flutter build apk --debug
