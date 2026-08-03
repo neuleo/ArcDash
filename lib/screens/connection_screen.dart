@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/widgets/connection_status_bar.dart';
+import 'package:arcdash/l10n/app_strings.dart';
 
 class ConnectionScreen extends ConsumerStatefulWidget {
   const ConnectionScreen({super.key});
@@ -39,7 +40,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     if (adapterState != BluetoothAdapterState.on) {
       if (mounted) {
         setState(() => _isScanning = false);
-        _showError('Bluetooth ist ausgeschaltet. Bitte aktiviere Bluetooth.');
+        _showError(AppStrings.of(context).text(AppText.bluetoothOff));
       }
       return;
     }
@@ -57,7 +58,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
       if (success) {
         Navigator.of(context).pushReplacementNamed('/dashboard');
       } else {
-        _showError('Verbindung fehlgeschlagen. Ist der Dongle eingeschaltet?');
+        _showError(AppStrings.of(context).text(AppText.connectionFailed));
       }
     }
   }
@@ -120,7 +121,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                         ),
                       ),
                       Text(
-                        'CONTROLLER VERBINDEN',
+                        AppStrings.of(context).text(AppText.controllerConnect),
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.4),
                           fontSize: 12,
@@ -141,9 +142,9 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
               // Scan controls
               Row(
                 children: [
-                  const Text(
-                    'NEARBY DONGLES',
-                    style: TextStyle(
+                  Text(
+                    AppStrings.of(context).text(AppText.nearbyDongles),
+                    style: const TextStyle(
                       color: Color(0xFF4A5568),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -163,7 +164,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                             ),
                           )
                         : const Icon(Icons.refresh, size: 16),
-                    label: Text(_isScanning ? 'Suche läuft...' : 'Suchen'),
+                    label: Text(AppStrings.of(context).text(
+                        _isScanning ? AppText.searching : AppText.search)),
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF00E5FF),
                       textStyle: const TextStyle(
@@ -345,7 +347,8 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            isScanning ? 'Dongles werden gesucht...' : 'Keine Dongles gefunden',
+            AppStrings.of(context).text(
+                isScanning ? AppText.searchingDongles : AppText.noDongles),
             style: const TextStyle(
               color: Color(0xFF4A5568),
               fontSize: 15,
@@ -356,7 +359,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             isScanning
                 ? 'Make sure your bike is on and\nthe dongle is connected'
-                : 'Tippe auf Suchen, um es erneut zu versuchen',
+                : AppStrings.of(context).text(AppText.searchAgain),
             style: const TextStyle(
               color: Color(0xFF2A3548),
               fontSize: 13,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/l10n/app_strings.dart';
 
 final _useMphProvider = StateProvider<bool>((ref) {
   return ref.read(storageServiceProvider).useMph;
@@ -15,17 +16,19 @@ class SettingsScreen extends ConsumerWidget {
     final useMph = ref.watch(_useMphProvider);
     final connected = ref.watch(isConnectedProvider);
     final storage = ref.read(storageServiceProvider);
+    final strings = AppStrings.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('EINSTELLUNGEN')),
+      appBar: AppBar(title: Text(strings.text(AppText.settings).toUpperCase())),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
-            const _SectionTitle('ANZEIGE'),
+            _SectionTitle(strings.text(AppText.display)),
             SwitchListTile(
-              title: const Text('Imperiale Einheiten'),
-              subtitle: Text(useMph ? 'mph und mi' : 'km/h und km'),
+              title: Text(strings.text(AppText.imperialUnits)),
+              subtitle:
+                  Text(useMph ? 'mph / mi' : strings.text(AppText.metricUnits)),
               secondary: const Icon(Icons.straighten),
               value: useMph,
               onChanged: (value) {
@@ -34,79 +37,76 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 20),
-            const _SectionTitle('VERBINDUNG'),
+            _SectionTitle(strings.text(AppText.connection)),
             ListTile(
               leading: Icon(Icons.bluetooth,
                   color: connected
                       ? const Color(0xFF54E39E)
                       : const Color(0xFFFFB45C)),
-              title:
-                  Text(connected ? 'Controller verbunden' : 'Nicht verbunden'),
+              title: Text(connected
+                  ? strings.text(AppText.controllerConnected)
+                  : strings.text(AppText.notConnected)),
               subtitle: Text(connected
-                  ? 'Live-Telemetrie ist aktiv'
-                  : 'Controller auswählen oder erneut verbinden'),
+                  ? strings.text(AppText.telemetryActive)
+                  : strings.text(AppText.selectController)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).pushNamed('/'),
             ),
             if (connected)
               ListTile(
                 leading: const Icon(Icons.link_off),
-                title: const Text('Verbindung trennen'),
+                title: Text(strings.text(AppText.disconnectAction)),
                 onTap: () => ref.read(bluetoothServiceProvider).disconnect(),
               ),
             const SizedBox(height: 20),
-            const _SectionTitle('DATENVERWALTUNG'),
+            _SectionTitle(strings.text(AppText.dataManagement)),
             ListTile(
               leading: const Icon(Icons.dashboard_customize_outlined),
-              title: const Text('Dashboard zurücksetzen'),
-              subtitle: const Text('Hoch- und Querformat auf Standard setzen'),
+              title: Text(strings.text(AppText.resetDashboard)),
+              subtitle: Text(strings.text(AppText.resetDashboardHint)),
               onTap: () => _confirm(
                 context,
-                title: 'Dashboard zurücksetzen?',
-                message: 'Deine angepassten Dashboard-Layouts werden entfernt.',
+                title: strings.text(AppText.resetDashboardQuestion),
+                message: strings.text(AppText.resetDashboardMessage),
                 action: storage.resetDashboardLayout,
               ),
             ),
             ListTile(
               leading: const Icon(Icons.route_outlined),
-              title: const Text('Fahrten löschen'),
-              subtitle: const Text('Gespeicherte Sessionhistorie entfernen'),
+              title: Text(strings.text(AppText.deleteRides)),
+              subtitle: Text(strings.text(AppText.deleteRidesHint)),
               onTap: () => _confirm(
                 context,
-                title: 'Alle Fahrten löschen?',
-                message: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+                title: strings.text(AppText.deleteRidesQuestion),
+                message: strings.text(AppText.irreversible),
                 action: storage.clearRideSessions,
               ),
             ),
             ListTile(
               leading: const Icon(Icons.layers_clear_outlined),
-              title: const Text('Lokale Profile löschen'),
-              subtitle: const Text('Controllerdaten werden nicht verändert'),
+              title: Text(strings.text(AppText.deleteProfiles)),
+              subtitle: Text(strings.text(AppText.deleteProfilesHint)),
               onTap: () => _confirm(
                 context,
-                title: 'Lokale Profile löschen?',
-                message:
-                    'Es werden nur lokal gespeicherte Profildateien entfernt.',
+                title: strings.text(AppText.deleteProfilesQuestion),
+                message: strings.text(AppText.deleteProfilesMessage),
                 action: storage.clearProfiles,
               ),
             ),
             const SizedBox(height: 20),
-            const _SectionTitle('SICHERHEIT'),
-            const ListTile(
-              leading:
-                  Icon(Icons.visibility_outlined, color: Color(0xFF54E39E)),
-              title: Text('Read-only-Modus aktiv'),
-              subtitle: Text(
-                'Diese Version liest Telemetrie und Diagnosedaten. Parameteränderungen und Restore sind deaktiviert.',
-              ),
+            _SectionTitle(strings.text(AppText.safety)),
+            ListTile(
+              leading: const Icon(Icons.visibility_outlined,
+                  color: Color(0xFF54E39E)),
+              title: Text(strings.text(AppText.readOnlyActive)),
+              subtitle: Text(strings.text(AppText.readOnlyDescription)),
             ),
             const SizedBox(height: 20),
-            const _SectionTitle('ÜBER ARCDASH'),
-            const ListTile(
-              leading: Icon(Icons.electric_bike_outlined),
-              title: Text('ArcDash 1.0.0 Read-only'),
-              subtitle: Text(
-                  'Lokales FarDriver-Cockpit ohne Cloud oder laufende Kosten'),
+            _SectionTitle(strings.text(AppText.about)),
+            ListTile(
+              leading: const Icon(Icons.electric_bike_outlined),
+              title: const Text('ArcDash 1.0.0 Read-only'),
+              subtitle: Text(strings.text(AppText.appDescription)),
             ),
           ],
         ),
@@ -128,18 +128,18 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Abbrechen')),
+              child: Text(AppStrings.of(context).text(AppText.cancel))),
           FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Zurücksetzen')),
+              child: Text(AppStrings.of(context).text(AppText.reset))),
         ],
       ),
     );
     if (confirmed != true) return;
     await action();
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Daten wurden zurückgesetzt.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppStrings.of(context).text(AppText.dataReset))));
     }
   }
 }

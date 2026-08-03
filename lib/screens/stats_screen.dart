@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:arcdash/providers/stats_provider.dart';
+import 'package:arcdash/l10n/app_strings.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -11,15 +12,16 @@ class StatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statsState = ref.watch(statsProvider);
     final session = statsState.currentSession;
+    final strings = AppStrings.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFF080B0E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D1117),
         foregroundColor: Colors.white,
-        title: const Text(
-          'STATS',
-          style: TextStyle(
+        title: Text(
+          strings.text(AppText.stats),
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
             letterSpacing: 3,
@@ -38,7 +40,7 @@ class StatsScreen extends ConsumerWidget {
                 if (path != null && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Exported to $path'),
+                      content: Text('${strings.text(AppText.exported)} $path'),
                       backgroundColor: const Color(0xFF1A2030),
                     ),
                   );
@@ -58,7 +60,7 @@ class StatsScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (session != null) ...[
-                const _SectionHeader(title: 'CURRENT SESSION'),
+                _SectionHeader(title: strings.text(AppText.currentSession)),
                 const SizedBox(height: 12),
                 _SessionSummaryCards(
                   distanceMi: session.distanceKm * 0.621371,
@@ -70,7 +72,7 @@ class StatsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
                 if (session.speedHistory.isNotEmpty) ...[
-                  const _SectionHeader(title: 'SPEED HISTORY'),
+                  _SectionHeader(title: strings.text(AppText.speedHistory)),
                   const SizedBox(height: 12),
                   _SpeedChart(
                     samples: session.speedHistory
@@ -85,7 +87,7 @@ class StatsScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
               ],
               if (statsState.pastSessions.isNotEmpty) ...[
-                const _SectionHeader(title: 'PAST SESSIONS'),
+                _SectionHeader(title: strings.text(AppText.pastSessions)),
                 const SizedBox(height: 12),
                 for (final json in statsState.pastSessions.reversed)
                   _PastSessionCard(json: json),
@@ -125,6 +127,7 @@ class _SessionSummaryCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -134,37 +137,37 @@ class _SessionSummaryCards extends StatelessWidget {
       childAspectRatio: 1.5,
       children: [
         _StatCard(
-          label: 'DISTANCE',
+          label: strings.text(AppText.distance),
           value: distanceMi.toStringAsFixed(2),
           unit: 'mi',
           color: const Color(0xFF00E5FF),
         ),
         _StatCard(
-          label: 'RIDE TIME',
+          label: strings.text(AppText.rideTime),
           value: _formatDuration(durationSeconds),
           unit: '',
           color: const Color(0xFF39FF14),
         ),
         _StatCard(
-          label: 'AVG SPEED',
+          label: strings.text(AppText.averageSpeed),
           value: avgSpeedMph.toStringAsFixed(1),
           unit: 'mph',
           color: const Color(0xFFFF9800),
         ),
         _StatCard(
-          label: 'TOP SPEED',
+          label: strings.text(AppText.topSpeed),
           value: maxSpeedMph.toStringAsFixed(1),
           unit: 'mph',
           color: const Color(0xFF00E5FF),
         ),
         _StatCard(
-          label: 'ENERGY USED',
+          label: strings.text(AppText.energyUsed),
           value: totalWhUsed.toStringAsFixed(0),
           unit: 'Wh',
           color: const Color(0xFF39FF14),
         ),
         _StatCard(
-          label: 'EFFICIENCY',
+          label: strings.text(AppText.efficiency),
           value: distanceMi > 0
               ? (totalWhUsed / distanceMi).toStringAsFixed(1)
               : '--',
@@ -408,13 +411,13 @@ class _EmptySession extends StatelessWidget {
           const SizedBox(height: 40),
           const Icon(Icons.timeline, size: 48, color: Color(0xFF2A3548)),
           const SizedBox(height: 16),
-          const Text(
-            'No active session',
-            style: TextStyle(color: Color(0xFF4A5568), fontSize: 15),
+          Text(
+            AppStrings.of(context).text(AppText.noActiveSession),
+            style: const TextStyle(color: Color(0xFF4A5568), fontSize: 15),
           ),
           const SizedBox(height: 8),
           Text(
-            'Connect to the controller to start tracking',
+            AppStrings.of(context).text(AppText.connectToTrack),
             style:
                 TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 13),
           ),

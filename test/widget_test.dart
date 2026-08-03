@@ -42,7 +42,7 @@ void main() {
     await tester.tap(find.text('Fahrten'));
     await tester.pumpAndSettle();
 
-    expect(find.text('STATS'), findsOneWidget);
+    expect(find.text('FAHRTEN'), findsOneWidget);
     expect(find.text('Cockpit'), findsOneWidget);
     expect(find.text('Einstellungen'), findsOneWidget);
   });
@@ -62,6 +62,16 @@ void main() {
     expect(find.text('Rides'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('CONNECT'), findsOneWidget);
+
+    await tester.tap(find.text('CONNECT'));
+    await tester.pumpAndSettle();
+    expect(find.text('CONNECT CONTROLLER'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Imperial units'), findsOneWidget);
   });
 
   testWidgets('dashboard exposes an explicit layout editor', (tester) async {
