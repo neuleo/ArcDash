@@ -151,8 +151,8 @@ erhalten.
 
 ## Phase 11: Version 2 vorbereiten
 
-- [ ] **T084** Navigation hinter stabilen Schnittstellen vorbereiten ([Details](./12-version-2-vorbereitung.md#t084---navigation-hinter-stabilen-schnittstellen-vorbereiten))
-- [ ] **T085** Version-2-Backlog konkretisieren ([Details](./12-version-2-vorbereitung.md#t085---version-2-backlog-konkretisieren))
+- [x] **T084** Navigation hinter stabilen Schnittstellen vorbereiten (`128c0e5`) ([Details](./12-version-2-vorbereitung.md#t084---navigation-hinter-stabilen-schnittstellen-vorbereiten))
+- [x] **T085** Version-2-Backlog konkretisieren (`f62c15b`) ([Details](./12-version-2-vorbereitung.md#t085---version-2-backlog-konkretisieren))
 
 ## Phasen-Gates
 
