@@ -47,6 +47,23 @@ void main() {
     expect(find.text('Einstellungen'), findsOneWidget);
   });
 
+  testWidgets('app shell supports optional English localization',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(locale: Locale('en')),
+      ),
+    );
+
+    expect(find.text('Rides'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('CONNECT'), findsOneWidget);
+  });
+
   testWidgets('dashboard exposes an explicit layout editor', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -78,7 +95,7 @@ void main() {
       ),
     );
 
-    expect(find.text('RIDE COMPUTER'), findsOneWidget);
+    expect(find.text('FAHR-COMPUTER'), findsOneWidget);
     expect(find.byKey(const Key('speed-dial')), findsOneWidget);
     expect(find.text('Cockpit'), findsOneWidget);
     expect(tester.takeException(), isNull);

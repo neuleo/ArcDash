@@ -7,6 +7,7 @@ import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/models/dashboard_layout.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/l10n/app_strings.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -189,6 +190,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final state = ref.watch(controllerProvider);
     final connected = ref.watch(isConnectedProvider);
     final orientation = _activeOrientation;
@@ -197,12 +199,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF050608),
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('ARCDASH'),
-            Text('RIDE COMPUTER',
-                style: TextStyle(
+            Text(strings.text(AppText.rideComputer),
+                style: const TextStyle(
                     fontSize: 9, letterSpacing: 1.8, color: Colors.white38)),
           ],
         ),
@@ -212,8 +214,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             onTap: () => Navigator.of(context).pushNamed('/'),
           ),
           IconButton(
-            tooltip:
-                _editing ? 'Bearbeitung schließen' : 'Dashboard bearbeiten',
+            tooltip: strings
+                .text(_editing ? AppText.closeEditor : AppText.editDashboard),
             onPressed: () => setState(() {
               _editing = !_editing;
               _editingOrientation = orientation;
@@ -260,7 +262,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           shrinkWrap: true,
           children: DashboardMetric.values
               .map((metric) => ListTile(
-                    title: Text(_metricLabel(metric)),
+                    title: Text(AppStrings.of(context).metric(metric.name)),
                     leading: const Icon(Icons.add),
                     onTap: () => Navigator.pop(context, metric),
                   ))
@@ -294,26 +296,29 @@ class _EditorBar extends StatelessWidget {
         child: Row(
           children: [
             SegmentedButton<DashboardOrientation>(
-              segments: const [
+              segments: [
                 ButtonSegment(
-                    value: DashboardOrientation.portrait, label: Text('Hoch')),
+                    value: DashboardOrientation.portrait,
+                    label: Text(AppStrings.of(context).text(AppText.portrait))),
                 ButtonSegment(
-                    value: DashboardOrientation.landscape, label: Text('Quer')),
+                    value: DashboardOrientation.landscape,
+                    label:
+                        Text(AppStrings.of(context).text(AppText.landscape))),
               ],
               selected: {orientation},
               onSelectionChanged: (value) => onOrientationChanged(value.single),
             ),
             const Spacer(),
             IconButton(
-                tooltip: 'Wert hinzufügen',
+                tooltip: AppStrings.of(context).text(AppText.addValue),
                 onPressed: onAdd,
                 icon: const Icon(Icons.add_box_outlined)),
             IconButton(
-                tooltip: 'Ausrichtung kopieren',
+                tooltip: AppStrings.of(context).text(AppText.copyOrientation),
                 onPressed: onCopy,
                 icon: const Icon(Icons.copy)),
             IconButton(
-                tooltip: 'Standardlayout',
+                tooltip: AppStrings.of(context).text(AppText.defaultLayout),
                 onPressed: onReset,
                 icon: const Icon(Icons.restart_alt)),
           ],
@@ -429,7 +434,8 @@ class _TileFrame extends StatelessWidget {
                 right: 2,
                 top: 2,
                 child: PopupMenuButton<_TileCommand>(
-                  tooltip: '${_metricLabel(tile.metric)} bearbeiten',
+                  tooltip:
+                      '${AppStrings.of(context).metric(tile.metric.name)} ${AppStrings.of(context).text(AppText.editDashboard)}',
                   onSelected: (command) => switch (command) {
                     _TileCommand.left => onMoveLeft(),
                     _TileCommand.right => onMoveRight(),
@@ -438,20 +444,31 @@ class _TileFrame extends StatelessWidget {
                     _TileCommand.resize => onResize(),
                     _TileCommand.remove => onRemove(),
                   },
-                  itemBuilder: (context) => const [
+                  itemBuilder: (context) => [
                     PopupMenuItem(
-                        value: _TileCommand.left, child: Text('Nach links')),
+                        value: _TileCommand.left,
+                        child: Text(
+                            AppStrings.of(context).text(AppText.moveLeft))),
                     PopupMenuItem(
-                        value: _TileCommand.right, child: Text('Nach rechts')),
+                        value: _TileCommand.right,
+                        child: Text(
+                            AppStrings.of(context).text(AppText.moveRight))),
                     PopupMenuItem(
-                        value: _TileCommand.up, child: Text('Nach oben')),
+                        value: _TileCommand.up,
+                        child:
+                            Text(AppStrings.of(context).text(AppText.moveUp))),
                     PopupMenuItem(
-                        value: _TileCommand.down, child: Text('Nach unten')),
+                        value: _TileCommand.down,
+                        child: Text(
+                            AppStrings.of(context).text(AppText.moveDown))),
                     PopupMenuItem(
                         value: _TileCommand.resize,
-                        child: Text('Größe ändern')),
+                        child:
+                            Text(AppStrings.of(context).text(AppText.resize))),
                     PopupMenuItem(
-                        value: _TileCommand.remove, child: Text('Entfernen')),
+                        value: _TileCommand.remove,
+                        child:
+                            Text(AppStrings.of(context).text(AppText.remove))),
                   ],
                   icon: const Icon(Icons.more_vert),
                 ),
@@ -473,8 +490,9 @@ class _MetricView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reading = _reading(tile.metric);
-    final label = _metricLabel(tile.metric);
+    final reading = _reading(context, tile.metric);
+    final strings = AppStrings.of(context);
+    final label = strings.metric(tile.metric.name);
     if (tile.metric == DashboardMetric.speed) {
       return _SpeedDial(speedKph: state.speedKph, connected: connected);
     }
@@ -520,7 +538,7 @@ class _MetricView extends StatelessWidget {
     });
   }
 
-  String _reading(DashboardMetric metric) {
+  String _reading(BuildContext context, DashboardMetric metric) {
     if (!connected && metric != DashboardMetric.connection) return '—';
     return switch (metric) {
       DashboardMetric.speed => '${state.speedKph.toStringAsFixed(0)} km/h',
@@ -535,8 +553,12 @@ class _MetricView extends StatelessWidget {
         '${state.motorTempC.toStringAsFixed(0)} °C',
       DashboardMetric.controllerTemperature =>
         '${state.controllerTempC.toStringAsFixed(0)} °C',
-      DashboardMetric.errors => state.hasAnyFault ? 'Fehler' : 'Keine Fehler',
-      DashboardMetric.connection => connected ? 'Verbunden' : 'Getrennt',
+      DashboardMetric.errors => state.hasAnyFault
+          ? AppStrings.of(context).text(AppText.error)
+          : AppStrings.of(context).text(AppText.noErrors),
+      DashboardMetric.connection => connected
+          ? AppStrings.of(context).text(AppText.connected)
+          : AppStrings.of(context).text(AppText.disconnected),
     };
   }
 }
@@ -566,7 +588,9 @@ class _ConnectionPill extends StatelessWidget {
                           ? const Color(0xFF54E39E)
                           : const Color(0xFFFFB45C)),
                   const SizedBox(width: 6),
-                  Text(connected ? 'LIVE' : 'VERBINDEN',
+                  Text(
+                      AppStrings.of(context)
+                          .text(connected ? AppText.live : AppText.connect),
                       style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -617,7 +641,9 @@ class _SpeedDial extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           letterSpacing: 2)),
                   const SizedBox(height: 8),
-                  Text(connected ? 'CONTROLLER' : 'KEINE DATEN',
+                  Text(
+                      AppStrings.of(context).text(
+                          connected ? AppText.controller : AppText.noData),
                       style: TextStyle(
                           color: connected
                               ? const Color(0xFF00E5FF)
@@ -709,7 +735,9 @@ class _PowerMeter extends StatelessWidget {
               Icon(regen ? Icons.battery_charging_full : Icons.bolt,
                   color: color, size: 18),
               const SizedBox(width: 8),
-              Text(regen ? 'REKUPERATION' : 'LEISTUNG',
+              Text(
+                  AppStrings.of(context)
+                      .text(regen ? AppText.regeneration : AppText.power),
                   style: TextStyle(
                       color: color,
                       fontSize: 11,
@@ -736,18 +764,3 @@ class _PowerMeter extends StatelessWidget {
     );
   }
 }
-
-String _metricLabel(DashboardMetric metric) => switch (metric) {
-      DashboardMetric.speed => 'Geschwindigkeit',
-      DashboardMetric.power => 'Leistung',
-      DashboardMetric.voltage => 'Spannung',
-      DashboardMetric.current => 'Strom',
-      DashboardMetric.soc => 'Batterie',
-      DashboardMetric.range => 'Reichweite',
-      DashboardMetric.profile => 'Profil',
-      DashboardMetric.gear => 'Gang',
-      DashboardMetric.motorTemperature => 'Motortemperatur',
-      DashboardMetric.controllerTemperature => 'Controllertemperatur',
-      DashboardMetric.errors => 'Fehler',
-      DashboardMetric.connection => 'Verbindung',
-    };

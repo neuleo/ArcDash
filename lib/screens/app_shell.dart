@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
 import 'package:arcdash/screens/settings_screen.dart';
 import 'package:arcdash/screens/stats_screen.dart';
+import 'package:arcdash/l10n/app_strings.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -13,13 +14,6 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
-  static const _destinations = [
-    NavigationDestination(icon: Icon(Icons.speed), label: 'Cockpit'),
-    NavigationDestination(icon: Icon(Icons.route_outlined), label: 'Fahrten'),
-    NavigationDestination(
-        icon: Icon(Icons.settings_outlined), label: 'Einstellungen'),
-  ];
-
   static const _screens = [
     DashboardScreen(),
     StatsScreen(),
@@ -29,6 +23,18 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
+          final strings = AppStrings.of(context);
+          final destinations = [
+            NavigationDestination(
+                icon: const Icon(Icons.speed),
+                label: strings.text(AppText.cockpit)),
+            NavigationDestination(
+                icon: const Icon(Icons.route_outlined),
+                label: strings.text(AppText.rides)),
+            NavigationDestination(
+                icon: const Icon(Icons.settings_outlined),
+                label: strings.text(AppText.settings)),
+          ];
           final useRail = constraints.maxWidth >= 700;
           final content = IndexedStack(
             index: _selectedIndex,
@@ -43,7 +49,7 @@ class _AppShellState extends State<AppShell> {
                       selectedIndex: _selectedIndex,
                       onDestinationSelected: _select,
                       labelType: NavigationRailLabelType.all,
-                      destinations: _destinations
+                      destinations: destinations
                           .map((destination) => NavigationRailDestination(
                                 icon: destination.icon,
                                 selectedIcon: destination.selectedIcon,
@@ -63,7 +69,7 @@ class _AppShellState extends State<AppShell> {
             bottomNavigationBar: NavigationBar(
               selectedIndex: _selectedIndex,
               onDestinationSelected: _select,
-              destinations: _destinations,
+              destinations: destinations,
             ),
           );
         },

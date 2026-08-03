@@ -7,9 +7,12 @@ import 'package:arcdash/screens/connection_screen.dart';
 import 'package:arcdash/screens/app_shell.dart';
 import 'package:arcdash/screens/debug_screen.dart';
 import 'package:arcdash/providers/stats_provider.dart';
+import 'package:arcdash/l10n/app_strings.dart';
 
 class ArcDashApp extends ConsumerWidget {
-  const ArcDashApp({super.key});
+  final Locale? locale;
+
+  const ArcDashApp({super.key, this.locale});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,9 +31,12 @@ class ArcDashApp extends ConsumerWidget {
       title: 'ArcDash',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
-      locale: const Locale('de'),
-      supportedLocales: const [Locale('de'), Locale('en')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      locale: locale ?? const Locale('de'),
+      supportedLocales: AppStrings.supportedLocales,
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        ...GlobalMaterialLocalizations.delegates,
+      ],
       initialRoute: '/dashboard',
       routes: {
         '/': (_) => const ConnectionScreen(),
