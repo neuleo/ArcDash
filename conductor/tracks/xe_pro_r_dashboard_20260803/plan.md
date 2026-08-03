@@ -2,14 +2,14 @@
 
 ## Phase 1: Dashboard-Datenmodell und Layoutvertrag
 
-- [ ] Task: Dashboard-Modell testgetrieben für frei wählbare Darstellungsarten erweitern
-    - [ ] Fehlende Model-Tests für die unabhängige Auswahl von Telemetriegröße und Darstellungsart schreiben
-    - [ ] Tests ausführen und das erwartete Fehlschlagen bestätigen
-    - [ ] Unterstützte Darstellungsarten für Bogen, Balken, Kreis und reine Information modellieren
-    - [ ] Kompatible Kombinationen aus Telemetriegröße und Darstellung definieren und validieren
-    - [ ] Mindestgrößen und Größenbeschränkungen pro Darstellungsart festlegen
-    - [ ] Tests erneut ausführen und den Green-Zustand bestätigen
-    - [ ] Model-Code refaktorieren und relevante Tests erneut ausführen
+- [x] 6283833 Task: Dashboard-Modell testgetrieben für frei wählbare Darstellungsarten erweitern
+    - [x] Fehlende Model-Tests für die unabhängige Auswahl von Telemetriegröße und Darstellungsart schreiben
+    - [x] Tests ausführen und das erwartete Fehlschlagen bestätigen
+    - [x] Unterstützte Darstellungsarten für Bogen, Balken, Kreis und reine Information modellieren
+    - [x] Kompatible Kombinationen aus Telemetriegröße und Darstellung definieren und validieren
+    - [x] Mindestgrößen und Größenbeschränkungen pro Darstellungsart festlegen
+    - [x] Tests erneut ausführen und den Green-Zustand bestätigen
+    - [x] Model-Code refaktorieren und relevante Tests erneut ausführen
 
 - [ ] Task: Trip-Distanz und Dashboard-Telemetrie testgetrieben anbinden
     - [ ] Tests für Trip-Distanz, fehlende Session-Daten und Datenqualität schreiben
