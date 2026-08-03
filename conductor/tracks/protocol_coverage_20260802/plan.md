@@ -17,11 +17,11 @@ All commands run inside the Docker container (`make test`, `make codegen`, etc.)
 
 ## Phase 2: CRC Calculator Tests
 
-- [ ] Task: Unit tests for CRC calculation and verification
-    - [ ] Write failing tests for `CrcCalculator.computeCRC` and `CrcCalculator.verifyCRC` against known-good reference vectors (start values a=0x3C, b=0x7F) from the FarDriver protocol reference
-    - [ ] Implement/fix `CrcCalculator` to make the tests pass (Green phase)
-    - [ ] Run `make test` and confirm all CRC tests pass
-- [ ] Task: Conductor - User Manual Verification 'CRC Calculator Tests' (Protocol in workflow.md)
+- [x] Task: Unit tests for CRC calculation and verification 20b74e2
+    - [x] Write failing tests for `CrcCalculator.computeCRC` and `CrcCalculator.verifyCRC` against known-good reference vectors (start values a=0x3C, b=0x7F) from the FarDriver protocol reference
+    - [x] Implement/fix `CrcCalculator` to make the tests pass (Green phase)
+    - [x] Run `make test` and confirm all CRC tests pass
+- [x] Task: Conductor - User Manual Verification 'CRC Calculator Tests' (Protocol in workflow.md) [checkpoint: 20b74e2]
 
 ## Phase 3: Packet Building Tests (ProtocolService)
 
