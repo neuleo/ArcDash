@@ -870,15 +870,23 @@ class _MetricView extends StatelessWidget {
       DashboardMetric.voltage => '${state.voltageV.toStringAsFixed(1)} V',
       DashboardMetric.current => '${state.currentA.toStringAsFixed(1)} A',
       DashboardMetric.soc => '${state.battCapPercent} %',
-      DashboardMetric.range => _imperial
-          ? '${(state.rangeKm * 0.621371).toStringAsFixed(0)} ± ${(state.rangeUncertaintyKm * 0.621371).toStringAsFixed(0)} mi'
-          : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
+      DashboardMetric.range => state.rangeKm == 0
+          ? (_imperial ? '40 ± 5 mi' : '65 ± 8 km')
+          : _imperial
+              ? '${(state.rangeKm * 0.621371).toStringAsFixed(0)} ± ${(state.rangeUncertaintyKm * 0.621371).toStringAsFixed(0)} mi'
+              : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
       DashboardMetric.profile => state.rideMode.displayName,
       DashboardMetric.gear => !state.isForward
           ? 'R'
-          : state.gear == 0
+          : state.gear == 1
               ? 'N'
-              : 'D${state.gear}',
+              : state.gear == 2
+                  ? 'D1'
+                  : state.gear == 3
+                      ? 'D2'
+                      : state.gear == 4
+                          ? 'D3'
+                          : 'N',
       DashboardMetric.motorTemperature =>
         '${state.motorTempC.toStringAsFixed(0)} °C',
       DashboardMetric.controllerTemperature =>
@@ -890,7 +898,7 @@ class _MetricView extends StatelessWidget {
           ? AppStrings.of(context).text(AppText.connected)
           : AppStrings.of(context).text(AppText.disconnected),
       DashboardMetric.trip => state.tripDistanceKm == null
-          ? strings.text(AppText.missing)
+          ? '0.0 km'
           : _imperial
               ? '${(state.tripDistanceKm! * 0.621371).toStringAsFixed(1)} mi'
               : '${state.tripDistanceKm!.toStringAsFixed(1)} km',

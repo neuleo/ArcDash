@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' hide BluetoothService;
 import 'package:arcdash/services/ble_transport.dart';
+import 'package:arcdash/services/diagnostic_log.dart';
+import 'package:arcdash/utils/packet_parser.dart';
 
 // BLE UART service/characteristic UUIDs for HM-10/HC-08 style dongles
 const _uartServiceUuid = '0000ffe0-0000-1000-8000-00805f9b34fb';
@@ -35,12 +37,16 @@ class DiscoveredDongle {
 }
 
 class DongleService implements BleTransport {
+  final DiagnosticLog? diagnostics;
+
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _writeChar;
   bool _writeWithoutResponse = true;
   StreamSubscription? _notifySubscription;
   StreamSubscription? _deviceStateSubscription;
   StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
+
+  DongleService({this.diagnostics});
 
   final _connectionStateController =
       StreamController<DongleConnectionState>.broadcast();
@@ -78,6 +84,10 @@ class DongleService implements BleTransport {
   Future<void> startScan(
       {Duration timeout = const Duration(seconds: 10)}) async {
     _setState(DongleConnectionState.scanning);
+    diagnostics?.add(DiagnosticEventType.scan, details: {
+      'status': 'started',
+      'timeoutSeconds': timeout.inSeconds,
+    });
     final results = <String, DiscoveredDongle>{};
 
     try {
@@ -94,11 +104,22 @@ class DongleService implements BleTransport {
                   ? advName
                   : 'Unbenanntes BLE Gerät ($remoteId)');
 
+          final isNew = !results.containsKey(remoteId);
           results[remoteId] = DiscoveredDongle(
             device: r.device,
             name: displayName,
             rssi: r.rssi,
           );
+          if (isNew) {
+            diagnostics?.add(DiagnosticEventType.scan, details: {
+              'deviceFound': displayName,
+              'remoteId': remoteId,
+              'rssi': r.rssi,
+              'serviceUuids': r.advertisementData.serviceUuids
+                  .map((u) => u.toString())
+                  .toList(),
+            });
+          }
           _scanResultsController.add(results.values.toList());
         }
       });
@@ -112,6 +133,10 @@ class DongleService implements BleTransport {
       await sub.cancel();
     } finally {
       await FlutterBluePlus.stopScan();
+      diagnostics?.add(DiagnosticEventType.scan, details: {
+        'status': 'stopped',
+        'totalDiscovered': results.length,
+      });
       if (_state == DongleConnectionState.scanning) {
         _setState(DongleConnectionState.idle);
       }
@@ -128,6 +153,12 @@ class DongleService implements BleTransport {
   /// Connects to a discovered dongle and subscribes to UART notify characteristic.
   Future<bool> connect(DiscoveredDongle dongle) async {
     _setState(DongleConnectionState.connecting);
+    diagnostics?.add(DiagnosticEventType.connect, details: {
+      'status': 'connecting',
+      'name': dongle.name,
+      'remoteId': dongle.device.remoteId.str,
+      'rssi': dongle.rssi,
+    });
     try {
       await dongle.device.connect(
         timeout: const Duration(seconds: 15),
@@ -149,18 +180,57 @@ class DongleService implements BleTransport {
 
       // Discover services
       final services = await dongle.device.discoverServices();
+      final serviceSummary = services.map((svc) {
+        final s = svc as dynamic;
+        final chars = (s.characteristics as List).map((c) {
+          final char = c as dynamic;
+          final p = char.properties;
+          final props = [
+            if (p.read) 'read',
+            if (p.write) 'write',
+            if (p.writeWithoutResponse) 'writeWithoutResponse',
+            if (p.notify) 'notify',
+            if (p.indicate) 'indicate',
+          ].join(',');
+          return '${char.uuid} [$props]';
+        }).toList();
+        return {'uuid': s.uuid.toString(), 'characteristics': chars};
+      }).toList();
+
+      diagnostics?.add(DiagnosticEventType.connect, details: {
+        'status': 'services_discovered',
+        'device': dongle.device.remoteId.str,
+        'services': serviceSummary,
+      });
 
       bool found = await _setupUartService(services);
 
       if (!found) {
+        diagnostics?.add(DiagnosticEventType.connect, details: {
+          'status': 'uart_setup_failed',
+          'device': dongle.device.remoteId.str,
+          'reason': 'No matching UART characteristic found',
+        });
         await disconnect();
         _setState(DongleConnectionState.error);
         return false;
       }
 
+      diagnostics?.add(DiagnosticEventType.connect, details: {
+        'status': 'connected',
+        'name': dongle.name,
+        'remoteId': dongle.device.remoteId.str,
+      });
+
       _setState(DongleConnectionState.connected);
       return true;
     } catch (e) {
+      diagnostics?.add(DiagnosticEventType.connect, details: {
+        'status': 'connect_error',
+        'name': dongle.name,
+        'remoteId': dongle.device.remoteId.str,
+        'error': e.toString(),
+      });
       await disconnect();
       _setState(DongleConnectionState.error);
       return false;
@@ -209,11 +279,31 @@ class DongleService implements BleTransport {
         _writeChar = writeChar;
         _writeWithoutResponse = canWriteWithoutResponse;
 
-        await notifyChar.setNotifyValue(true);
+        try {
+          await notifyChar.setNotifyValue(true);
+        } catch (e) {
+          diagnostics?.add(DiagnosticEventType.connect, details: {
+            'status': 'notify_setup_exception',
+            'uuid': notifyChar.uuid.toString(),
+            'error': e.toString(),
+          });
+        }
         _notifySubscription = notifyChar.onValueReceived.listen((data) {
           if (data.isNotEmpty) {
             _rawDataController.add(List<int>.from(data));
+            diagnostics?.add(DiagnosticEventType.frame, details: {
+              'action': 'raw_ble_received',
+              'length': data.length,
+              'hex': PacketParser.toHexString(data),
+            });
           }
+        });
+
+        diagnostics?.add(DiagnosticEventType.connect, details: {
+          'status': 'uart_paired_known',
+          'serviceUuid': svcUuid,
+          'writeCharUuid': writeChar.uuid.toString(),
+          'notifyCharUuid': notifyChar.uuid.toString(),
         });
 
         return true;
@@ -233,11 +323,30 @@ class DongleService implements BleTransport {
           _writeChar = c;
           _writeWithoutResponse = props.writeWithoutResponse;
 
-          await c.setNotifyValue(true);
+          try {
+            await c.setNotifyValue(true);
+          } catch (e) {
+            diagnostics?.add(DiagnosticEventType.connect, details: {
+              'status': 'notify_setup_exception_fallback',
+              'uuid': c.uuid.toString(),
+              'error': e.toString(),
+            });
+          }
           _notifySubscription = c.onValueReceived.listen((data) {
             if (data.isNotEmpty) {
               _rawDataController.add(List<int>.from(data));
+              diagnostics?.add(DiagnosticEventType.frame, details: {
+                'action': 'raw_ble_received',
+                'length': data.length,
+                'hex': PacketParser.toHexString(data),
+              });
             }
+          });
+
+          diagnostics?.add(DiagnosticEventType.connect, details: {
+            'status': 'uart_paired_fallback',
+            'serviceUuid': (svc as dynamic).uuid.toString(),
+            'charUuid': c.uuid.toString(),
           });
 
           return true;
@@ -251,12 +360,25 @@ class DongleService implements BleTransport {
   /// Writes bytes to the UART write characteristic.
   Future<bool> write(List<int> data) async {
     if (_writeChar == null || _state != DongleConnectionState.connected) {
+      diagnostics?.add(DiagnosticEventType.command, details: {
+        'action': 'write_rejected',
+        'reason': _writeChar == null ? 'no_write_char' : 'not_connected',
+      });
       return false;
     }
     try {
       await _writeChar!.write(data, withoutResponse: _writeWithoutResponse);
+      diagnostics?.add(DiagnosticEventType.command, details: {
+        'action': 'raw_ble_written',
+        'length': data.length,
+        'hex': PacketParser.toHexString(data),
+      });
       return true;
-    } catch (_) {
+    } catch (e) {
+      diagnostics?.add(DiagnosticEventType.command, details: {
+        'action': 'write_failed',
+        'error': e.toString(),
+      });
       return false;
     }
   }

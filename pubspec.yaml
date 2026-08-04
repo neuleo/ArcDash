@@ -33,6 +33,7 @@ dependencies:
 
   # Utils
   intl: ^0.20.2
+  share_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

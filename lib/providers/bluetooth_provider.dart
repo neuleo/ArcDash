@@ -1,10 +1,17 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
+import 'package:arcdash/services/diagnostic_log.dart';
+
+// Global shared diagnostic log provider
+final diagnosticsLogProvider = Provider<DiagnosticLog>((ref) {
+  return DiagnosticLog(maxEvents: 1000);
+});
 
 // Singleton bluetooth service
 final bluetoothServiceProvider = Provider<DongleService>((ref) {
-  final service = DongleService();
+  final diagnostics = ref.watch(diagnosticsLogProvider);
+  final service = DongleService(diagnostics: diagnostics);
   ref.onDispose(service.dispose);
   return service;
 });

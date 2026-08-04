@@ -250,5 +250,6 @@ final controllerProvider =
     StateNotifierProvider<ControllerNotifier, ControllerState>((ref) {
   final bluetooth = ref.watch(bluetoothServiceProvider);
   final storage = ref.watch(storageServiceProvider);
-  return ControllerNotifier(bluetooth, storage);
+  final diagnostics = ref.watch(diagnosticsLogProvider);
+  return ControllerNotifier(bluetooth, storage, diagnostics: diagnostics);
 });

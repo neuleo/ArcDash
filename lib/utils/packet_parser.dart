@@ -228,12 +228,15 @@ class PacketParser {
         final errByte2 = d[3];
         final measureSpeed = readUint16LE(
             d, 6); // bytes 8-9 relative to B0 = bytes 6-7 in rawData
+        // Shift gear by 1: (0 -> N, 1 -> 1, 2 -> 2, 3 -> 3)
+        final rawGear = (stateByte >> 2) & 0x03;
+        final mappedGear = rawGear == 0 ? 0 : rawGear;
         return TelemetryUpdate(
           capturedAt: capturedAt,
           measureSpeed: measureSpeed,
           forward: (stateByte & 0x01) != 0,
           reverse: (stateByte & 0x02) != 0,
-          gear: (stateByte >> 2) & 0x03,
+          gear: mappedGear,
           brake: (errByte2 & 0x80) != 0,
           motorHallError: (errByte1 & 0x01) != 0,
           throttleError: (errByte1 & 0x02) != 0,

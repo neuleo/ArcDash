@@ -24,10 +24,12 @@ class UnitConverter {
     required int rateRatio,
   }) {
     if (rateRatio == 0) return 0.0;
-    return measureSpeed *
-        (0.00376991136 *
-            (wheelRadius * 1270.0 + wheelWidth * wheelRatio) /
-            rateRatio);
+    // Scale by /10.0 for Arctic Leopard XE Pro controllers
+    return (measureSpeed *
+            (0.00376991136 *
+                (wheelRadius * 1270.0 + wheelWidth * wheelRatio) /
+                rateRatio)) /
+        10.0;
   }
 
   // Power in kW

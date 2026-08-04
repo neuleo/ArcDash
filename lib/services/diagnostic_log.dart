@@ -35,7 +35,7 @@ class DiagnosticLog {
   final DiagnosticClock _clock;
   final List<DiagnosticEvent> _events = [];
 
-  DiagnosticLog({this.maxEvents = 200, DiagnosticClock clock = DateTime.now})
+  DiagnosticLog({this.maxEvents = 1000, DiagnosticClock clock = DateTime.now})
       : _clock = clock {
     if (maxEvents < 1) throw ArgumentError.value(maxEvents, 'maxEvents');
   }
@@ -49,15 +49,38 @@ class DiagnosticLog {
     _events.add(DiagnosticEvent(
       timestamp: _clock(),
       type: type,
-      details: _redactMap(details),
+      details: details,
     ));
     if (_events.length > maxEvents) _events.removeAt(0);
   }
 
   String exportJson() => jsonEncode({
         'format': 'arcdash-diagnostics-v1',
-        'events': _events.map((event) => event.toJson()).toList(),
+        'events': _events
+            .map((event) => DiagnosticEvent(
+                  timestamp: event.timestamp,
+                  type: event.type,
+                  details: _redactMap(event.details),
+                ).toJson())
+            .toList(),
       });
+
+  String exportAsText({bool redact = false}) {
+    final buffer = StringBuffer();
+    buffer.writeln('=== ArcDash Diagnose-Log ===');
+    buffer.writeln('Exportiert: ${DateTime.now().toUtc().toIso8601String()}');
+    buffer.writeln('Anzahl Events: ${_events.length}');
+    buffer.writeln('========================================\n');
+    for (final event in _events) {
+      final ts = event.timestamp.toUtc().toIso8601String();
+      final typeStr = event.type.name.toUpperCase().padRight(10);
+      final detailsMap = redact ? _redactMap(event.details) : event.details;
+      final detailsStr =
+          detailsMap.entries.map((e) => '${e.key}: ${e.value}').join(' | ');
+      buffer.writeln('[$ts] $typeStr $detailsStr');
+    }
+    return buffer.toString();
+  }
 
   static Map<String, Object?> _redactMap(Map<String, Object?> values) =>
       values.map((key, value) => MapEntry(key, _redactValue(key, value)));

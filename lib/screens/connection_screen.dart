@@ -7,6 +7,7 @@ import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/widgets/connection_status_bar.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 import 'package:arcdash/services/android_permission_service.dart';
+import 'package:arcdash/services/diagnostic_log_exporter.dart';
 
 class ConnectionScreen extends ConsumerStatefulWidget {
   const ConnectionScreen({super.key});
@@ -236,6 +237,27 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Diagnostic Log Share Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final diagnostics = ref.read(diagnosticsLogProvider);
+                    DiagnosticLogExporter.shareOrCopy(context, diagnostics);
+                  },
+                  icon: const Icon(Icons.share, size: 18),
+                  label: const Text('Diagnose-Log teilen'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF00E5FF),
+                    side: const BorderSide(color: Color(0xFF00E5FF)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
             ],
