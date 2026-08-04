@@ -22,35 +22,26 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Build pinned Flutter image
-        run: docker build --tag arcdash-flutter-ci .
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
 
       - name: Resolve dependencies
-        run: >-
-          docker run --rm
-          --volume "$GITHUB_WORKSPACE:/app"
-          --workdir /app
-          --env CI=true
-          arcdash-flutter-ci
-          flutter pub get
+        run: flutter pub get
 
       - name: Run tests
-        run: >-
-          docker run --rm
-          --volume "$GITHUB_WORKSPACE:/app"
-          --workdir /app
-          --env CI=true
-          arcdash-flutter-ci
-          flutter test
+        run: flutter test
 
       - name: Build development APK
-        run: >-
-          docker run --rm
-          --volume "$GITHUB_WORKSPACE:/app"
-          --workdir /app
-          --env CI=true
-          arcdash-flutter-ci
-          flutter build apk --debug
+        run: flutter build apk --debug
 
       - name: Prepare release assets
         run: |
