@@ -30,7 +30,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
     // Explicitly request both Bluetooth and Fine Location permissions on Android
     try {
-      final permService = const AndroidPermissionService(PermissionHandlerRequester());
+      final permService =
+          const AndroidPermissionService(PermissionHandlerRequester());
       await permService.requestForSdk(33);
       await permService.requestForSdk(30);
     } catch (_) {}

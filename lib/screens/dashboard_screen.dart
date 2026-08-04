@@ -1115,7 +1115,8 @@ class _PowerMeter extends StatelessWidget {
                         ? '${powerKw.abs().toStringAsFixed(1)} kW'
                         : quality == TelemetryFreshness.disconnected
                             ? 'OFF'
-                            : AppStrings.of(context).text(_qualityText(quality)),
+                            : AppStrings.of(context)
+                                .text(_qualityText(quality)),
                     maxLines: 1,
                     overflow: TextOverflow.fade,
                     softWrap: false,
