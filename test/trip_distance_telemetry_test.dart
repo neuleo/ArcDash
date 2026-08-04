@@ -47,7 +47,7 @@ void main() {
 
     await tester
         .pumpWidget(_buildApp(stateWithTrip, connected: false, now: now));
-    expect(find.text('Getrennt'), findsOneWidget);
+    expect(find.text('OFF'), findsOneWidget);
   });
 
   test('updates range prediction and uncertainty when ride mode changes', () {

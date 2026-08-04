@@ -50,8 +50,8 @@ void main() {
 
     await expectState(
       state: ControllerState(lastUpdate: now),
-      connected: true,
-      label: 'Fehlt',
+      connected: false,
+      label: 'OFF',
     );
     await expectState(
       state: _stateWithSample(
@@ -81,7 +81,7 @@ void main() {
         voltageV: 58,
       ),
       connected: false,
-      label: 'Getrennt',
+      label: 'OFF',
     );
   });
 

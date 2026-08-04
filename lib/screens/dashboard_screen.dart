@@ -780,16 +780,33 @@ class _MetricView extends StatelessWidget {
             fontWeight: FontWeight.w800,
           ));
       if (compact) {
-        return Row(children: [
-          Expanded(child: labelWidget),
-          const SizedBox(width: 8),
-          Flexible(child: valueWidget),
-        ]);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(child: labelWidget),
+            const SizedBox(width: 4),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: valueWidget,
+              ),
+            ),
+          ],
+        );
       }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [labelWidget, const SizedBox(height: 6), valueWidget],
+        children: [
+          labelWidget,
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: valueWidget,
+          ),
+        ],
       );
     });
   }
@@ -835,13 +852,13 @@ class _MetricView extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (metric != DashboardMetric.connection &&
         quality != TelemetryFreshness.fresh) {
-      return strings.text(switch (quality) {
-        null => AppText.missing,
-        TelemetryFreshness.stale => AppText.stale,
-        TelemetryFreshness.invalid => AppText.invalid,
-        TelemetryFreshness.disconnected => AppText.disconnected,
-        TelemetryFreshness.fresh => AppText.unknown,
-      });
+      return switch (quality) {
+        null => strings.text(AppText.missing),
+        TelemetryFreshness.stale => strings.text(AppText.stale),
+        TelemetryFreshness.invalid => strings.text(AppText.invalid),
+        TelemetryFreshness.disconnected => 'OFF',
+        TelemetryFreshness.fresh => strings.text(AppText.unknown),
+      };
     }
     return switch (metric) {
       DashboardMetric.speed => _imperial
@@ -976,15 +993,17 @@ class _SpeedDial extends StatelessWidget {
                         letterSpacing: 2)),
                 const SizedBox(height: 8),
                 Text(
-                    AppStrings.of(context).text(
-                        quality == TelemetryFreshness.fresh
-                            ? AppText.controller
-                            : _qualityText(quality)),
+                    quality == TelemetryFreshness.disconnected
+                        ? 'OFF'
+                        : AppStrings.of(context).text(
+                            quality == TelemetryFreshness.fresh
+                                ? AppText.controller
+                                : _qualityText(quality)),
                     style: TextStyle(
                         color: quality == TelemetryFreshness.fresh
                             ? const Color(0xFF00E5FF)
                             : const Color(0xFFFFB45C),
-                        fontSize: 9,
+                        fontSize: 10,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.5)),
               ],
@@ -1094,21 +1113,23 @@ class _PowerMeter extends StatelessWidget {
                 child: Text(
                     fresh
                         ? '${powerKw.abs().toStringAsFixed(1)} kW'
-                        : AppStrings.of(context).text(_qualityText(quality)),
+                        : quality == TelemetryFreshness.disconnected
+                            ? 'OFF'
+                            : AppStrings.of(context).text(_qualityText(quality)),
                     maxLines: 1,
                     overflow: TextOverflow.fade,
                     softWrap: false,
                     style: const TextStyle(
-                        fontSize: 26, fontWeight: FontWeight.w900)),
+                        fontSize: 22, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
                 value: normalized,
-                minHeight: 12,
+                minHeight: 8,
                 backgroundColor: const Color(0xFF263039),
                 valueColor: AlwaysStoppedAnimation(color)),
           ),
