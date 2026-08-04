@@ -39,11 +39,18 @@ void main() {
     final stateMissingTrip = ControllerState(
       lastUpdate: now,
       tripDistanceKm: null,
+      telemetrySamples: {
+        ControllerTelemetry.trip: TelemetrySample(
+          value: 0.0,
+          source: TelemetrySource.derived,
+          capturedAt: now,
+        ),
+      },
     );
 
     await tester
         .pumpWidget(_buildApp(stateMissingTrip, connected: true, now: now));
-    expect(find.text('Fehlt'), findsOneWidget);
+    expect(find.text('0.0 km'), findsOneWidget);
 
     await tester
         .pumpWidget(_buildApp(stateWithTrip, connected: false, now: now));

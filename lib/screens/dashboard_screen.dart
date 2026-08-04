@@ -812,7 +812,10 @@ class _MetricView extends StatelessWidget {
   }
 
   TelemetryFreshness? _quality(DashboardMetric metric) {
-    if (metric == DashboardMetric.connection) return TelemetryFreshness.fresh;
+    if (metric == DashboardMetric.connection ||
+        metric == DashboardMetric.range) {
+      return TelemetryFreshness.fresh;
+    }
     final field = switch (metric) {
       DashboardMetric.speed => ControllerTelemetry.speed,
       DashboardMetric.power ||
@@ -897,11 +900,13 @@ class _MetricView extends StatelessWidget {
       DashboardMetric.connection => connected
           ? AppStrings.of(context).text(AppText.connected)
           : AppStrings.of(context).text(AppText.disconnected),
-      DashboardMetric.trip => state.tripDistanceKm == null
-          ? '0.0 km'
-          : _imperial
-              ? '${(state.tripDistanceKm! * 0.621371).toStringAsFixed(1)} mi'
-              : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
+      DashboardMetric.trip => quality == TelemetryFreshness.disconnected
+          ? 'OFF'
+          : state.tripDistanceKm == null
+              ? '0.0 km'
+              : _imperial
+                  ? '${(state.tripDistanceKm! * 0.621371).toStringAsFixed(1)} mi'
+                  : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
     };
   }
 
