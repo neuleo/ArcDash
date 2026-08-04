@@ -217,7 +217,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Device names: YuanQ, FOC, FarDriver. Make sure the dongle is plugged into the controller and the bike is powered on.',
+                        'Unterstützte Dongle-Namen: YuanQ, FOC, FarDriver, CONTROLDMC88, DMC, BT, JDY sowie alle BLE-UART Module. Stelle sicher, dass das Bike eingeschaltet ist.',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.4),
                           fontSize: 12,
