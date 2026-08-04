@@ -64,13 +64,16 @@ void main() {
     expect(find.text('CONNECT'), findsOneWidget);
 
     await tester.tap(find.text('CONNECT'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('CONNECT CONTROLLER'), findsOneWidget);
     await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.text('Settings'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Imperial units'), findsOneWidget);
   });
 
