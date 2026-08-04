@@ -6,6 +6,7 @@ import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/widgets/connection_status_bar.dart';
 import 'package:arcdash/l10n/app_strings.dart';
+import 'package:arcdash/services/android_permission_service.dart';
 
 class ConnectionScreen extends ConsumerStatefulWidget {
   const ConnectionScreen({super.key});
@@ -26,7 +27,15 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
   Future<void> _startScan() async {
     setState(() => _isScanning = true);
-    // Wait until the BT adapter is on (handles macOS/iOS initialization delay)
+
+    // Explicitly request both Bluetooth and Fine Location permissions on Android
+    try {
+      final permService = const AndroidPermissionService(PermissionHandlerRequester());
+      await permService.requestForSdk(33);
+      await permService.requestForSdk(30);
+    } catch (_) {}
+
+    // Wait until the BT adapter is on (handles macOS/iOS/Android initialization delay)
     final BluetoothAdapterState adapterState;
     try {
       adapterState = await FlutterBluePlus.adapterState

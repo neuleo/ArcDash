@@ -81,11 +81,6 @@ class DongleService implements BleTransport {
     final results = <String, DiscoveredDongle>{};
 
     try {
-      await FlutterBluePlus.startScan(
-        timeout: timeout,
-        androidUsesFineLocation: true,
-      );
-
       final sub = FlutterBluePlus.scanResults.listen((scanResults) {
         for (final r in scanResults) {
           final name = r.device.platformName;
@@ -107,6 +102,11 @@ class DongleService implements BleTransport {
           _scanResultsController.add(results.values.toList());
         }
       });
+
+      await FlutterBluePlus.startScan(
+        timeout: timeout,
+        androidUsesFineLocation: false,
+      );
 
       await Future.delayed(timeout);
       await sub.cancel();
