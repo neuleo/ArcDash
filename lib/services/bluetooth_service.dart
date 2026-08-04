@@ -150,33 +150,7 @@ class DongleService implements BleTransport {
       // Discover services
       final services = await dongle.device.discoverServices();
 
-      // Prefer the confirmed target UART, then retain legacy fallbacks.
-      bool found = await _setupUartService(
-        services,
-        _targetServiceUuid,
-        _targetCharUuid,
-        _targetCharUuid,
-      );
-
-      // Try primary UART service (FFE0/FFE1).
-      if (!found) {
-        found = await _setupUartService(
-          services,
-          _uartServiceUuid,
-          _uartCharUuid,
-          _uartCharUuid,
-        );
-      }
-
-      // Fallback to alternative UART service
-      if (!found) {
-        found = await _setupUartService(
-          services,
-          _altServiceUuid,
-          _altCharWriteUuid,
-          _altCharNotifyUuid,
-        );
-      }
+      bool found = await _setupUartService(services);
 
       if (!found) {
         await disconnect();
@@ -193,46 +167,82 @@ class DongleService implements BleTransport {
     }
   }
 
-  Future<bool> _setupUartService(
-    List<Object> services,
-    String serviceUuid,
-    String writeCharUuid,
-    String notifyCharUuid,
-  ) async {
+  Future<bool> _setupUartService(List<Object> services) async {
+    // Known UUID pairings: (Service UUID prefix/exact, Write Char UUID prefix/exact, Notify Char UUID prefix/exact)
+    final knownPairs = [
+      (_targetServiceUuid, _targetCharUuid, _targetCharUuid),
+      (_uartServiceUuid, _uartCharUuid, _uartCharUuid),
+      (_altServiceUuid, _altCharWriteUuid, _altCharNotifyUuid),
+    ];
+
     BluetoothCharacteristic? findChar(
         List<BluetoothCharacteristic> chars, String uuid) {
+      final searchUuid = uuid.toLowerCase();
       for (final c in chars) {
-        if (c.uuid.toString().toLowerCase() == uuid) return c;
+        final cUuid = c.uuid.toString().toLowerCase();
+        if (cUuid == searchUuid || cUuid.startsWith(searchUuid)) return c;
       }
       return null;
     }
 
-    for (final svc in services) {
-      // Access fbp BluetoothService fields via dynamic to avoid class name conflict
-      final svcUuid = (svc as dynamic).uuid.toString().toLowerCase();
-      if (svcUuid != serviceUuid) continue;
+    // 1. Try known UUID pairs first
+    for (final pair in knownPairs) {
+      final sUuid = pair.$1.toLowerCase();
+      final wUuid = pair.$2;
+      final nUuid = pair.$3;
 
+      for (final svc in services) {
+        final svcUuid = (svc as dynamic).uuid.toString().toLowerCase();
+        if (svcUuid != sUuid && !svcUuid.startsWith(sUuid)) continue;
+
+        final chars = List<BluetoothCharacteristic>.from(
+            (svc as dynamic).characteristics as List);
+        final writeChar = findChar(chars, wUuid);
+        final notifyChar = findChar(chars, nUuid);
+
+        if (writeChar == null || notifyChar == null) continue;
+        final canWriteWithoutResponse =
+            writeChar.properties.writeWithoutResponse;
+        final canWriteWithResponse = writeChar.properties.write;
+        if (!canWriteWithoutResponse && !canWriteWithResponse) continue;
+
+        _writeChar = writeChar;
+        _writeWithoutResponse = canWriteWithoutResponse;
+
+        await notifyChar.setNotifyValue(true);
+        _notifySubscription = notifyChar.onValueReceived.listen((data) {
+          if (data.isNotEmpty) {
+            _rawDataController.add(List<int>.from(data));
+          }
+        });
+
+        return true;
+      }
+    }
+
+    // 2. Fallback: Search ALL services and characteristics for a characteristic that supports notify/indicate AND write/writeWithoutResponse
+    for (final svc in services) {
       final chars = List<BluetoothCharacteristic>.from(
           (svc as dynamic).characteristics as List);
-      final writeChar = findChar(chars, writeCharUuid);
-      final notifyChar = findChar(chars, notifyCharUuid);
+      for (final c in chars) {
+        final props = c.properties;
+        final supportsNotifyOrIndicate = props.notify || props.indicate;
+        final supportsWrite = props.write || props.writeWithoutResponse;
 
-      if (writeChar == null || notifyChar == null) return false;
-      final canWriteWithoutResponse = writeChar.properties.writeWithoutResponse;
-      final canWriteWithResponse = writeChar.properties.write;
-      if (!canWriteWithoutResponse && !canWriteWithResponse) return false;
+        if (supportsNotifyOrIndicate && supportsWrite) {
+          _writeChar = c;
+          _writeWithoutResponse = props.writeWithoutResponse;
 
-      _writeChar = writeChar;
-      _writeWithoutResponse = canWriteWithoutResponse;
+          await c.setNotifyValue(true);
+          _notifySubscription = c.onValueReceived.listen((data) {
+            if (data.isNotEmpty) {
+              _rawDataController.add(List<int>.from(data));
+            }
+          });
 
-      await notifyChar.setNotifyValue(true);
-      _notifySubscription = notifyChar.onValueReceived.listen((data) {
-        if (data.isNotEmpty) {
-          _rawDataController.add(List<int>.from(data));
+          return true;
         }
-      });
-
-      return true;
+      }
     }
 
     return false;
