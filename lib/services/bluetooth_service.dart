@@ -88,54 +88,23 @@ class DongleService implements BleTransport {
 
       final sub = FlutterBluePlus.scanResults.listen((scanResults) {
         for (final r in scanResults) {
-          final name = r.device.platformName.toLowerCase();
-          final advName = r.advertisementData.advName.toLowerCase();
-          final fullName = '$name $advName';
+          final name = r.device.platformName;
+          final advName = r.advertisementData.advName;
+          final remoteId = r.device.remoteId.str;
 
-          // Accept all devices that match typical FarDriver/OEM naming patterns,
-          // or expose known UART service UUIDs, or accept any visible BLE device
-          // with a non-empty name during scanning so no dongle gets hidden.
-          final matchesName = fullName.isNotEmpty &&
-              (fullName.contains('yuanq') ||
-                  fullName.contains('foc') ||
-                  fullName.contains('fardriver') ||
-                  fullName.contains('control') ||
-                  fullName.contains('dmc') ||
-                  fullName.contains('ffe0') ||
-                  fullName.contains('ff00') ||
-                  fullName.contains('nd') ||
-                  fullName.contains('bt') ||
-                  fullName.contains('jdy') ||
-                  fullName.contains('hm') ||
-                  fullName.contains('at') ||
-                  fullName.contains('uart') ||
-                  fullName.contains('ble'));
+          // SHOW ALL DISCOVERED BLUETOOTH DEVICES WITHOUT ANY FILTER!
+          final displayName = name.isNotEmpty
+              ? name
+              : (advName.isNotEmpty
+                  ? advName
+                  : 'Unbenanntes BLE Gerät ($remoteId)');
 
-          final matchesService = r.advertisementData.serviceUuids.any((u) {
-            final s = u.toString().toLowerCase();
-            return s.contains('ff00') ||
-                s.contains('ffe0') ||
-                s.contains('fff0') ||
-                s.contains('49535343');
-          });
-
-          // Show all devices with a name, or matching known service UUIDs
-          if (r.device.platformName.isNotEmpty ||
-              matchesName ||
-              matchesService) {
-            final displayName = r.device.platformName.isNotEmpty
-                ? r.device.platformName
-                : (r.advertisementData.advName.isNotEmpty
-                    ? r.advertisementData.advName
-                    : 'FarDriver Dongle (${r.device.remoteId.str})');
-
-            results[r.device.remoteId.str] = DiscoveredDongle(
-              device: r.device,
-              name: displayName,
-              rssi: r.rssi,
-            );
-            _scanResultsController.add(results.values.toList());
-          }
+          results[remoteId] = DiscoveredDongle(
+            device: r.device,
+            name: displayName,
+            rssi: r.rssi,
+          );
+          _scanResultsController.add(results.values.toList());
         }
       });
 

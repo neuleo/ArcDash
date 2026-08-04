@@ -217,7 +217,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Unterstützte Dongle-Namen: YuanQ, FOC, FarDriver, CONTROLDMC88, DMC, BT, JDY sowie alle BLE-UART Module. Stelle sicher, dass das Bike eingeschaltet ist.',
+                        'Der Scan zeigt JETZT ALLE Bluetooth-Geräte in deiner Umgebung an (ohne Filter).',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.4),
                           fontSize: 12,
