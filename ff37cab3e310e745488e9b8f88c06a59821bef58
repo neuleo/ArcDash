@@ -1,0 +1,1 @@
+Behebt das BLE-Scan-Problem auf Android 16: Stream-Listener wird vor FlutterBluePlus.startScan registriert, androidUsesFineLocation steht auf false.
