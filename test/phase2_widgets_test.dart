@@ -1,5 +1,6 @@
 import 'package:arcdash/app.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
+import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/services/storage_service.dart';
