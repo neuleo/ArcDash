@@ -9,5 +9,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Fullscreen-Dashboard im XE-Pro-R-Stil**
+- [x] **Track: Fullscreen-Dashboard im XE-Pro-R-Stil**
   *Link: [./tracks/xe_pro_r_dashboard_20260803/](./tracks/xe_pro_r_dashboard_20260803/)*
