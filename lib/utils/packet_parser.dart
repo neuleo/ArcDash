@@ -188,8 +188,7 @@ class PacketParser {
     if (!CrcCalculator.verifyCRC(packet, 16)) return null;
 
     final idByte = packet[1];
-    final id = idByte & 0x3F; // lower 6 bits
-    if (id >= flashReadAddr.length) return null;
+    final id = (idByte & 0x7F) % flashReadAddr.length;
 
     final address = flashReadAddr[id];
     final rawData = packet.sublist(2, 14);
