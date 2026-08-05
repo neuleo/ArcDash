@@ -1,0 +1,6 @@
+Task: Automatic voltage calibration learning and persistence
+- RangePredictionState gains maxVoltageV/minVoltageV with learnVoltage() and clearVoltageCalibration(); serialized backward-compatible
+- RangePredictionRepository adds learnVoltage()/resetVoltageCalibration() and a SharedPreferences-backed KeyValueStorage
+- Live telemetry folds voltage into the learned range via RangePredictionNotifier; settings screen shows max/min voltage and a reset button with confirm dialog
+- Diagnose-Log teilen button added to settings screen (connection screen already had it)
+- Verification: docker compose run --rm flutter dart format lib test; flutter analyze --no-fatal-infos (only pre-existing infos); flutter test -> 221 passed
