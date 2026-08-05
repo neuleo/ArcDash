@@ -1,0 +1,1 @@
+ArcDash uses only metric units (km/h, km, °C, kW, V, A). Removed mph/mi/imperial conversions, DashboardUnit.imperial, useMph and useFahrenheit settings, and the imperial unit toggle. Stats and tuning screens now display km/h and km.
