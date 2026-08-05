@@ -102,6 +102,14 @@ enum AppText {
   irreversible,
   deleteProfilesQuestion,
   deleteProfilesMessage,
+  voltageCalibration,
+  maxVoltage,
+  minVoltage,
+  noCalibrationData,
+  resetCalibration,
+  resetCalibrationHint,
+  resetCalibrationQuestion,
+  resetCalibrationMessage,
 }
 
 class AppStrings {
@@ -234,6 +242,15 @@ const _germanText = {
   AppText.deleteProfilesQuestion: 'Lokale Profile löschen?',
   AppText.deleteProfilesMessage:
       'Es werden nur lokal gespeicherte Profildateien entfernt.',
+  AppText.voltageCalibration: 'SPANNUNGSKALIBRIERUNG',
+  AppText.maxVoltage: 'Max. Spannung',
+  AppText.minVoltage: 'Min. Spannung',
+  AppText.noCalibrationData: 'Noch keine Kalibrierdaten',
+  AppText.resetCalibration: 'Spannungskalibrierung zurücksetzen',
+  AppText.resetCalibrationHint: 'Gelernte Min-/Max-Spannung wird neu erfasst',
+  AppText.resetCalibrationQuestion: 'Spannungskalibrierung zurücksetzen?',
+  AppText.resetCalibrationMessage:
+      'Die gelernten Min-/Max-Spannungswerte werden gelöscht und neu erfasst.',
 };
 
 const _englishText = {
@@ -342,6 +359,15 @@ const _englishText = {
   AppText.deleteProfilesQuestion: 'Delete local profiles?',
   AppText.deleteProfilesMessage:
       'Only locally saved profile files are removed.',
+  AppText.voltageCalibration: 'VOLTAGE CALIBRATION',
+  AppText.maxVoltage: 'Max voltage',
+  AppText.minVoltage: 'Min voltage',
+  AppText.noCalibrationData: 'No calibration data yet',
+  AppText.resetCalibration: 'Reset voltage calibration',
+  AppText.resetCalibrationHint: 'Learned min/max voltage will be re-learned',
+  AppText.resetCalibrationQuestion: 'Reset voltage calibration?',
+  AppText.resetCalibrationMessage:
+      'The learned min/max voltage values will be cleared and re-learned.',
 };
 
 const _germanMetrics = {

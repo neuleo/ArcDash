@@ -24,6 +24,20 @@ void main() {
       expect(restored.socConfidence, 0.85);
     });
 
+    test('voltage calibration range survives serialization round-trip', () {
+      const state = RangePredictionState(
+        schemaVersion: 1,
+        controllerId: 'FD-72600-A1',
+        maxVoltageV: 82.4,
+        minVoltageV: 58.2,
+      );
+
+      final restored = RangePredictionState.fromJson(state.toJson());
+
+      expect(restored.maxVoltageV, 82.4);
+      expect(restored.minVoltageV, 58.2);
+    });
+
     test('corrupted or mismatching controller ID resets to safe initial state',
         () {
       final repository = RangePredictionRepository(storage: MemoryStorage());
@@ -54,6 +68,69 @@ void main() {
       final repository = RangePredictionRepository(storage: storage);
       final loaded = repository.loadState(controllerId: 'ANY');
       expect(loaded, isNull);
+    });
+  });
+
+  group('T068 Voltage Calibration Learning', () {
+    test('learnVoltage expands min and max on first observations', () {
+      final repository = RangePredictionRepository(storage: MemoryStorage());
+
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 72.5);
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 84.2);
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 60.1);
+
+      final state = repository.loadState(controllerId: 'FD-1');
+
+      expect(state, isNotNull);
+      expect(state!.maxVoltageV, 84.2);
+      expect(state.minVoltageV, 60.1);
+    });
+
+    test('learnVoltage ignores invalid readings and does not shrink range', () {
+      final repository = RangePredictionRepository(storage: MemoryStorage());
+
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 72.0);
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 80.0);
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 70.0);
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: -1.0);
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 82.0);
+
+      final state = repository.loadState(controllerId: 'FD-1');
+
+      expect(state, isNotNull);
+      expect(state!.maxVoltageV, 82.0);
+      expect(state.minVoltageV, 70.0);
+    });
+    test('single-slot calibration stays bound to the active controller', () {
+      final repository =
+          RangePredictionRepository(storage: MemoryStorage());
+
+      repository.learnVoltage(controllerId: 'CONTROLLER-A', voltageV: 84.0);
+
+      // Stored state is only readable for the controller it was learned for.
+      final stateB = repository.loadState(controllerId: 'CONTROLLER-B');
+      expect(stateB, isNull);
+
+      final stateA = repository.loadState(controllerId: 'CONTROLLER-A');
+      expect(stateA, isNotNull);
+      expect(stateA!.maxVoltageV, 84.0);
+    });
+
+    test('resetVoltageCalibration clears only the calibration range', () {
+      final repository = RangePredictionRepository(storage: MemoryStorage());
+
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 84.0);
+      repository.resetVoltageCalibration(controllerId: 'FD-1');
+
+      final state = repository.loadState(controllerId: 'FD-1');
+
+      expect(state, isNotNull);
+      expect(state!.maxVoltageV, isNull);
+      expect(state.minVoltageV, isNull);
+
+      repository.learnVoltage(controllerId: 'FD-1', voltageV: 60.0);
+      final relearned = repository.loadState(controllerId: 'FD-1');
+      expect(relearned!.minVoltageV, 60.0);
     });
   });
 }

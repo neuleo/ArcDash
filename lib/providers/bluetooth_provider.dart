@@ -41,6 +41,13 @@ final connectedDeviceNameProvider = Provider<String?>((ref) {
   return service.connectedDeviceName;
 });
 
+// Stable identifier of the connected device (BLE remote id)
+final connectedDeviceIdProvider = Provider<String?>((ref) {
+  final service = ref.watch(bluetoothServiceProvider);
+  ref.watch(connectionStateProvider); // rebuild on state change
+  return service.connectedDeviceId;
+});
+
 // Action: start scan
 final scanActionProvider = Provider<Future<void> Function()>((ref) {
   return () async {

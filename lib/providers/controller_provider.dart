@@ -11,15 +11,61 @@ import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/utils/packet_parser.dart';
 import 'package:arcdash/utils/packet_framer.dart';
 import 'package:arcdash/services/diagnostic_log.dart';
+import 'package:arcdash/models/range_prediction_state.dart';
+import 'package:arcdash/services/range_prediction_repository.dart';
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   throw UnimplementedError('Override in ProviderScope');
+});
+
+/// Repository backing the learned range prediction / voltage calibration state.
+final rangePredictionRepositoryProvider =
+    Provider<RangePredictionRepository>((ref) {
+  final storage = ref.watch(storageServiceProvider);
+  return RangePredictionRepository(storage: storage.rangePredictionStorage);
+});
+
+class RangePredictionNotifier extends StateNotifier<RangePredictionState?> {
+  final RangePredictionRepository _repository;
+  final String _controllerId;
+
+  RangePredictionNotifier(this._repository, this._controllerId)
+      : super(_repository.loadState(controllerId: _controllerId));
+
+  /// Automatically learns a live voltage reading into the calibration range
+  /// and persists it when the range is expanded.
+  void learnVoltage(double voltageV) {
+    final current = state ?? RangePredictionState(controllerId: _controllerId);
+    final updated = current.learnVoltage(voltageV);
+    if (identical(updated, current)) return;
+    _repository.saveState(updated);
+    state = updated;
+  }
+
+  void resetVoltageCalibration() {
+    final current = state;
+    if (current == null) return;
+    final cleared = current.clearVoltageCalibration();
+    _repository.saveState(cleared);
+    state = cleared;
+  }
+}
+
+/// Reactive state of the learned range prediction data for the connected
+/// controller. Null when nothing has been learned yet.
+final rangePredictionStateProvider =
+    StateNotifierProvider<RangePredictionNotifier, RangePredictionState?>(
+        (ref) {
+  final repository = ref.watch(rangePredictionRepositoryProvider);
+  final deviceId = ref.watch(connectedDeviceIdProvider) ?? 'default-controller';
+  return RangePredictionNotifier(repository, deviceId);
 });
 
 class ControllerNotifier extends StateNotifier<ControllerState> {
   final BleTransport _bluetooth;
   final StorageService _storage;
   final DiagnosticLog _diagnostics;
+  final RangePredictionNotifier? _rangePrediction;
 
   StreamSubscription? _dataSub;
   StreamSubscription? _connSub;
@@ -38,8 +84,9 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   String exportDiagnosticJson() => _diagnostics.exportJson();
 
   ControllerNotifier(this._bluetooth, this._storage,
-      {DiagnosticLog? diagnostics})
-      : _diagnostics = diagnostics ?? DiagnosticLog(),
+      {DiagnosticLog? diagnostics, RangePredictionNotifier? rangePrediction})
+      : _rangePrediction = rangePrediction,
+        _diagnostics = diagnostics ?? DiagnosticLog(),
         super(ControllerState.initial()) {
     _connSub = _bluetooth.connectionStateStream.listen(_onConnectionState);
   }
@@ -147,6 +194,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     if (update.voltageV != null) {
       next = next.copyWith(voltageV: update.voltageV);
       record(ControllerTelemetry.voltage, update.voltageV!);
+      _rangePrediction?.learnVoltage(update.voltageV!);
     }
     if (update.currentA != null) {
       next = next.copyWith(currentA: update.currentA);
@@ -251,5 +299,7 @@ final controllerProvider =
   final bluetooth = ref.watch(bluetoothServiceProvider);
   final storage = ref.watch(storageServiceProvider);
   final diagnostics = ref.watch(diagnosticsLogProvider);
-  return ControllerNotifier(bluetooth, storage, diagnostics: diagnostics);
+  final rangePrediction = ref.watch(rangePredictionStateProvider.notifier);
+  return ControllerNotifier(bluetooth, storage,
+      diagnostics: diagnostics, rangePrediction: rangePrediction);
 });

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arcdash/models/range_prediction_state.dart';
 
 abstract class KeyValueStorage {
@@ -18,6 +19,23 @@ class MemoryStorage implements KeyValueStorage {
 
   @override
   void delete(String key) => _data.remove(key);
+}
+
+/// Adapter for [SharedPreferences]. A null [SharedPreferences] (e.g. before
+/// storage initialization) degrades gracefully to a read-only/no-op store.
+class SharedPreferencesKeyValueStorage implements KeyValueStorage {
+  final SharedPreferences? _prefs;
+
+  SharedPreferencesKeyValueStorage([this._prefs]);
+
+  @override
+  String? read(String key) => _prefs?.getString(key);
+
+  @override
+  void write(String key, String value) => _prefs?.setString(key, value);
+
+  @override
+  void delete(String key) => _prefs?.remove(key);
 }
 
 class RangePredictionRepository {
@@ -45,6 +63,26 @@ class RangePredictionRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Automatically folds a live voltage reading into the learned calibration
+  /// range and persists it. No-op when [voltageV] is invalid or already inside
+  /// the learned range.
+  void learnVoltage({required String controllerId, required double voltageV}) {
+    if (!voltageV.isFinite || voltageV <= 0) return;
+    final state = loadState(controllerId: controllerId) ??
+        RangePredictionState(controllerId: controllerId);
+    final updated = state.learnVoltage(voltageV);
+    if (!identical(updated, state)) {
+      saveState(updated);
+    }
+  }
+
+  /// Clears the learned voltage calibration range for the given controller.
+  void resetVoltageCalibration({required String controllerId}) {
+    final state = loadState(controllerId: controllerId);
+    if (state == null) return;
+    saveState(state.clearVoltageCalibration());
   }
 
   void resetState() {

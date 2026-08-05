@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
+import 'package:arcdash/services/diagnostic_log_exporter.dart';
 
 final _useMphProvider = StateProvider<bool>((ref) {
   return ref.read(storageServiceProvider).useMph;
@@ -17,6 +18,9 @@ class SettingsScreen extends ConsumerWidget {
     final connected = ref.watch(isConnectedProvider);
     final storage = ref.read(storageServiceProvider);
     final strings = AppStrings.of(context);
+    final calibration = ref.watch(rangePredictionStateProvider);
+    final maxVoltage = calibration?.maxVoltageV;
+    final minVoltage = calibration?.minVoltageV;
 
     return Scaffold(
       appBar: AppBar(title: Text(strings.text(AppText.settings).toUpperCase())),
@@ -58,6 +62,14 @@ class SettingsScreen extends ConsumerWidget {
                 title: Text(strings.text(AppText.disconnectAction)),
                 onTap: () => ref.read(bluetoothServiceProvider).disconnect(),
               ),
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('Diagnose-Log teilen'),
+              onTap: () {
+                final diagnostics = ref.read(diagnosticsLogProvider);
+                DiagnosticLogExporter.shareOrCopy(context, diagnostics);
+              },
+            ),
             const SizedBox(height: 20),
             _SectionTitle(strings.text(AppText.dataManagement)),
             ListTile(
@@ -91,6 +103,38 @@ class SettingsScreen extends ConsumerWidget {
                 title: strings.text(AppText.deleteProfilesQuestion),
                 message: strings.text(AppText.deleteProfilesMessage),
                 action: storage.clearProfiles,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _SectionTitle(strings.text(AppText.voltageCalibration)),
+            ListTile(
+              leading: const Icon(Icons.battery_charging_full_outlined),
+              title: Text(strings.text(AppText.maxVoltage)),
+              subtitle: Text(maxVoltage != null
+                  ? '${maxVoltage.toStringAsFixed(1)} V'
+                  : strings.text(AppText.noCalibrationData)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.battery_alert_outlined),
+              title: Text(strings.text(AppText.minVoltage)),
+              subtitle: Text(minVoltage != null
+                  ? '${minVoltage.toStringAsFixed(1)} V'
+                  : strings.text(AppText.noCalibrationData)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_backup_restore),
+              title: Text(strings.text(AppText.resetCalibration)),
+              subtitle: Text(strings.text(AppText.resetCalibrationHint)),
+              enabled: maxVoltage != null || minVoltage != null,
+              onTap: () => _confirm(
+                context,
+                title: strings.text(AppText.resetCalibrationQuestion),
+                message: strings.text(AppText.resetCalibrationMessage),
+                action: () async {
+                  ref
+                      .read(rangePredictionStateProvider.notifier)
+                      .resetVoltageCalibration();
+                },
               ),
             ),
             const SizedBox(height: 20),

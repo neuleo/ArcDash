@@ -7,6 +7,7 @@ import 'package:arcdash/models/ride_stats.dart';
 import 'package:arcdash/models/dashboard_layout.dart';
 import 'package:arcdash/services/dashboard_layout_repository.dart';
 import 'package:arcdash/services/versioned_json_repository.dart';
+import 'package:arcdash/services/range_prediction_repository.dart';
 import 'package:csv/csv.dart';
 
 const _prefKeyUseMph = 'use_mph';
@@ -42,6 +43,11 @@ class StorageService {
   }
 
   bool get isInitialized => _initialized;
+
+  /// Key-value storage for the range prediction / voltage calibration state.
+  /// Gracefully degrades to a no-op store when not initialized (e.g. in tests).
+  KeyValueStorage get rangePredictionStorage =>
+      SharedPreferencesKeyValueStorage(_initialized ? _prefs : null);
 
   DashboardLayout loadDashboardLayout() {
     return _dashboardLayout;

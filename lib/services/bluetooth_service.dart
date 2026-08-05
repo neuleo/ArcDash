@@ -65,6 +65,7 @@ class DongleService implements BleTransport {
 
   BluetoothDevice? get connectedDevice => _connectedDevice;
   String? get connectedDeviceName => _connectedDevice?.platformName;
+  String? get connectedDeviceId => _connectedDevice?.remoteId.str;
 
   void _setState(DongleConnectionState s) {
     _state = s;
