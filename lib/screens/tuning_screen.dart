@@ -5,7 +5,6 @@ import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/tuning_provider.dart';
 import 'package:arcdash/services/profile_tools.dart';
-import 'package:arcdash/utils/unit_converter.dart';
 
 class TuningScreen extends ConsumerWidget {
   const TuningScreen({super.key});
@@ -88,15 +87,13 @@ class TuningScreen extends ConsumerWidget {
               _TuningSlider(
                 label: 'Max Speed',
                 icon: Icons.speed,
-                value: UnitConverter.kphToMph(profile.maxSpeedKph),
-                min: UnitConverter.kphToMph(10),
-                max: UnitConverter.kphToMph(100),
-                unit: 'mph',
-                displayValue: UnitConverter.kphToMph(profile.maxSpeedKph)
-                    .toStringAsFixed(0),
+                value: profile.maxSpeedKph,
+                min: 10,
+                max: 100,
+                unit: 'km/h',
+                displayValue: profile.maxSpeedKph.toStringAsFixed(0),
                 onChanged: editorEnabled
-                    ? (mph) =>
-                        notifier.updateMaxSpeed(UnitConverter.mphToKph(mph))
+                    ? (kph) => notifier.updateMaxSpeed(kph)
                     : null,
                 accentColor: const Color(0xFF00E5FF),
               ),
@@ -303,7 +300,7 @@ class TuningScreen extends ConsumerWidget {
             ],
             Text(
               'Writing to: ${profile.name}\n'
-              'Max Speed: ${UnitConverter.kphToMph(profile.maxSpeedKph).toStringAsFixed(0)} mph\n'
+              'Max Speed: ${profile.maxSpeedKph.toStringAsFixed(0)} km/h\n'
               'Peak Torque: ${(profile.maxPhaseCurrA / 400.0 * 100).toStringAsFixed(0)}%\n'
               'Peak Power: ${(profile.maxLineCurrA * 72.0 / 1000.0).toStringAsFixed(1)} kW',
               style: const TextStyle(

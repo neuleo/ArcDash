@@ -74,7 +74,7 @@ void main() {
     await tester.tap(find.text('Settings'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Imperial units'), findsOneWidget);
+    expect(find.text('CONNECTION'), findsOneWidget);
   });
 
   testWidgets('dashboard exposes an explicit layout editor', (tester) async {
@@ -208,8 +208,6 @@ void main() {
   });
 
   test('core unit conversions handle limits and zero denominators', () {
-    expect(UnitConverter.kphToMph(100), closeTo(62.1371, 0.0001));
-    expect(UnitConverter.speedUnit(true), 'mph');
     expect(
         UnitConverter.batteryPercent(
           voltageDeciVolts: 500,

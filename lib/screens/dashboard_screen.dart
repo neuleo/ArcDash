@@ -331,7 +331,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 onResize: _resizeTile,
                 onKindChanged: _setTileKind,
                 onUnitChanged: _setTileUnit,
-                useImperialUnits: _storage.useMph,
               ),
             ),
           ],
@@ -437,7 +436,6 @@ class DashboardRenderer extends StatelessWidget {
   final ControllerState state;
   final bool connected;
   final DateTime now;
-  final bool useImperialUnits;
   final bool editing;
   final ValueChanged<DashboardTile>? onRemove;
   final void Function(DashboardTile, int, int)? onMove;
@@ -457,7 +455,6 @@ class DashboardRenderer extends StatelessWidget {
     this.onResize,
     this.onKindChanged,
     this.onUnitChanged,
-    this.useImperialUnits = false,
   });
 
   @override
@@ -501,7 +498,6 @@ class DashboardRenderer extends StatelessWidget {
                       state: state,
                       connected: connected,
                       now: now,
-                      useImperialUnits: useImperialUnits,
                     ),
                   ),
                 ),
@@ -625,8 +621,6 @@ class _TileFrame extends StatelessWidget {
                       onUnitChanged(DashboardUnit.automatic),
                     _TileCommand.unitMetric =>
                       onUnitChanged(DashboardUnit.metric),
-                    _TileCommand.unitImperial =>
-                      onUnitChanged(DashboardUnit.imperial),
                     _TileCommand.remove => onRemove(),
                   },
                   itemBuilder: (context) {
@@ -681,9 +675,6 @@ class _TileFrame extends StatelessWidget {
                         PopupMenuItem(
                             value: _TileCommand.unitMetric,
                             child: Text(strings.text(AppText.unitMetric))),
-                        PopupMenuItem(
-                            value: _TileCommand.unitImperial,
-                            child: Text(strings.text(AppText.unitImperial))),
                       ],
                       PopupMenuItem(
                           value: _TileCommand.remove,
@@ -713,7 +704,6 @@ enum _TileCommand {
   arcDisplay,
   unitAutomatic,
   unitMetric,
-  unitImperial,
   remove,
 }
 
@@ -722,14 +712,12 @@ class _MetricView extends StatelessWidget {
   final ControllerState state;
   final bool connected;
   final DateTime now;
-  final bool useImperialUnits;
 
   const _MetricView({
     required this.tile,
     required this.state,
     required this.connected,
     required this.now,
-    required this.useImperialUnits,
   });
 
   @override
@@ -743,7 +731,6 @@ class _MetricView extends StatelessWidget {
       return _SpeedDial(
         speedKph: state.speedKph,
         quality: quality,
-        imperial: _imperial,
       );
     }
     if (tile.metric == DashboardMetric.power &&
@@ -864,9 +851,7 @@ class _MetricView extends StatelessWidget {
       };
     }
     return switch (metric) {
-      DashboardMetric.speed => _imperial
-          ? '${(state.speedKph * 0.621371).toStringAsFixed(0)} mph'
-          : '${state.speedKph.toStringAsFixed(0)} km/h',
+      DashboardMetric.speed => '${state.speedKph.toStringAsFixed(0)} km/h',
       DashboardMetric.power => '${state.powerKw.toStringAsFixed(1)} kW',
       DashboardMetric.regeneration =>
         '${math.max(-state.powerKw, 0).toStringAsFixed(1)} kW',
@@ -874,10 +859,8 @@ class _MetricView extends StatelessWidget {
       DashboardMetric.current => '${state.currentA.toStringAsFixed(1)} A',
       DashboardMetric.soc => '${state.battCapPercent} %',
       DashboardMetric.range => state.rangeKm == 0
-          ? (_imperial ? '40 ± 5 mi' : '65 ± 8 km')
-          : _imperial
-              ? '${(state.rangeKm * 0.621371).toStringAsFixed(0)} ± ${(state.rangeUncertaintyKm * 0.621371).toStringAsFixed(0)} mi'
-              : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
+          ? '65 ± 8 km'
+          : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
       DashboardMetric.profile => state.rideMode.displayName,
       DashboardMetric.gear => !state.isForward
           ? 'R'
@@ -904,15 +887,9 @@ class _MetricView extends StatelessWidget {
           ? 'OFF'
           : state.tripDistanceKm == null
               ? '0.0 km'
-              : _imperial
-                  ? '${(state.tripDistanceKm! * 0.621371).toStringAsFixed(1)} mi'
-                  : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
+              : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
     };
   }
-
-  bool get _imperial =>
-      tile.unit == DashboardUnit.imperial ||
-      (tile.unit == DashboardUnit.automatic && useImperialUnits);
 }
 
 class _ConnectionPill extends StatelessWidget {
@@ -958,22 +935,18 @@ class _ConnectionPill extends StatelessWidget {
 class _SpeedDial extends StatelessWidget {
   final double speedKph;
   final TelemetryFreshness? quality;
-  final bool imperial;
 
   const _SpeedDial({
     required this.speedKph,
     required this.quality,
-    required this.imperial,
   });
 
   @override
   Widget build(BuildContext context) {
-    final speed = imperial ? speedKph * 0.621371 : speedKph;
-    final unit = imperial ? 'mph' : 'km/h';
     return Semantics(
       key: const Key('speed-dial'),
       label: quality == TelemetryFreshness.fresh
-          ? '${AppStrings.of(context).metric('speed')} ${speed.round()} $unit'
+          ? '${AppStrings.of(context).metric('speed')} ${speedKph.round()} km/h'
           : 'Geschwindigkeit ${_qualityLabel(context, quality)}',
       child: LayoutBuilder(
         builder: (context, constraints) => Stack(
@@ -990,7 +963,7 @@ class _SpeedDial extends StatelessWidget {
               children: [
                 Text(
                     quality == TelemetryFreshness.fresh
-                        ? speed.round().toString()
+                        ? speedKph.round().toString()
                         : '–',
                     style: TextStyle(
                         fontSize: math.min(constraints.maxHeight * 0.29, 82),
@@ -998,7 +971,7 @@ class _SpeedDial extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         letterSpacing: -3)),
                 const SizedBox(height: 8),
-                Text(unit,
+                Text('km/h',
                     style: const TextStyle(
                         color: Colors.white54,
                         fontSize: 13,

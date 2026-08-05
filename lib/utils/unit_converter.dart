@@ -1,20 +1,4 @@
 class UnitConverter {
-  static const double _kphToMph = 0.621371;
-  static const double _mphToKph = 1.60934;
-
-  // Speed
-  static double kphToMph(double kph) => kph * _kphToMph;
-  static double mphToKph(double mph) => mph * _mphToKph;
-
-  static double convertSpeed(double kph, bool useMph) =>
-      useMph ? kphToMph(kph) : kph;
-
-  static String speedUnit(bool useMph) => useMph ? 'mph' : 'km/h';
-
-  // Temperature
-  static double celsiusToFahrenheit(double c) => c * 9.0 / 5.0 + 32.0;
-  static double fahrenheitToCelsius(double f) => (f - 32.0) * 5.0 / 9.0;
-
   // Speed from raw MeasureSpeed + wheel geometry (returns km/h)
   static double measureSpeedToKph({
     required int measureSpeed,

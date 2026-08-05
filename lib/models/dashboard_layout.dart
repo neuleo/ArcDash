@@ -21,7 +21,7 @@ enum DashboardMetric {
 
 enum DashboardTileKind { value, compact, status, arc, bar, circle }
 
-enum DashboardUnit { automatic, metric, imperial }
+enum DashboardUnit { automatic, metric }
 
 class DashboardMeasurementDefinition {
   final DashboardTileKind defaultKind;
@@ -81,7 +81,6 @@ const dashboardMeasurementCatalog =
     allowedUnits: {
       DashboardUnit.automatic,
       DashboardUnit.metric,
-      DashboardUnit.imperial,
     },
     minimumWidth: 3,
     minimumHeight: 3,
@@ -155,7 +154,6 @@ const dashboardMeasurementCatalog =
     allowedUnits: {
       DashboardUnit.automatic,
       DashboardUnit.metric,
-      DashboardUnit.imperial,
     },
     maxAge: Duration(seconds: 10),
     minimum: 0,
@@ -212,7 +210,6 @@ const dashboardMeasurementCatalog =
     allowedUnits: {
       DashboardUnit.automatic,
       DashboardUnit.metric,
-      DashboardUnit.imperial,
     },
     maxAge: Duration(seconds: 10),
     minimum: 0,

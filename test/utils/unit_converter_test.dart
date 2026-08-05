@@ -3,22 +3,6 @@ import 'package:arcdash/utils/unit_converter.dart';
 
 void main() {
   group('UnitConverter', () {
-    test('converts speed between km/h and mph', () {
-      expect(UnitConverter.kphToMph(100.0), closeTo(62.1371, 0.001));
-      expect(UnitConverter.mphToKph(62.1371), closeTo(100.0, 0.01));
-      expect(UnitConverter.convertSpeed(100.0, true), closeTo(62.1371, 0.001));
-      expect(UnitConverter.convertSpeed(100.0, false), 100.0);
-      expect(UnitConverter.speedUnit(true), 'mph');
-      expect(UnitConverter.speedUnit(false), 'km/h');
-    });
-
-    test('converts temperature between Celsius and Fahrenheit', () {
-      expect(UnitConverter.celsiusToFahrenheit(0.0), 32.0);
-      expect(UnitConverter.celsiusToFahrenheit(100.0), 212.0);
-      expect(UnitConverter.fahrenheitToCelsius(32.0), 0.0);
-      expect(UnitConverter.fahrenheitToCelsius(212.0), 100.0);
-    });
-
     test(
         'measureSpeedToKph calculates speed accurately and handles zero rateRatio',
         () {

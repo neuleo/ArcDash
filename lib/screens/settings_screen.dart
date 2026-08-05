@@ -5,16 +5,11 @@ import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 import 'package:arcdash/services/diagnostic_log_exporter.dart';
 
-final _useMphProvider = StateProvider<bool>((ref) {
-  return ref.read(storageServiceProvider).useMph;
-});
-
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final useMph = ref.watch(_useMphProvider);
     final connected = ref.watch(isConnectedProvider);
     final storage = ref.read(storageServiceProvider);
     final strings = AppStrings.of(context);
@@ -29,17 +24,6 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
             _SectionTitle(strings.text(AppText.display)),
-            SwitchListTile(
-              title: Text(strings.text(AppText.imperialUnits)),
-              subtitle:
-                  Text(useMph ? 'mph / mi' : strings.text(AppText.metricUnits)),
-              secondary: const Icon(Icons.straighten),
-              value: useMph,
-              onChanged: (value) {
-                ref.read(_useMphProvider.notifier).state = value;
-                storage.setUseMph(value);
-              },
-            ),
             const SizedBox(height: 20),
             _SectionTitle(strings.text(AppText.connection)),
             ListTile(

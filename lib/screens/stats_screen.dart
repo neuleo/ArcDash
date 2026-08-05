@@ -63,22 +63,20 @@ class StatsScreen extends ConsumerWidget {
                 _SectionHeader(title: strings.text(AppText.currentSession)),
                 const SizedBox(height: 12),
                 _SessionSummaryCards(
-                  distanceMi: session.distanceKm * 0.621371,
-                  durationSeconds: session.duration.inSeconds,
-                  avgSpeedMph: session.avgSpeedKph * 0.621371,
-                  maxSpeedMph: session.maxSpeedKph * 0.621371,
-                  totalWhUsed: session.totalWhUsed,
                   distanceKm: session.distanceKm,
+                  durationSeconds: session.duration.inSeconds,
+                  avgSpeedKph: session.avgSpeedKph,
+                  maxSpeedKph: session.maxSpeedKph,
+                  totalWhUsed: session.totalWhUsed,
                 ),
                 const SizedBox(height: 20),
                 if (session.speedHistory.isNotEmpty) ...[
                   _SectionHeader(title: strings.text(AppText.speedHistory)),
                   const SizedBox(height: 12),
                   _SpeedChart(
-                    samples: session.speedHistory
-                        .map((s) => s.speedKph * 0.621371)
-                        .toList(),
-                    unit: 'mph',
+                    samples:
+                        session.speedHistory.map((s) => s.speedKph).toList(),
+                    unit: 'km/h',
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -101,19 +99,17 @@ class StatsScreen extends ConsumerWidget {
 }
 
 class _SessionSummaryCards extends StatelessWidget {
-  final double distanceMi;
   final double distanceKm;
   final int durationSeconds;
-  final double avgSpeedMph;
-  final double maxSpeedMph;
+  final double avgSpeedKph;
+  final double maxSpeedKph;
   final double totalWhUsed;
 
   const _SessionSummaryCards({
-    required this.distanceMi,
     required this.distanceKm,
     required this.durationSeconds,
-    required this.avgSpeedMph,
-    required this.maxSpeedMph,
+    required this.avgSpeedKph,
+    required this.maxSpeedKph,
     required this.totalWhUsed,
   });
 
@@ -138,8 +134,8 @@ class _SessionSummaryCards extends StatelessWidget {
       children: [
         _StatCard(
           label: strings.text(AppText.distance),
-          value: distanceMi.toStringAsFixed(2),
-          unit: 'mi',
+          value: distanceKm.toStringAsFixed(2),
+          unit: 'km',
           color: const Color(0xFF00E5FF),
         ),
         _StatCard(
@@ -150,14 +146,14 @@ class _SessionSummaryCards extends StatelessWidget {
         ),
         _StatCard(
           label: strings.text(AppText.averageSpeed),
-          value: avgSpeedMph.toStringAsFixed(1),
-          unit: 'mph',
+          value: avgSpeedKph.toStringAsFixed(1),
+          unit: 'km/h',
           color: const Color(0xFFFF9800),
         ),
         _StatCard(
           label: strings.text(AppText.topSpeed),
-          value: maxSpeedMph.toStringAsFixed(1),
-          unit: 'mph',
+          value: maxSpeedKph.toStringAsFixed(1),
+          unit: 'km/h',
           color: const Color(0xFF00E5FF),
         ),
         _StatCard(
@@ -168,10 +164,10 @@ class _SessionSummaryCards extends StatelessWidget {
         ),
         _StatCard(
           label: strings.text(AppText.efficiency),
-          value: distanceMi > 0
-              ? (totalWhUsed / distanceMi).toStringAsFixed(1)
+          value: distanceKm > 0
+              ? (totalWhUsed / distanceKm).toStringAsFixed(1)
               : '--',
-          unit: 'Wh/mi',
+          unit: 'Wh/km',
           color: const Color(0xFFFF9800),
         ),
       ],
@@ -248,7 +244,7 @@ class _StatCard extends StatelessWidget {
 class _SpeedChart extends StatelessWidget {
   final List<double> samples;
   final String unit;
-  const _SpeedChart({required this.samples, this.unit = 'mph'});
+  const _SpeedChart({required this.samples, this.unit = 'km/h'});
 
   @override
   Widget build(BuildContext context) {
@@ -335,9 +331,7 @@ class _PastSessionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final startTime = DateTime.tryParse(json['startTime'] as String? ?? '');
     final distKm = (json['distanceKm'] as num?)?.toDouble() ?? 0.0;
-    final distMi = distKm * 0.621371;
-    final maxSpd =
-        ((json['maxSpeedKph'] as num?)?.toDouble() ?? 0.0) * 0.621371;
+    final maxSpd = (json['maxSpeedKph'] as num?)?.toDouble() ?? 0.0;
     final durSec = (json['durationSeconds'] as num?)?.toInt() ?? 0;
     final wh = (json['totalWhUsed'] as num?)?.toDouble() ?? 0.0;
 
@@ -368,7 +362,7 @@ class _PastSessionCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${distMi.toStringAsFixed(2)} mi  •  '
+                  '${distKm.toStringAsFixed(2)} km  •  '
                   '${_fmt(durSec)}  •  '
                   '${wh.toStringAsFixed(0)} Wh',
                   style: const TextStyle(
@@ -380,7 +374,7 @@ class _PastSessionCard extends StatelessWidget {
             ),
           ),
           Text(
-            '${maxSpd.toStringAsFixed(0)}\nmph top',
+            '${maxSpd.toStringAsFixed(0)}\nkm/h top',
             style: const TextStyle(
               color: Color(0xFF00E5FF),
               fontSize: 13,

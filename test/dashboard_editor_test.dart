@@ -112,18 +112,13 @@ void main() {
         DashboardLayout.defaults().portrait.toJson());
   });
 
-  testWidgets('speed unit choice changes display without changing SI state',
-      (tester) async {
+  testWidgets('speed tile uses metric km/h display', (tester) async {
     final storage = _RecordingStorage(DashboardLayout.defaults());
     await _pumpEditor(tester, storage);
 
-    await _selectCommand(tester, 'Geschwindigkeit', 'Imperiale Einheit');
     await tester.pump(const Duration(milliseconds: 400));
 
-    final speed = storage.layout.portrait.tiles
-        .singleWhere((tile) => tile.metric == DashboardMetric.speed);
-    expect(speed.unit, DashboardUnit.imperial);
-    expect(find.text('mph'), findsOneWidget);
+    expect(find.text('km/h'), findsOneWidget);
   });
 
   testWidgets('editor remains usable on a narrow target', (tester) async {
@@ -231,9 +226,6 @@ class _RecordingStorage extends StorageService {
     layout = next;
     writeCount++;
   }
-
-  @override
-  bool get useMph => false;
 }
 
 class _FakeDongleService extends DongleService {

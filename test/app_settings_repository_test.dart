@@ -16,8 +16,6 @@ void main() {
     test('loads default settings when no data is stored', () {
       final settings = settingsRepo.loadSettings();
       expect(settings.languageCode, 'de');
-      expect(settings.useMph, isFalse);
-      expect(settings.useFahrenheit, isFalse);
       expect(settings.autoReconnect, isTrue);
       expect(settings.hapticFeedbackEnabled, isTrue);
     });
@@ -25,8 +23,6 @@ void main() {
     test('saves and persists settings updates', () {
       const updated = AppSettings(
         languageCode: 'en',
-        useMph: true,
-        useFahrenheit: true,
         autoReconnect: false,
         hapticFeedbackEnabled: false,
       );
@@ -35,8 +31,6 @@ void main() {
       final loaded = settingsRepo.loadSettings();
 
       expect(loaded.languageCode, 'en');
-      expect(loaded.useMph, isTrue);
-      expect(loaded.useFahrenheit, isTrue);
       expect(loaded.autoReconnect, isFalse);
       expect(loaded.hapticFeedbackEnabled, isFalse);
     });

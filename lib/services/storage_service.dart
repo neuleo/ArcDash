@@ -10,7 +10,6 @@ import 'package:arcdash/services/versioned_json_repository.dart';
 import 'package:arcdash/services/range_prediction_repository.dart';
 import 'package:csv/csv.dart';
 
-const _prefKeyUseMph = 'use_mph';
 const _prefKeyStockBackup = 'stock_backup_json';
 const _prefKeyProfiles = 'tuning_profiles';
 const _prefKeyRideSessions = 'ride_sessions';
@@ -60,12 +59,6 @@ class StorageService {
     if (!_initialized) return;
     await _dashboardRepository!.save(layout);
     dashboardLayoutStatus = DashboardLayoutLoadStatus.loaded;
-  }
-
-  // --- Unit preference ---
-  bool get useMph => _initialized && (_prefs.getBool(_prefKeyUseMph) ?? false);
-  Future<void> setUseMph(bool v) async {
-    if (_initialized) await _prefs.setBool(_prefKeyUseMph, v);
   }
 
   Future<void> resetDashboardLayout() async {

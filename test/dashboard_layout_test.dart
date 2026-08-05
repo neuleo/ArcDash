@@ -70,7 +70,7 @@ void main() {
       id: 'speed',
       metric: DashboardMetric.speed,
       kind: DashboardTileKind.value,
-      unit: DashboardUnit.imperial,
+      unit: DashboardUnit.metric,
       column: 0,
       row: 0,
       width: 3,
@@ -88,7 +88,7 @@ void main() {
     });
 
     expect(decoded, customized);
-    expect(decoded.unit, DashboardUnit.imperial);
+    expect(decoded.unit, DashboardUnit.metric);
     expect(legacy.unit, DashboardUnit.automatic);
   });
 
