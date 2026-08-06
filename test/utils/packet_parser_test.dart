@@ -55,6 +55,47 @@ void main() {
       expect(PacketParser.parseStatusPacket(badCrc), isNull);
     });
 
+    test('parseStatusPacket maps high-bit packet IDs via the lower 7 bits', () {
+      // Live FarDriver status frames set the protocol flag bits, so byte 1
+      // arrives as 0x80–0xB6. 0x85 must map to index 5 -> flashReadAddr[5]
+      // = 0x0C (battery calibration), never to the speed block 0xE2.
+      List<int> packetFor(int idByte) {
+        final p = Uint8List(16);
+        p[0] = 0xAA;
+        p[1] = idByte;
+        CrcCalculator.computeCRC(p, 16);
+        return p;
+      }
+
+      expect(PacketParser.parseStatusPacket(packetFor(0x85))!.address, 0x0C);
+      expect(PacketParser.parseStatusPacket(packetFor(0x80))!.address, 0xE2);
+      expect(PacketParser.parseStatusPacket(packetFor(0xB6))!.address, 0xFA);
+    });
+
+    test('high-bit status ID decodes the mapped telemetry block end to end',
+        () {
+      // Full pipeline: raw frame (0xAA 0x85 ...) -> parse -> extract.
+      // Index 5 is the 0x0C battery-calibration block, not 0xE2 speed/flags.
+      final p = Uint8List(16);
+      p[0] = 0xAA;
+      p[1] = 0x85;
+      // rawData[2..3] = zeroBattCoeff = 600 (0x0258)
+      p[4] = 0x58;
+      p[5] = 0x02;
+      // rawData[4..5] = fullBattCoeff = 840 (0x0348)
+      p[6] = 0x48;
+      p[7] = 0x03;
+      CrcCalculator.computeCRC(p, 16);
+
+      final parsed = PacketParser.parseStatusPacket(p);
+      expect(parsed, isNotNull);
+      expect(parsed!.address, 0x0C);
+      final update = PacketParser.extractTelemetry(parsed);
+      expect(update, isNotNull);
+      expect(update!.zeroBattCoeff, 600);
+      expect(update.fullBattCoeff, 840);
+    });
+
     test('readInt16LE and readUint16LE read signed/unsigned 16-bit values', () {
       final data = [0xFF, 0x7F, 0x00, 0x80]; // 32767, -32768
       expect(PacketParser.readUint16LE(data, 0), 32767);
@@ -85,6 +126,8 @@ void main() {
       expect(flashReadAddr.length, 55);
       expect(flashReadAddr[0], 0xE2);
       expect(flashReadAddr[1], 0xE8);
+      expect(flashReadAddr[5], 0x0C);
+      expect(flashReadAddr[54], 0xFA);
     });
   });
 }

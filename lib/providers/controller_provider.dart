@@ -91,6 +91,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     _connSub = _bluetooth.connectionStateStream.listen(_onConnectionState);
   }
 
+  Timer? _streamInitTimer;
+
   void _onConnectionState(DongleConnectionState cs) {
     _diagnostics.add(
       cs == DongleConnectionState.disconnected
@@ -101,6 +103,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     if (cs == DongleConnectionState.connected) {
       _onConnected();
     } else if (cs == DongleConnectionState.disconnected) {
+      _streamInitTimer?.cancel();
+      _streamInitTimer = null;
       _dataSub?.cancel();
       _dataSub = null;
       _framer.reset();
@@ -111,8 +115,21 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     // Subscribe to incoming data
     _dataSub = _bluetooth.rawDataStream.listen(_onRawData);
 
-    // Send start-status-stream command
-    await Future.delayed(const Duration(milliseconds: 200));
+    // Send start-status-stream command periodically until packets arrive
+    _streamInitTimer?.cancel();
+    _streamInitTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (state.telemetrySamples.isEmpty) {
+        await _bluetooth.write(ProtocolService.startStatusStreamPacket());
+        _diagnostics.add(DiagnosticEventType.command, details: {
+          'action': 'sent_start_status_stream_retry',
+        });
+      } else {
+        _streamInitTimer?.cancel();
+        _streamInitTimer = null;
+      }
+    });
+
+    await Future.delayed(const Duration(milliseconds: 300));
     await _bluetooth.write(ProtocolService.startStatusStreamPacket());
   }
 
@@ -171,6 +188,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       final kph = _speedFromRaw(update.measureSpeed!);
       next = next.copyWith(speedKph: kph, lastUpdate: update.capturedAt);
       record(ControllerTelemetry.speed, kph);
+      record(ControllerTelemetry.trip, next.tripDistanceKm ?? 0.0);
     }
     if (update.forward != null) next = next.copyWith(isForward: update.forward);
     if (update.reverse != null && update.reverse!) {
@@ -195,6 +213,13 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       next = next.copyWith(voltageV: update.voltageV);
       record(ControllerTelemetry.voltage, update.voltageV!);
       _rangePrediction?.learnVoltage(update.voltageV!);
+      // Compute range sample using battery capacity or conservative estimate
+      final rangeEst = quality.TelemetrySample(
+        value: next.rangeKm == 0 ? 65.0 : next.rangeKm,
+        source: quality.TelemetrySource.derived,
+        capturedAt: update.capturedAt,
+      );
+      samples[ControllerTelemetry.range] = rangeEst;
     }
     if (update.currentA != null) {
       next = next.copyWith(currentA: update.currentA);

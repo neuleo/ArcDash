@@ -2,7 +2,11 @@ import 'dart:math' as math;
 import 'package:arcdash/utils/crc_calculator.dart';
 
 /// Memory address lookup table for rotating status packet IDs (0–54).
-/// id < 0x37 maps to flash_read_addr[id] from the FarDriver protocol repo.
+/// Mirrors `flashReadAddr[55]` from the FarDriver protocol repo
+/// (reference/upstream/fardriver-controllers/fardriver_message.hpp).
+/// Each 16-byte status frame carries the rotating index in `packet[1]`;
+/// the upper two bits are protocol flags (the controller sends 0x80–0xB6),
+/// so the index is recovered with `packet[1] & 0x7F`.
 const List<int> flashReadAddr = [
   0xE2,
   0xE8,
@@ -188,6 +192,11 @@ class PacketParser {
     if (!CrcCalculator.verifyCRC(packet, 16)) return null;
 
     final idByte = packet[1];
+    // The status ID byte combines the rotating index (lower 7 bits) with
+    // protocol flags (upper bits). Live frames arrive as 0x80–0xB6, so mask
+    // with 0x7F: 0x85 -> index 5 -> flashReadAddr[5] = 0x0C (battery
+    // calibration), never the speed block 0xE2. The modulo keeps out-of-range
+    // ids deterministic instead of crashing.
     final id = (idByte & 0x7F) % flashReadAddr.length;
 
     final address = flashReadAddr[id];

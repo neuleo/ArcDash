@@ -102,8 +102,7 @@ void main() {
       expect(state.minVoltageV, 70.0);
     });
     test('single-slot calibration stays bound to the active controller', () {
-      final repository =
-          RangePredictionRepository(storage: MemoryStorage());
+      final repository = RangePredictionRepository(storage: MemoryStorage());
 
       repository.learnVoltage(controllerId: 'CONTROLLER-A', voltageV: 84.0);
 
