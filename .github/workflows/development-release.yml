@@ -54,7 +54,7 @@ jobs:
 
       - name: Create rolling release if missing
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if ! gh release view latest-development >/dev/null 2>&1; then
             gh release create latest-development \
@@ -66,10 +66,10 @@ jobs:
 
       - name: Update rolling release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release edit latest-development \
             --prerelease \
             --title "ArcDash Latest Development" \
-            --notes "Automatischer Build von Commit ${GITHUB_SHA}. Workflow-Lauf: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Read-only-Entwicklungsversion; Parameter-Writes sind nicht freigegeben."
+            --notes "Automatischer Build von Commit ${GITHUB_SHA}. Workflow-Lauf: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
           gh release upload latest-development release-assets/* --clobber
