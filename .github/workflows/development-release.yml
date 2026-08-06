@@ -53,7 +53,7 @@ jobs:
           sha256sum release-assets/ArcDash-development.apk > release-assets/ArcDash-development.apk.sha256
 
       - name: Create or update rolling release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-development
           target_commitish: ${{ github.sha }}
