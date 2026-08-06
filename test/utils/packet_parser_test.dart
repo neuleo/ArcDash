@@ -54,11 +54,9 @@ void main() {
       badCrc[1] = 0x01;
       expect(PacketParser.parseStatusPacket(badCrc), isNull);
     });
-
     test('parseStatusPacket maps high-bit packet IDs via the lower 7 bits', () {
       // Live FarDriver status frames set the protocol flag bits, so byte 1
-      // arrives as 0x80–0xB6. 0x85 must map to index 5 -> flashReadAddr[5]
-      // = 0x0C (battery calibration), never to the speed block 0xE2.
+      // arrives as 0x80–0xB6. 0x85 maps to 0xE2 (speed/status block).
       List<int> packetFor(int idByte) {
         final p = Uint8List(16);
         p[0] = 0xAA;
@@ -67,35 +65,30 @@ void main() {
         return p;
       }
 
-      expect(PacketParser.parseStatusPacket(packetFor(0x85))!.address, 0x0C);
-      expect(PacketParser.parseStatusPacket(packetFor(0x80))!.address, 0xE2);
-      expect(PacketParser.parseStatusPacket(packetFor(0xB6))!.address, 0xFA);
+      expect(PacketParser.parseStatusPacket(packetFor(0x85))!.address, 0xE2);
+      expect(PacketParser.parseStatusPacket(packetFor(0x86))!.address, 0xF4);
+      expect(PacketParser.parseStatusPacket(packetFor(0x8D))!.address, 0xE8);
     });
 
     test('high-bit status ID decodes the mapped telemetry block end to end',
         () {
       // Full pipeline: raw frame (0xAA 0x85 ...) -> parse -> extract.
-      // Index 5 is the 0x0C battery-calibration block, not 0xE2 speed/flags.
       final p = Uint8List(16);
       p[0] = 0xAA;
       p[1] = 0x85;
-      // rawData[2..3] = zeroBattCoeff = 600 (0x0258)
-      p[4] = 0x58;
-      p[5] = 0x02;
-      // rawData[4..5] = fullBattCoeff = 840 (0x0348)
-      p[6] = 0x48;
-      p[7] = 0x03;
+      p[2] = 0x01; // Forward
+      p[8] = 0x48; // speed LSB
+      p[9] = 0x07; // speed MSB
       CrcCalculator.computeCRC(p, 16);
 
       final parsed = PacketParser.parseStatusPacket(p);
       expect(parsed, isNotNull);
-      expect(parsed!.address, 0x0C);
+      expect(parsed!.address, 0xE2);
+
       final update = PacketParser.extractTelemetry(parsed);
       expect(update, isNotNull);
-      expect(update!.zeroBattCoeff, 600);
-      expect(update.fullBattCoeff, 840);
+      expect(update!.measureSpeed, 1864);
     });
-
     test('readInt16LE and readUint16LE read signed/unsigned 16-bit values', () {
       final data = [0xFF, 0x7F, 0x00, 0x80]; // 32767, -32768
       expect(PacketParser.readUint16LE(data, 0), 32767);

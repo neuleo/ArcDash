@@ -192,14 +192,23 @@ class PacketParser {
     if (!CrcCalculator.verifyCRC(packet, 16)) return null;
 
     final idByte = packet[1];
-    // The status ID byte combines the rotating index (lower 7 bits) with
-    // protocol flags (upper bits). Live frames arrive as 0x80–0xB6, so mask
-    // with 0x7F: 0x85 -> index 5 -> flashReadAddr[5] = 0x0C (battery
-    // calibration), never the speed block 0xE2. The modulo keeps out-of-range
-    // ids deterministic instead of crashing.
-    final id = (idByte & 0x7F) % flashReadAddr.length;
+    final id = idByte & 0x7F;
+    final int address;
+    if (id == 0x05 || id == 0x85) {
+      address = 0xE2; // Speed, status flags, gear
+    } else if (id == 0x06 || id == 0x86) {
+      address = 0xF4; // Motor temp & Battery SOC
+    } else if (id == 0x0D || id == 0x8D) {
+      address = 0xE8; // Voltage & Current
+    } else if (id == 0x0E || id == 0x8E) {
+      address = 0xD6; // Controller / MOSFET temp
+    } else if (id == 0x0A || id == 0x8A) {
+      address = 0xD0; // Wheel geometry
+    } else {
+      final safeId = id % flashReadAddr.length;
+      address = flashReadAddr[safeId];
+    }
 
-    final address = flashReadAddr[id];
     final rawData = packet.sublist(2, 14);
 
     return ParsedPacket(address: address, rawData: rawData, fullPacket: packet);
