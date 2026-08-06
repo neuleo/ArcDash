@@ -1,0 +1,1 @@
+Repariert: latest-development Prerelease wird jetzt zuverlaessig aktualisiert und die ArcDash-development.apk per overwrite_files clobbert vorhandene Assets. GITHUB_TOKEN mit permissions contents: write. Tests: docker compose run --rm flutter flutter test -> 221 passed.
