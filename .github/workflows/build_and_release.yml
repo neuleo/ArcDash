@@ -1,0 +1,53 @@
+name: ArcDash Build & Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Android APK and Upload Asset
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run unit & widget tests
+        run: flutter test
+
+      - name: Build Android APK (Debug)
+        run: flutter build apk --debug
+
+      - name: Prepare APK File
+        run: |
+          mkdir -p release-apk
+          cp build/app/outputs/flutter-apk/app-debug.apk release-apk/ArcDash-latest.apk
+
+      - name: Publish Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-dev
+          name: "ArcDash Development Build"
+          body: "Automatischer Build von Commit ${{ github.sha }}."
+          files: release-apk/ArcDash-latest.apk
+          overwrite: true
