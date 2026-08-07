@@ -800,8 +800,11 @@ class _MetricView extends StatelessWidget {
 
   TelemetryFreshness? _quality(DashboardMetric metric) {
     if (metric == DashboardMetric.connection ||
-        metric == DashboardMetric.range) {
-      return TelemetryFreshness.fresh;
+        metric == DashboardMetric.range ||
+        metric == DashboardMetric.trip) {
+      return connected
+          ? TelemetryFreshness.fresh
+          : TelemetryFreshness.disconnected;
     }
     final field = switch (metric) {
       DashboardMetric.speed => ControllerTelemetry.speed,
@@ -862,17 +865,19 @@ class _MetricView extends StatelessWidget {
           ? '65 ± 8 km'
           : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
       DashboardMetric.profile => state.rideMode.displayName,
-      DashboardMetric.gear => !state.isForward
-          ? 'R'
-          : state.gear == 1
-              ? 'N'
-              : state.gear == 2
-                  ? 'D1'
-                  : state.gear == 3
-                      ? 'D2'
-                      : state.gear == 4
-                          ? 'D3'
-                          : 'N',
+      DashboardMetric.gear => state.gear == null
+          ? 'N'
+          : !state.isForward
+              ? 'R'
+              : state.gear == 1
+                  ? 'N'
+                  : state.gear == 2
+                      ? 'D1'
+                      : state.gear == 3
+                          ? 'D2'
+                          : state.gear == 4
+                              ? 'D3'
+                              : 'N',
       DashboardMetric.motorTemperature =>
         '${state.motorTempC.toStringAsFixed(0)} °C',
       DashboardMetric.controllerTemperature =>
@@ -883,11 +888,9 @@ class _MetricView extends StatelessWidget {
       DashboardMetric.connection => connected
           ? AppStrings.of(context).text(AppText.connected)
           : AppStrings.of(context).text(AppText.disconnected),
-      DashboardMetric.trip => quality == TelemetryFreshness.disconnected
-          ? 'OFF'
-          : state.tripDistanceKm == null
-              ? '0.0 km'
-              : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
+      DashboardMetric.trip => state.tripDistanceKm == null
+          ? '0.0 km'
+          : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
     };
   }
 }

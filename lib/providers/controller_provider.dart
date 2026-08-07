@@ -8,6 +8,7 @@ import 'package:arcdash/services/bluetooth_service.dart'
 import 'package:arcdash/services/ble_transport.dart';
 import 'package:arcdash/services/protocol_service.dart';
 import 'package:arcdash/services/storage_service.dart';
+import 'package:arcdash/utils/unit_converter.dart';
 import 'package:arcdash/utils/packet_parser.dart';
 import 'package:arcdash/utils/packet_framer.dart';
 import 'package:arcdash/services/diagnostic_log.dart';
@@ -189,9 +190,15 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
     if (update.measureSpeed != null) {
       final kph = _speedFromRaw(update.measureSpeed!);
-      next = next.copyWith(speedKph: kph, lastUpdate: update.capturedAt);
+      final dtHours = update.capturedAt.difference(state.lastUpdate).inMilliseconds / 3600000.0;
+      final newTrip = (state.tripDistanceKm ?? 0.0) + (dtHours > 0 && dtHours < 0.01 && kph > 0 ? kph * dtHours : 0.0);
+      next = next.copyWith(
+        speedKph: kph,
+        tripDistanceKm: newTrip,
+        lastUpdate: update.capturedAt,
+      );
       record(ControllerTelemetry.speed, kph);
-      record(ControllerTelemetry.trip, next.tripDistanceKm ?? 0.0);
+      record(ControllerTelemetry.trip, newTrip);
     }
     if (update.forward != null) next = next.copyWith(isForward: update.forward);
     if (update.reverse != null && update.reverse!) {
@@ -208,6 +215,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     if (update.controllerTempProtect != null)
       next = next.copyWith(controllerTempProtect: update.controllerTempProtect);
     if (update.gear != null) record(ControllerTelemetry.gear, update.gear!);
+    record(ControllerTelemetry.profile, next.rideMode.index);
     if (update.measureSpeed != null) {
       record(ControllerTelemetry.errors, next.hasAnyFault ? 1 : 0);
     }
@@ -277,11 +285,13 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   }
 
   double _speedFromRaw(int measureSpeed) {
-    if (state.rateRatio == 0) return 0.0;
-    return measureSpeed *
-        (0.00376991136 *
-            (state.wheelRadius * 1270.0 + state.wheelWidth * state.wheelRatio) /
-            state.rateRatio);
+    return UnitConverter.measureSpeedToKph(
+      measureSpeed: measureSpeed,
+      wheelRadius: state.wheelRadius,
+      wheelWidth: state.wheelWidth,
+      wheelRatio: state.wheelRatio,
+      rateRatio: state.rateRatio,
+    );
   }
 
   void _saveStockBackup() {
