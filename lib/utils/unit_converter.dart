@@ -8,9 +8,9 @@ class UnitConverter {
     required int rateRatio,
   }) {
     if (rateRatio == 0) return 0.0;
-    // Scale by /10.0 for Arctic Leopard XE Pro controllers
+    // Scale for Arctic Leopard XE Pro controllers (calibrated 40 km/h real = 40 km/h displayed)
     return (measureSpeed *
-            (0.00376991136 *
+            (0.00456958953 *
                 (wheelRadius * 1270.0 + wheelWidth * wheelRatio) /
                 rateRatio)) /
         10.0;
