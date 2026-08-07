@@ -56,7 +56,7 @@ void main() {
     });
     test('parseStatusPacket maps high-bit packet IDs via the lower 7 bits', () {
       // Live FarDriver status frames set the protocol flag bits, so byte 1
-      // arrives as 0x80–0xB6. 0x85 maps to 0xE2 (speed/status block).
+      // arrives as 0x80–0xB6. 0x80 maps to index 0 -> flashReadAddr[0] = 0xE2.
       List<int> packetFor(int idByte) {
         final p = Uint8List(16);
         p[0] = 0xAA;
@@ -65,17 +65,16 @@ void main() {
         return p;
       }
 
-      expect(PacketParser.parseStatusPacket(packetFor(0x85))!.address, 0xE2);
-      expect(PacketParser.parseStatusPacket(packetFor(0x86))!.address, 0xF4);
-      expect(PacketParser.parseStatusPacket(packetFor(0x8D))!.address, 0xE8);
+      expect(PacketParser.parseStatusPacket(packetFor(0x80))!.address, 0xE2);
+      expect(PacketParser.parseStatusPacket(packetFor(0x81))!.address, 0xE8);
     });
 
     test('high-bit status ID decodes the mapped telemetry block end to end',
         () {
-      // Full pipeline: raw frame (0xAA 0x85 ...) -> parse -> extract.
+      // Full pipeline: raw frame (0xAA 0x80 ...) -> parse -> extract.
       final p = Uint8List(16);
       p[0] = 0xAA;
-      p[1] = 0x85;
+      p[1] = 0x80; // 0x80 -> 0xE2 speed/flags
       p[2] = 0x01; // Forward
       p[8] = 0x48; // speed LSB
       p[9] = 0x07; // speed MSB

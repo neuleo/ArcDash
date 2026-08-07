@@ -192,23 +192,12 @@ class PacketParser {
     if (!CrcCalculator.verifyCRC(packet, 16)) return null;
 
     final idByte = packet[1];
-    final id = idByte & 0x7F;
-    final int address;
-    if (id == 0x05 || id == 0x85) {
-      address = 0xE2; // Speed, status flags, gear
-    } else if (id == 0x06 || id == 0x86) {
-      address = 0xF4; // Motor temp & Battery SOC
-    } else if (id == 0x0D || id == 0x8D) {
-      address = 0xE8; // Voltage & Current
-    } else if (id == 0x0E || id == 0x8E) {
-      address = 0xD6; // Controller / MOSFET temp
-    } else if (id == 0x0A || id == 0x8A) {
-      address = 0xD0; // Wheel geometry
-    } else {
-      final safeId = id % flashReadAddr.length;
-      address = flashReadAddr[safeId];
-    }
+    // FarDriver rotates 55 status block IDs (0x80..0xB6 or 0x00..0x36).
+    // The rotating index is stored in the lower bits (id & 0x3F).
+    final id = idByte & 0x3F;
+    if (id >= flashReadAddr.length) return null;
 
+    final address = flashReadAddr[id];
     final rawData = packet.sublist(2, 14);
 
     return ParsedPacket(address: address, rawData: rawData, fullPacket: packet);
