@@ -190,8 +190,11 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
     if (update.measureSpeed != null) {
       final kph = _speedFromRaw(update.measureSpeed!);
-      final dtHours = update.capturedAt.difference(state.lastUpdate).inMilliseconds / 3600000.0;
-      final newTrip = (state.tripDistanceKm ?? 0.0) + (dtHours > 0 && dtHours < 0.01 && kph > 0 ? kph * dtHours : 0.0);
+      final dtHours =
+          update.capturedAt.difference(state.lastUpdate).inMilliseconds /
+              3600000.0;
+      final newTrip = (state.tripDistanceKm ?? 0.0) +
+          (dtHours > 0 && dtHours < 0.01 && kph > 0 ? kph * dtHours : 0.0);
       next = next.copyWith(
         speedKph: kph,
         tripDistanceKm: newTrip,

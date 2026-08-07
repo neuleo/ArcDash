@@ -5,6 +5,7 @@ import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 import 'package:arcdash/services/diagnostic_log_exporter.dart';
+import 'package:arcdash/services/profile_exporter.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -121,6 +122,37 @@ class SettingsScreen extends ConsumerWidget {
                       .resetVoltageCalibration();
                 },
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_upload_outlined),
+              title: const Text('Gelerntes Profil exportieren'),
+              subtitle: const Text(
+                  'Kopiert das gelernte Profil (Spannung & Verbrauch) als JSON'),
+              onTap: () => ProfileExporter.exportProfile(context, calibration),
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_download_outlined),
+              title: const Text('Profil importieren'),
+              subtitle: const Text(
+                  'Fügt ein vordefiniertes oder geteiltes Profil ein'),
+              onTap: () async {
+                final imported =
+                    await ProfileExporter.importProfileDialog(context);
+                if (imported != null) {
+                  final repo = ref.read(rangePredictionRepositoryProvider);
+                  repo.saveState(imported);
+                  ref.invalidate(rangePredictionStateProvider);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Profil erfolgreich importiert & gespeichert!'),
+                        backgroundColor: Color(0xFF123328),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
             const SizedBox(height: 20),
             _SectionTitle(strings.text(AppText.safety)),

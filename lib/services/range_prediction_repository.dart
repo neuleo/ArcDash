@@ -48,6 +48,7 @@ class RangePredictionRepository {
   void saveState(RangePredictionState state) {
     final rawJson = jsonEncode(state.toJson());
     _storage.write(_storageKey, rawJson);
+    _storage.write('${_storageKey}_${state.controllerId}', rawJson);
   }
 
   RangePredictionState? loadState({required String controllerId}) {
