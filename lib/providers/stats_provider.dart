@@ -84,13 +84,24 @@ class StatsNotifier extends StateNotifier<StatsState> {
   void _takeSample() {
     final controller = _ref.read(controllerProvider);
     final now = DateTime.now();
+
+    // Check if the day has changed (Midnight automatic reset/rollover)
+    final session = state.currentSession;
+    if (session != null && session.startTime.day != now.day) {
+      unawaited(_finalizeSession().then((_) {
+        _beginSession(now);
+        _lastSampleTime = now;
+      }));
+      return;
+    }
+
     final lastSample = _lastSampleTime;
     _lastSampleTime = now;
     if (state.currentSession == null) {
       if (controller.speedKph < 1.5) return;
       _beginSession(now);
     }
-    final session = state.currentSession!;
+    final currentActiveSession = state.currentSession!;
     final delta = lastSample == null
         ? 0.0
         : now.difference(lastSample).inMilliseconds / 1000.0;
@@ -105,7 +116,7 @@ class StatsNotifier extends StateNotifier<StatsState> {
       _stationarySince = null;
     }
 
-    session.addSample(
+    currentActiveSession.addSample(
       speedKph: controller.speedKph,
       voltageV: controller.voltageV,
       currentA: controller.currentA,
@@ -114,10 +125,16 @@ class StatsNotifier extends StateNotifier<StatsState> {
 
     // Trigger rebuild by copying state
     state = StatsState(
-      currentSession: session,
+      currentSession: currentActiveSession,
       pastSessions: state.pastSessions,
       isTracking: state.isTracking,
     );
+  }
+
+  Future<void> resetCurrentSession() async {
+    await _finalizeSession();
+    _lastSampleTime = DateTime.now();
+    _startSampling();
   }
 
   Future<void> _finalizeSession() async {

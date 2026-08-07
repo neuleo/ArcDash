@@ -30,9 +30,37 @@ class StatsScreen extends ConsumerWidget {
         centerTitle: false,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_outlined, size: 20),
+            tooltip: 'Session zurücksetzen',
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Session zurücksetzen'),
+                  content: const Text(
+                      'Möchtest du die aktuelle Fahrt-Session jetzt beenden und auf 0 zurücksetzen? Die bisherigen Daten werden in der Historie archiviert.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Abbrechen'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Zurücksetzen'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true) {
+                await ref.read(statsProvider.notifier).resetCurrentSession();
+              }
+            },
+          ),
           if (session != null)
             IconButton(
-              icon: const Icon(Icons.download_outlined, size: 20),
+              icon: const Icon(Icons.share_outlined, size: 20),
+              tooltip: 'Fahrt exportieren / teilen',
               onPressed: () async {
                 final path = await ref
                     .read(statsProvider.notifier)
