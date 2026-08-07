@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:arcdash/providers/stats_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
+import 'package:arcdash/models/ride_stats.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -360,56 +363,144 @@ class _PastSessionCard extends StatelessWidget {
     final startTime = DateTime.tryParse(json['startTime'] as String? ?? '');
     final distKm = (json['distanceKm'] as num?)?.toDouble() ?? 0.0;
     final maxSpd = (json['maxSpeedKph'] as num?)?.toDouble() ?? 0.0;
+    final avgSpd = (json['avgSpeedKph'] as num?)?.toDouble() ?? 0.0;
     final durSec = (json['durationSeconds'] as num?)?.toInt() ?? 0;
     final wh = (json['totalWhUsed'] as num?)?.toDouble() ?? 0.0;
 
-    final dateStr =
-        startTime != null ? DateFormat('MMM d, HH:mm').format(startTime) : '—';
+    final dateStr = startTime != null
+        ? DateFormat('dd.MM.yyyy, HH:mm').format(startTime)
+        : '—';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111518),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF1A2030)),
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => _showSessionDetailsDialog(
+          context, dateStr, distKm, avgSpd, maxSpd, durSec, wh, json),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111518),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF1A2030)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dateStr,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${distKm.toStringAsFixed(2)} km  •  '
+                    '${_fmt(durSec)}  •  '
+                    '${wh.toStringAsFixed(0)} Wh',
+                    style: const TextStyle(
+                      color: Color(0xFF8B949E),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.share_outlined,
+                  size: 18, color: Color(0xFF54E39E)),
+              tooltip: 'Diese Fahrt exportieren / teilen',
+              onPressed: () => _exportJson(context, json, dateStr),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '${maxSpd.toStringAsFixed(0)}\nkm/h top',
+              style: const TextStyle(
+                color: Color(0xFF00E5FF),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  dateStr,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${distKm.toStringAsFixed(2)} km  •  '
-                  '${_fmt(durSec)}  •  '
-                  '${wh.toStringAsFixed(0)} Wh',
-                  style: const TextStyle(
-                    color: Color(0xFF4A5568),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
+    );
+  }
+
+  void _exportJson(
+      BuildContext context, Map<String, dynamic> sessionJson, String dateStr) {
+    final formatted = const JsonEncoder.withIndent('  ').convert(sessionJson);
+    Clipboard.setData(ClipboardData(text: formatted));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text('Fahrt ($dateStr) als JSON in die Zwischenablage kopiert!'),
+        backgroundColor: const Color(0xFF123328),
+      ),
+    );
+  }
+
+  void _showSessionDetailsDialog(
+    BuildContext context,
+    String dateStr,
+    double distKm,
+    double avgSpd,
+    double maxSpd,
+    int durSec,
+    double wh,
+    Map<String, dynamic> sessionJson,
+  ) {
+    final whPerKm = distKm > 0.05 ? (wh / distKm).toStringAsFixed(1) : '—';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0D1117),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFF1A2030)),
+        ),
+        title: Text(
+          'Fahrtdetails ($dateStr)',
+          style: const TextStyle(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _DetailRow(
+                label: 'Distanz', value: '${distKm.toStringAsFixed(2)} km'),
+            _DetailRow(label: 'Fahrzeit', value: _fmt(durSec)),
+            _DetailRow(
+                label: 'Max. Geschwindigkeit',
+                value: '${maxSpd.toStringAsFixed(1)} km/h'),
+            _DetailRow(
+                label: 'Durchschnitt',
+                value: '${avgSpd.toStringAsFixed(1)} km/h'),
+            _DetailRow(
+                label: 'Verbrauchte Energie',
+                value: '${wh.toStringAsFixed(1)} Wh'),
+            _DetailRow(label: 'Effizienz / Verbrauch', value: '$whPerKm Wh/km'),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.share_outlined, size: 18),
+            label: const Text('Exportieren / Kopieren'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _exportJson(context, sessionJson, dateStr);
+            },
           ),
-          Text(
-            '${maxSpd.toStringAsFixed(0)}\nkm/h top',
-            style: const TextStyle(
-              color: Color(0xFF00E5FF),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              height: 1.3,
-            ),
-            textAlign: TextAlign.right,
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Schließen'),
           ),
         ],
       ),
@@ -417,8 +508,37 @@ class _PastSessionCard extends StatelessWidget {
   }
 
   String _fmt(int seconds) {
-    final m = seconds ~/ 60;
-    return '${m}m';
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    if (h > 0) return '${h}h ${m}m';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: const TextStyle(color: Color(0xFF8B949E), fontSize: 13)),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
   }
 }
 
