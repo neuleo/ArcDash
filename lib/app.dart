@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/screens/connection_screen.dart';
 import 'package:arcdash/screens/app_shell.dart';
 import 'package:arcdash/screens/debug_screen.dart';
+import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/stats_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 
@@ -16,8 +17,9 @@ class ArcDashApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Session recording must not depend on opening the rides screen.
+    // Keep telemetry and session recording active globally
     ref.watch(statsProvider);
+    ref.watch(controllerProvider);
     // Force dark status bar icons on light backgrounds (none here, but good practice)
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

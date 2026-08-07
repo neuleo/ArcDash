@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
@@ -131,10 +132,18 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             _SectionTitle(strings.text(AppText.about)),
-            ListTile(
-              leading: const Icon(Icons.electric_bike_outlined),
-              title: const Text('ArcDash 1.0.0 Read-only'),
-              subtitle: Text(strings.text(AppText.appDescription)),
+            FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                final version = snapshot.hasData
+                    ? 'v${snapshot.data!.version} (${snapshot.data!.buildNumber})'
+                    : '1.0.0';
+                return ListTile(
+                  leading: const Icon(Icons.electric_bike_outlined),
+                  title: Text('ArcDash $version Read-only'),
+                  subtitle: Text(strings.text(AppText.appDescription)),
+                );
+              },
             ),
           ],
         ),

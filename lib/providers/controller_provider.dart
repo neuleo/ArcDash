@@ -89,6 +89,9 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
         _diagnostics = diagnostics ?? DiagnosticLog(),
         super(ControllerState.initial()) {
     _connSub = _bluetooth.connectionStateStream.listen(_onConnectionState);
+    if (_bluetooth.state == DongleConnectionState.connected) {
+      _onConnected();
+    }
   }
 
   Timer? _streamInitTimer;
