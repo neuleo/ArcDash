@@ -48,18 +48,29 @@ class RangePredictionRepository {
   void saveState(RangePredictionState state) {
     final rawJson = jsonEncode(state.toJson());
     _storage.write(_storageKey, rawJson);
-    _storage.write('${_storageKey}_${state.controllerId}', rawJson);
+    _storage.write('${_storageKey}_last_saved', rawJson);
+    if (state.controllerId.isNotEmpty) {
+      _storage.write('${_storageKey}_${state.controllerId}', rawJson);
+    }
   }
 
   RangePredictionState? loadState({required String controllerId}) {
     try {
-      final raw = _storage.read(_storageKey);
+      final raw = (controllerId.isNotEmpty
+              ? _storage.read('${_storageKey}_$controllerId')
+              : null) ??
+          _storage.read(_storageKey) ??
+          _storage.read('${_storageKey}_last_saved');
       if (raw == null || raw.isEmpty) return null;
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) return null;
 
       final state = RangePredictionState.fromJson(decoded);
-      if (state.controllerId != controllerId) return null;
+      if (controllerId.isNotEmpty &&
+          state.controllerId.isNotEmpty &&
+          state.controllerId != controllerId) {
+        return null;
+      }
       return state;
     } catch (_) {
       return null;

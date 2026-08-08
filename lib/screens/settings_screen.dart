@@ -128,7 +128,11 @@ class SettingsScreen extends ConsumerWidget {
               title: const Text('Gelerntes Profil exportieren'),
               subtitle: const Text(
                   'Kopiert das gelernte Profil (Spannung & Verbrauch) als JSON'),
-              onTap: () => ProfileExporter.exportProfile(context, calibration),
+              onTap: () {
+                final repo = ref.read(rangePredictionRepositoryProvider);
+                final profile = calibration ?? repo.loadState(controllerId: '');
+                ProfileExporter.exportProfile(context, profile);
+              },
             ),
             ListTile(
               leading: const Icon(Icons.file_download_outlined),

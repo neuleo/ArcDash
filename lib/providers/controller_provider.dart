@@ -93,7 +93,7 @@ final rangePredictionStateProvider =
     StateNotifierProvider<RangePredictionNotifier, RangePredictionState?>(
         (ref) {
   final repository = ref.watch(rangePredictionRepositoryProvider);
-  final deviceId = ref.watch(connectedDeviceIdProvider) ?? 'default-controller';
+  final deviceId = ref.watch(connectedDeviceIdProvider) ?? 'C0:00:56:C4:00:36';
   return RangePredictionNotifier(repository, deviceId);
 });
 
