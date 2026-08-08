@@ -123,6 +123,16 @@ class StatsNotifier extends StateNotifier<StatsState> {
       deltaTimeSeconds: delta,
     );
 
+    // Feed learned session metrics into RangePredictionNotifier
+    if (currentActiveSession.distanceKm >= 0.5 &&
+        currentActiveSession.totalWhUsed > 10) {
+      _ref.read(rangePredictionStateProvider.notifier).learnFromSession(
+            distanceKm: currentActiveSession.distanceKm,
+            totalWhUsed: currentActiveSession.totalWhUsed,
+            socPercent: controller.battCapPercent?.toDouble(),
+          );
+    }
+
     // Trigger rebuild by copying state
     state = StatsState(
       currentSession: currentActiveSession,

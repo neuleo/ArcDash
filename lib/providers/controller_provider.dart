@@ -43,6 +43,41 @@ class RangePredictionNotifier extends StateNotifier<RangePredictionState?> {
     state = updated;
   }
 
+  /// Automatically learns from a completed or in-progress ride session.
+  void learnFromSession(
+      {required double distanceKm,
+      required double totalWhUsed,
+      double? socPercent}) {
+    if (distanceKm < 0.5 || totalWhUsed <= 10) return;
+    final current = state ?? RangePredictionState(controllerId: _controllerId);
+    final consumption = totalWhUsed / distanceKm;
+    if (consumption < 10 || consumption > 300) return;
+
+    final history = List<double>.from(current.consumptionHistoryWhPerKm);
+    history.add(consumption);
+    if (history.length > 50) history.removeAt(0);
+
+    // If SOC delta is available or we know battery went down, estimate full capacity
+    double? cap = current.learnedCapacityWh;
+    if (socPercent != null && socPercent < 95 && socPercent > 5) {
+      final usedPct = 100.0 - socPercent;
+      if (usedPct >= 15.0) {
+        final estCapacity = totalWhUsed / (usedPct / 100.0);
+        if (estCapacity >= 1000 && estCapacity <= 15000) {
+          cap = cap == null ? estCapacity : (cap * 0.7 + estCapacity * 0.3);
+        }
+      }
+    }
+
+    final updated = current.copyWith(
+      consumptionHistoryWhPerKm: history,
+      learnedCapacityWh: cap,
+      socConfidence: (current.socConfidence + 0.15).clamp(0.0, 1.0),
+    );
+    _repository.saveState(updated);
+    state = updated;
+  }
+
   void resetVoltageCalibration() {
     final current = state;
     if (current == null) return;
@@ -227,9 +262,31 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       next = next.copyWith(voltageV: update.voltageV);
       record(ControllerTelemetry.voltage, update.voltageV!);
       _rangePrediction?.learnVoltage(update.voltageV!);
-      // Compute range sample using battery capacity or conservative estimate
+
+      // Calculate dynamic range prediction based on learned profile and active session
+      final learned = _rangePrediction?.state;
+      final soc = next.battCapPercent; // 0..100 %
+      final learnedCap = learned?.learnedCapacityWh ??
+          3800.0; // Default Arctic Leopard ~3.8 kWh
+      final avgCons =
+          (learned != null && learned.consumptionHistoryWhPerKm.isNotEmpty)
+              ? (learned.consumptionHistoryWhPerKm.reduce((a, b) => a + b) /
+                  learned.consumptionHistoryWhPerKm.length)
+              : 60.0; // Wh/km default
+
+      final dynamicRangeKm = (soc * learnedCap / 100.0) / avgCons;
+      final dynamicUncertainty =
+          (learned != null && learned.socConfidence > 0.3)
+              ? dynamicRangeKm * 0.1
+              : 8.0;
+
+      next = next.copyWith(
+        rangeKm: dynamicRangeKm,
+        rangeUncertaintyKm: dynamicUncertainty,
+      );
+
       final rangeEst = quality.TelemetrySample(
-        value: next.rangeKm == 0 ? 65.0 : next.rangeKm,
+        value: dynamicRangeKm,
         source: quality.TelemetrySource.derived,
         capturedAt: update.capturedAt,
       );
