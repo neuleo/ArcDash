@@ -154,6 +154,31 @@ erhalten.
 - [x] **T084** Navigation hinter stabilen Schnittstellen vorbereiten (`128c0e5`) ([Details](./12-version-2-vorbereitung.md#t084---navigation-hinter-stabilen-schnittstellen-vorbereiten))
 - [x] **T085** Version-2-Backlog konkretisieren (`f62c15b`) ([Details](./12-version-2-vorbereitung.md#t085---version-2-backlog-konkretisieren))
 
+## Phase 12: Version 2 — Haupt-Navigation & UI-Struktur
+
+- [ ] **T086** 4-Tab-Hauptnavigation etablieren (`Cockpit`, `Tuning`, `Fahrten`, `Einstellungen`) ([Details](./13-tuning-und-schreibengine.md#t086---4-tab-hauptnavigation-etablieren))
+- [ ] **T087** TuningScreen als eigener Tab ausbauen ([Details](./13-tuning-und-schreibengine.md#t087---tuningscreen-als-eigener-tab-ausbauen))
+
+## Phase 13: Fail-Closed Safety Engine & Parameterkatalog
+
+- [ ] **T088** Fail-Closed Safety Evaluator bauen (Stillstand `0.0 km/h`, frischer Stream, Fehlerfrei) ([Details](./13-tuning-und-schreibengine.md#t088---fail-closed-safety-evaluator-bauen))
+- [ ] **T089** Parameterkatalog & Hardwaregrenzen aus Basemap festlegen (`maxSpeed`, `maxLineCurr`, `throttleResponse`) ([Details](./13-tuning-und-schreibengine.md#t089---parameterkatalog--hardwaregrenzen-aus-basemap-festlegen))
+
+## Phase 14: Presets & Live-Tuning
+
+- [ ] **T090** Live-Tuning Slider & Parameter-Steuerung (Max Speed, Line Current, Response) ([Details](./13-tuning-und-schreibengine.md#t090---live-tuning-slider--parameter-steuerung))
+- [ ] **T091** Tuning-Presets System (`Stock Offroad`, `Eco Range`, `Custom`) ([Details](./13-tuning-und-schreibengine.md#t091---tuning-presets-system))
+
+## Phase 15: Werks-Restore & Read-Back Verifikation
+
+- [ ] **T092** Werks-Restore Engine (Flashen aus `Unmodified Basemap.heb`) ([Details](./13-tuning-und-schreibengine.md#t092---werks-restore-engine-aus-unmodified_basemapheb))
+- [ ] **T093** Read-Back Verifikation & Erfolgs-Quittung ([Details](./13-tuning-und-schreibengine.md#t093---read-back-verifikation--erfolgs-quittung))
+
+## Phase 16 & 17: Qualitätssicherung & Release (v2.0.0)
+
+- [ ] **T094** Unit- & Widget-Tests erweitern ([Details](./13-tuning-und-schreibengine.md#t094---unit--widget-tests-erweitern))
+- [ ] **T095** Release v2.0.0 auf GitHub Actions veröffentlichen ([Details](./13-tuning-und-schreibengine.md#t095---release-v200-auf-github-actions-veroeffentlichen))
+
 ## Phasen-Gates
 
 Eine Phase ist erst abgeschlossen, wenn alle ihre Tasks abgeschlossen sind und
