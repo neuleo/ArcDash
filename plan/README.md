@@ -166,13 +166,13 @@ erhalten.
 
 ## Phase 14: Presets & Live-Tuning
 
-- [ ] **T090** Live-Tuning Slider & Parameter-Steuerung (Max Speed, Line Current, Response) ([Details](./13-tuning-und-schreibengine.md#t090---live-tuning-slider--parameter-steuerung))
-- [ ] **T091** Tuning-Presets System (`Stock Offroad`, `Eco Range`, `Custom`) ([Details](./13-tuning-und-schreibengine.md#t091---tuning-presets-system))
+- [x] **T090** Live-Tuning Slider & Parameter-Steuerung (Max Speed, Line Current, Response) ([Details](./13-tuning-und-schreibengine.md#t090---live-tuning-slider--parameter-steuerung))
+- [x] **T091** Tuning-Presets System (`Stock Offroad`, `Eco Range`, `Custom`) ([Details](./13-tuning-und-schreibengine.md#t091---tuning-presets-system))
 
 ## Phase 15: Werks-Restore & Read-Back Verifikation
 
-- [ ] **T092** Werks-Restore Engine (Flashen aus `Unmodified Basemap.heb`) ([Details](./13-tuning-und-schreibengine.md#t092---werks-restore-engine-aus-unmodified_basemapheb))
-- [ ] **T093** Read-Back Verifikation & Erfolgs-Quittung ([Details](./13-tuning-und-schreibengine.md#t093---read-back-verifikation--erfolgs-quittung))
+- [x] **T092** Werks-Restore Engine (Flashen aus `Unmodified Basemap.heb`) ([Details](./13-tuning-und-schreibengine.md#t092---werks-restore-engine-aus-unmodified_basemapheb))
+- [x] **T093** Read-Back Verifikation & Erfolgs-Quittung ([Details](./13-tuning-und-schreibengine.md#t093---read-back-verifikation--erfolgs-quittung))
 
 ## Phase 16 & 17: Qualitätssicherung & Release (v2.0.0)
 
