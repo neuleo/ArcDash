@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/tuning_profile.dart';
-import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/tuning_provider.dart';
 import 'package:arcdash/services/profile_tools.dart';
+import 'package:arcdash/services/write_safety.dart';
 
 class TuningScreen extends ConsumerWidget {
   const TuningScreen({super.key});
@@ -12,10 +12,10 @@ class TuningScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tuningState = ref.watch(tuningProvider);
-    final controllerState = ref.watch(controllerProvider);
+    final safety = ref.watch(writeSafetyDecisionProvider);
     final profile = tuningState.pendingProfile;
     final notifier = ref.read(tuningProvider.notifier);
-    final isMoving = controllerState.speedKph > 2.0;
+    final isMoving = safety.rejections.contains(SafetyRejection.moving);
     final editorValidation = const ProfileValidator().validateParameters({
       'maxSpeedKph': profile.maxSpeedKph,
       'maxLineCurrA': profile.maxLineCurrA,
@@ -52,7 +52,7 @@ class TuningScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Safety warning banner
-              _WarningBanner(isMoving: isMoving),
+              _WarningBanner(decision: safety),
               const SizedBox(height: 20),
 
               // Presets
@@ -200,7 +200,7 @@ class TuningScreen extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: tuningState.isApplying || isMoving
+                  onPressed: tuningState.isApplying || !safety.allowed
                       ? null
                       : () => _showApplyDialog(context, ref, profile),
                   style: ElevatedButton.styleFrom(
@@ -360,31 +360,42 @@ class TuningScreen extends ConsumerWidget {
 }
 
 class _WarningBanner extends StatelessWidget {
-  final bool isMoving;
-  const _WarningBanner({required this.isMoving});
+  final SafetyDecision decision;
+  const _WarningBanner({required this.decision});
 
   @override
   Widget build(BuildContext context) {
-    if (isMoving) {
+    if (!decision.allowed) {
+      final moving = decision.rejections.contains(SafetyRejection.moving);
       return Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFF1744).withOpacity(0.12),
+          color: (moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800))
+              .withOpacity(moving ? 0.12 : 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFF1744).withOpacity(0.4)),
+          border: Border.all(
+            color: (moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800))
+                .withOpacity(0.4),
+          ),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.warning, color: Color(0xFFFF1744), size: 18),
-            SizedBox(width: 10),
+            Icon(
+              moving ? Icons.warning : Icons.lock_outline,
+              color: moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800),
+              size: 18,
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'VEHICLE MOVING — Tuning locked until stationary',
+                moving
+                    ? 'VEHICLE MOVING — Tuning locked until stationary'
+                    : 'TUNING LOCKED — ${describeSafety(decision)}',
                 style: TextStyle(
-                  color: Color(0xFFFF1744),
+                  color: moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800),
                   fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w600,
+                  height: 1.5,
                 ),
               ),
             ),

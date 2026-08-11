@@ -18,10 +18,21 @@ VersionedProfile _profile({double speed = 45}) => VersionedProfile(
     );
 
 void main() {
-  test('profile editor validation blocks unknown hardware bounds', () {
+  test('profile editor validation accepts in-range hardware bounds', () {
     final validation = const ProfileValidator().validate(_profile());
-    expect(validation.valid, isFalse);
-    expect(validation.issues, contains(ProfileIssue.unknownBounds));
+    expect(validation.valid, isTrue);
+    expect(validation.issues, isEmpty);
+  });
+
+  test('profile editor validation rejects values outside hardware bounds', () {
+    final tooFast = _profile(speed: 200);
+    expect(const ProfileValidator().validate(tooFast).valid, isFalse);
+    expect(const ProfileValidator().validate(tooFast).issues,
+        contains(ProfileIssue.invalidValue));
+
+    final tooSlow = _profile(speed: 5);
+    expect(const ProfileValidator().validate(tooSlow).issues,
+        contains(ProfileIssue.invalidValue));
   });
 
   test('diff sorts values and classifies safety-critical fields', () {

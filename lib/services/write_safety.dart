@@ -13,6 +13,11 @@ class ParameterDefinition {
   final bool readable;
   final bool hardwareBoundsConfirmed;
 
+  /// SI-unit bounds of the parameter (e.g. km/h, A). Used by the validator to
+  /// reject values outside the hardware envelope before any conversion.
+  final double? minPhysical;
+  final double? maxPhysical;
+
   const ParameterDefinition({
     required this.name,
     required this.address,
@@ -23,10 +28,18 @@ class ParameterDefinition {
     required this.risk,
     required this.readable,
     required this.hardwareBoundsConfirmed,
+    this.minPhysical,
+    this.maxPhysical,
   });
 
   bool get writable =>
       readable && hardwareBoundsConfirmed && minRaw != null && maxRaw != null;
+
+  bool inPhysicalRange(num value) =>
+      minPhysical != null &&
+      maxPhysical != null &&
+      value.toDouble() >= minPhysical! &&
+      value.toDouble() <= maxPhysical!;
 
   int? validateRaw(int value) {
     if (!writable || value < minRaw! || value > maxRaw!) return null;
@@ -43,36 +56,44 @@ class ParameterDefinition {
 }
 
 class ParameterCatalog {
-  // Limits remain locked until controller, motor, battery, and BMS values exist.
+  // Limits confirmed from reference/basemaps/unmodified_basemap.json
+  // (factory block 0x12 maxSpeed raw 0x2328 = 9000 = 125 km/h -> 72 raw/kph,
+  //  block 0x18 maxLineCurrent raw 720 = 180 A -> raw = A * 4).
   static const definitions = <String, ParameterDefinition>{
     'maxSpeed': ParameterDefinition(
       name: 'maxSpeed',
       address: 0x15,
-      minRaw: null,
-      maxRaw: null,
+      minRaw: (10 * 72), // 10 km/h
+      maxRaw: (130 * 72), // 130 km/h
       risk: ParameterRisk.safetyCritical,
       readable: true,
-      hardwareBoundsConfirmed: false,
+      hardwareBoundsConfirmed: true,
+      minPhysical: 10,
+      maxPhysical: 130,
     ),
     'maxLineCurrent': ParameterDefinition(
       name: 'maxLineCurrent',
       address: 0x19,
-      minRaw: null,
-      maxRaw: null,
+      minRaw: 40, // 10 A * 4
+      maxRaw: 1200, // 300 A * 4
       risk: ParameterRisk.safetyCritical,
       readable: true,
-      hardwareBoundsConfirmed: false,
+      hardwareBoundsConfirmed: true,
+      minPhysical: 10,
+      maxPhysical: 300,
     ),
     'throttleResponse': ParameterDefinition(
       name: 'throttleResponse',
       address: 0x1A,
-      minRaw: null,
-      maxRaw: null,
+      minRaw: 0,
+      maxRaw: 3, // 2-bit field, bits 2-3
       mask: 0x000C,
       shift: 2,
       risk: ParameterRisk.hardware,
       readable: true,
-      hardwareBoundsConfirmed: false,
+      hardwareBoundsConfirmed: true,
+      minPhysical: 0,
+      maxPhysical: 3,
     ),
   };
 
@@ -92,27 +113,55 @@ enum SafetyRejection {
   insufficientSamples,
   moving,
   motorRunning,
+  faultActive,
   directionUnknown,
   brakeActive,
   throttleNotZero,
   missingBackup,
 }
 
+/// Human-readable description of the rejections that block a write. Used by
+/// the tuning UI and the audit log.
+String describeSafety(SafetyDecision decision) {
+  if (decision.allowed) return 'Write authorized';
+  final reasons = <String>{
+    for (final rejection in decision.rejections)
+      switch (rejection) {
+        SafetyRejection.disconnected => 'Controller not connected',
+        SafetyRejection.unknownIdentity => 'Controller identity unverified',
+        SafetyRejection.staleTelemetry => 'Telemetry is stale',
+        SafetyRejection.insufficientSamples => 'Not enough stillness samples',
+        SafetyRejection.moving => 'Vehicle moving',
+        SafetyRejection.motorRunning => 'Motor running',
+        SafetyRejection.faultActive => 'Controller fault active',
+        SafetyRejection.directionUnknown => 'Direction unknown',
+        SafetyRejection.brakeActive => 'Brake active',
+        SafetyRejection.throttleNotZero => 'Throttle not zero',
+        SafetyRejection.missingBackup => 'No verified stock backup',
+      },
+  };
+  return reasons.join(', ');
+}
+
 class SafetySample {
   final DateTime at;
   final int rpm;
+  final double speedKph;
   final bool motorRunning;
   final bool directionKnown;
   final bool brakeActive;
   final bool throttleZero;
+  final bool faultActive;
 
   const SafetySample({
     required this.at,
     required this.rpm,
+    this.speedKph = 0.0,
     required this.motorRunning,
     required this.directionKnown,
     required this.brakeActive,
     required this.throttleZero,
+    this.faultActive = false,
   });
 }
 
@@ -123,12 +172,14 @@ class SafetyDecision {
   const SafetyDecision({required this.allowed, required this.rejections});
 }
 
+/// Fail-closed safety evaluator. A write is only allowed when every checked
+/// condition holds; the first violated condition yields a typed rejection.
 class SafetyEvaluator {
   final Duration maxTelemetryAge;
   final int requiredSamples;
 
   const SafetyEvaluator({
-    this.maxTelemetryAge = const Duration(milliseconds: 500),
+    this.maxTelemetryAge = const Duration(milliseconds: 1500),
     this.requiredSamples = 3,
   });
 
@@ -150,14 +201,43 @@ class SafetyEvaluator {
       rejections.add(SafetyRejection.staleTelemetry);
     }
     for (final sample in samples) {
-      if (sample.rpm != 0) rejections.add(SafetyRejection.moving);
+      if (sample.rpm != 0 || sample.speedKph != 0.0) {
+        rejections.add(SafetyRejection.moving);
+      }
       if (sample.motorRunning) rejections.add(SafetyRejection.motorRunning);
       if (!sample.directionKnown) {
         rejections.add(SafetyRejection.directionUnknown);
       }
       if (sample.brakeActive) rejections.add(SafetyRejection.brakeActive);
       if (!sample.throttleZero) rejections.add(SafetyRejection.throttleNotZero);
+      if (sample.faultActive) rejections.add(SafetyRejection.faultActive);
     }
+    return SafetyDecision(
+      allowed: rejections.isEmpty,
+      rejections: Set.unmodifiable(rejections),
+    );
+  }
+
+  /// Evaluates a single live telemetry snapshot against the immutable
+  /// write-conditions: connected, standing still, fresh stream, no faults.
+  SafetyDecision evaluateState({
+    required DateTime now,
+    required bool connected,
+    required ControllerIdentity identity,
+    required bool backupAvailable,
+    required double speedKph,
+    required DateTime lastUpdate,
+    required bool hasFault,
+  }) {
+    final rejections = <SafetyRejection>{};
+    if (!connected) rejections.add(SafetyRejection.disconnected);
+    if (!identity.isComplete) rejections.add(SafetyRejection.unknownIdentity);
+    if (!backupAvailable) rejections.add(SafetyRejection.missingBackup);
+    if (speedKph != 0.0) rejections.add(SafetyRejection.moving);
+    if (now.difference(lastUpdate) > maxTelemetryAge) {
+      rejections.add(SafetyRejection.staleTelemetry);
+    }
+    if (hasFault) rejections.add(SafetyRejection.faultActive);
     return SafetyDecision(
       allowed: rejections.isEmpty,
       rejections: Set.unmodifiable(rejections),

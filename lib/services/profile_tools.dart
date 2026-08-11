@@ -31,12 +31,15 @@ class ProfileValidator {
     final issues = <ProfileIssue>{};
     for (final entry in parameters.entries) {
       final definition = _definitionFor(entry.key);
-      if (definition == null) {
-        issues.add(ProfileIssue.unknownParameter);
-      } else if (entry.value is! num) {
+      // Parameters without a catalog entry (e.g. maxPhaseCurrA, regenStrength)
+      // are display-only and never written, so they are not validated.
+      if (definition == null) continue;
+      if (entry.value is! num) {
         issues.add(ProfileIssue.invalidValue);
       } else if (!definition.hardwareBoundsConfirmed) {
         issues.add(ProfileIssue.unknownBounds);
+      } else if (!definition.inPhysicalRange(entry.value as num)) {
+        issues.add(ProfileIssue.invalidValue);
       }
     }
     return ProfileValidation(Set.unmodifiable(issues));

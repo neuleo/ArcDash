@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
 import 'package:arcdash/screens/settings_screen.dart';
 import 'package:arcdash/screens/stats_screen.dart';
+import 'package:arcdash/screens/tuning_screen.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 
 class AppShell extends StatefulWidget {
@@ -16,6 +17,7 @@ class _AppShellState extends State<AppShell> {
 
   static const _screens = [
     DashboardScreen(),
+    TuningScreen(),
     StatsScreen(),
     SettingsScreen(),
   ];
@@ -28,6 +30,9 @@ class _AppShellState extends State<AppShell> {
             NavigationDestination(
                 icon: const Icon(Icons.speed),
                 label: strings.text(AppText.cockpit)),
+            NavigationDestination(
+                icon: const Icon(Icons.tune),
+                label: strings.text(AppText.tuning)),
             NavigationDestination(
                 icon: const Icon(Icons.route_outlined),
                 label: strings.text(AppText.rides)),

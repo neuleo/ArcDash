@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 enum AppText {
   cockpit,
   rides,
+  tuning,
   settings,
   connect,
   live,
@@ -134,6 +135,7 @@ class AppStrings {
 const _germanText = {
   AppText.cockpit: 'Cockpit',
   AppText.rides: 'Fahrten',
+  AppText.tuning: 'Tuning',
   AppText.settings: 'Einstellungen',
   AppText.connect: 'VERBINDEN',
   AppText.live: 'LIVE',
@@ -250,6 +252,7 @@ const _germanText = {
 const _englishText = {
   AppText.cockpit: 'Cockpit',
   AppText.rides: 'Rides',
+  AppText.tuning: 'Tuning',
   AppText.settings: 'Settings',
   AppText.connect: 'CONNECT',
   AppText.live: 'LIVE',

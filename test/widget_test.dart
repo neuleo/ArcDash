@@ -3,6 +3,7 @@ import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
 import 'package:arcdash/screens/app_shell.dart';
+import 'package:arcdash/screens/tuning_screen.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/utils/crc_calculator.dart';
@@ -45,6 +46,30 @@ void main() {
     expect(find.text('FAHRTEN'), findsOneWidget);
     expect(find.text('Cockpit'), findsOneWidget);
     expect(find.text('Einstellungen'), findsOneWidget);
+  });
+
+  testWidgets('app shell exposes the tuning tab with tuning controls',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          bluetoothServiceProvider.overrideWithValue(_FakeDongleService()),
+          storageServiceProvider.overrideWithValue(StorageService()),
+        ],
+        child: const ArcDashApp(),
+      ),
+    );
+
+    await tester.tap(find.text('Tuning'));
+    await tester.pump();
+
+    expect(find.byType(TuningScreen), findsOneWidget);
+    expect(find.text('TUNING'), findsOneWidget);
+    expect(find.text('Max Speed'), findsOneWidget);
+    expect(find.text('Cockpit'), findsOneWidget);
+    expect(find.text('Fahrten'), findsOneWidget);
+    expect(find.text('Einstellungen'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('app shell supports optional English localization',

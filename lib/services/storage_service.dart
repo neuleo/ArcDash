@@ -93,9 +93,11 @@ class StorageService {
   }
 
   // --- Stock backup ---
-  bool get hasStockBackup => _prefs.containsKey(_prefKeyStockBackup);
+  bool get hasStockBackup =>
+      _initialized && _prefs.containsKey(_prefKeyStockBackup);
 
   Future<void> saveStockBackup(Map<int, int> rawAddressValues) async {
+    if (!_initialized) return;
     final encoded = jsonEncode(rawAddressValues.map(
       (k, v) => MapEntry(k.toString(), v),
     ));
@@ -104,16 +106,19 @@ class StorageService {
   }
 
   Map<int, int>? loadStockBackup() {
+    if (!_initialized) return null;
     final s = _prefs.getString(_prefKeyStockBackup);
     if (s == null) return null;
     final map = jsonDecode(s) as Map<String, dynamic>;
     return map.map((k, v) => MapEntry(int.parse(k), v as int));
   }
 
-  bool get firstConnectDone => _prefs.getBool(_prefKeyFirstConnect) ?? false;
+  bool get firstConnectDone =>
+      _initialized && (_prefs.getBool(_prefKeyFirstConnect) ?? false);
 
   // --- Tuning profiles ---
   Future<void> saveProfile(TuningProfile profile) async {
+    if (!_initialized) return;
     final profiles = loadProfiles();
     final idx = profiles.indexWhere((p) => p.name == profile.name);
     if (idx >= 0) {
@@ -128,6 +133,7 @@ class StorageService {
   }
 
   List<TuningProfile> loadProfiles() {
+    if (!_initialized) return [];
     final s = _prefs.getString(_prefKeyProfiles);
     if (s == null) return [];
     try {
@@ -141,6 +147,7 @@ class StorageService {
   }
 
   Future<void> deleteProfile(String name) async {
+    if (!_initialized) return;
     final profiles = loadProfiles()..removeWhere((p) => p.name == name);
     await _prefs.setString(
       _prefKeyProfiles,
@@ -185,6 +192,6 @@ class StorageService {
   }
 
   Future<void> clearAll() async {
-    await _prefs.clear();
+    if (_initialized) await _prefs.clear();
   }
 }

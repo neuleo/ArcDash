@@ -1,7 +1,35 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:arcdash/models/controller_identity.dart';
 import 'package:arcdash/models/tuning_profile.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/services/write_safety.dart';
+
+/// Identity of the connected controller. Parsed from live status during a
+/// later phase; until then the fail-closed gate keeps writes blocked.
+final controllerIdentityProvider = Provider<ControllerIdentity>((ref) {
+  return const ControllerIdentity();
+});
+
+/// Live fail-closed write authorization. A write is only allowed when the
+/// controller is connected, standing still (speedKph == 0.0), the telemetry
+/// stream is fresh and no fault is active.
+final writeSafetyDecisionProvider = Provider<SafetyDecision>((ref) {
+  final controller = ref.watch(controllerProvider);
+  final connected = ref.watch(isConnectedProvider);
+  final storage = ref.watch(storageServiceProvider);
+  final identity = ref.watch(controllerIdentityProvider);
+  return const SafetyEvaluator().evaluateState(
+    now: DateTime.now(),
+    connected: connected,
+    identity: identity,
+    backupAvailable: storage.hasStockBackup,
+    speedKph: controller.speedKph,
+    lastUpdate: controller.lastUpdate,
+    hasFault: controller.hasAnyFault,
+  );
+});
 
 class TuningState {
   final TuningProfile pendingProfile;
@@ -103,10 +131,26 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   /// Applies all pending profile parameters to the controller.
+  ///
+  /// Fail-closed: nothing is written unless the safety evaluator authorizes
+  /// the write (connected, standstill at 0.0 km/h, fresh stream, no faults).
   Future<bool> applyProfile() async {
+    if (state.isApplying) return false;
+    final decision = _ref.read(writeSafetyDecisionProvider);
+    if (!decision.allowed) {
+      state = state.copyWith(
+        isApplying: false,
+        appliedSuccessfully: false,
+        lastError: describeSafety(decision),
+      );
+      return false;
+    }
+    // Wiring the serialized BLE writes is part of Phase 14 (T090); the write
+    // path stays read-only until then.
     state = state.copyWith(
-      lastError:
-          'Write engine locked until hardware limits and read-back are verified.',
+      isApplying: false,
+      appliedSuccessfully: false,
+      lastError: 'Write engine not yet enabled — live writing ships in Phase 14.',
     );
     return false;
   }
