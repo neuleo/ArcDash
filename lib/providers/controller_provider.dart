@@ -265,20 +265,31 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
       // Calculate dynamic range prediction based on learned profile and active session
       final learned = _rangePrediction?.state;
-      final soc = next.battCapPercent; // 0..100 %
+
+      // Dynamically calculate SOC from learned voltage calibration bounds if available
+      final maxV = learned?.maxVoltageV ?? 87.9;
+      final minV = learned?.minVoltageV ?? 62.0;
+      final calcSoc = (update.voltageV != null && maxV > minV)
+          ? ((100.0 * (update.voltageV! - minV) / (maxV - minV)).round())
+              .clamp(0, 100)
+          : next.battCapPercent;
+
+      next = next.copyWith(battCapPercent: calcSoc);
+      record(ControllerTelemetry.soc, calcSoc);
+
       final learnedCap = learned?.learnedCapacityWh ??
           3800.0; // Default Arctic Leopard ~3.8 kWh
       final avgCons =
           (learned != null && learned.consumptionHistoryWhPerKm.isNotEmpty)
               ? (learned.consumptionHistoryWhPerKm.reduce((a, b) => a + b) /
                   learned.consumptionHistoryWhPerKm.length)
-              : 60.0; // Wh/km default
+              : 56.0; // Wh/km default from live ride history
 
-      final dynamicRangeKm = (soc * learnedCap / 100.0) / avgCons;
+      final dynamicRangeKm = (calcSoc * learnedCap / 100.0) / avgCons;
       final dynamicUncertainty =
           (learned != null && learned.socConfidence > 0.3)
-              ? dynamicRangeKm * 0.1
-              : 8.0;
+              ? dynamicRangeKm * 0.08
+              : 5.0;
 
       next = next.copyWith(
         rangeKm: dynamicRangeKm,

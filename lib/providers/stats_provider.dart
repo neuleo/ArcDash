@@ -156,6 +156,14 @@ class StatsNotifier extends StateNotifier<StatsState> {
     if (session == null) return;
     session.end();
 
+    if (session.distanceKm >= 0.5 && session.totalWhUsed > 10) {
+      _ref.read(rangePredictionStateProvider.notifier).learnFromSession(
+            distanceKm: session.distanceKm,
+            totalWhUsed: session.totalWhUsed,
+            socPercent: _ref.read(controllerProvider).battCapPercent.toDouble(),
+          );
+    }
+
     await _saveSession(session);
     state = state.copyWith(clearCurrentSession: true, isTracking: false);
     _loadPastSessions();
