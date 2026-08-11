@@ -156,13 +156,13 @@ erhalten.
 
 ## Phase 12: Version 2 — Haupt-Navigation & UI-Struktur
 
-- [ ] **T086** 4-Tab-Hauptnavigation etablieren (`Cockpit`, `Tuning`, `Fahrten`, `Einstellungen`) ([Details](./13-tuning-und-schreibengine.md#t086---4-tab-hauptnavigation-etablieren))
-- [ ] **T087** TuningScreen als eigener Tab ausbauen ([Details](./13-tuning-und-schreibengine.md#t087---tuningscreen-als-eigener-tab-ausbauen))
+- [x] **T086** 4-Tab-Hauptnavigation etablieren (`Cockpit`, `Tuning`, `Fahrten`, `Einstellungen`) (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t086---4-tab-hauptnavigation-etablieren))
+- [x] **T087** TuningScreen als eigener Tab ausbauen (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t087---tuningscreen-als-eigener-tab-ausbauen))
 
 ## Phase 13: Fail-Closed Safety Engine & Parameterkatalog
 
-- [ ] **T088** Fail-Closed Safety Evaluator bauen (Stillstand `0.0 km/h`, frischer Stream, Fehlerfrei) ([Details](./13-tuning-und-schreibengine.md#t088---fail-closed-safety-evaluator-bauen))
-- [ ] **T089** Parameterkatalog & Hardwaregrenzen aus Basemap festlegen (`maxSpeed`, `maxLineCurr`, `throttleResponse`) ([Details](./13-tuning-und-schreibengine.md#t089---parameterkatalog--hardwaregrenzen-aus-basemap-festlegen))
+- [x] **T088** Fail-Closed Safety Evaluator bauen (Stillstand `0.0 km/h`, frischer Stream, Fehlerfrei) (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t088---fail-closed-safety-evaluator-bauen))
+- [x] **T089** Parameterkatalog & Hardwaregrenzen aus Basemap festlegen (`maxSpeed`, `maxLineCurr`, `throttleResponse`) (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t089---parameterkatalog--hardwaregrenzen-aus-basemap-festlegen))
 
 ## Phase 14: Presets & Live-Tuning
 
