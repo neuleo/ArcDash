@@ -40,12 +40,14 @@ jobs:
       - name: Calculate Dynamic Version
         id: versioning
         run: |
-          MAJOR_MINOR=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1 | cut -d'.' -f1,2)
-          PATCH=$(git rev-list --count HEAD)
-          VERSION="${MAJOR_MINOR}.${PATCH}"
+          BASE_VERSION=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1)
+          BUILD_NUM=$(git rev-list --count HEAD)
+          VERSION="v${BASE_VERSION}"
+          FULL_BUILD_VERSION="${BASE_VERSION}.${BUILD_NUM}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Calculated version: $VERSION"
+          echo "FULL_BUILD_VERSION=$FULL_BUILD_VERSION" >> $GITHUB_ENV
+          echo "Calculated version: $VERSION (Build: $BUILD_NUM)"
 
       - name: Build Android APK (Debug)
         run: flutter build apk --debug --build-name=${{ env.VERSION }} --build-number=${{ github.run_number }}
@@ -53,7 +55,7 @@ jobs:
       - name: Prepare APK File
         run: |
           mkdir -p release-apk
-          cp build/app/outputs/flutter-apk/app-debug.apk release-apk/ArcDash-v${{ env.VERSION }}.apk
+          cp build/app/outputs/flutter-apk/app-debug.apk release-apk/ArcDash-${{ env.VERSION }}.apk
 
       - name: Delete Old Rolling Release if exists
         env:
@@ -64,11 +66,11 @@ jobs:
       - name: Publish Versioned Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.VERSION }}
-          name: "ArcDash v${{ env.VERSION }}"
+          tag_name: ${{ env.VERSION }}
+          name: "ArcDash ${{ env.VERSION }}"
           body: |
-            Automatischer Release-Build **v${{ env.VERSION }}** (Commit `${{ github.sha }}`).
+            Automatischer Release-Build **${{ env.VERSION }}** (Build `${{ env.FULL_BUILD_VERSION }}`, Commit `${{ github.sha }}`).
             Workflow-Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          files: release-apk/ArcDash-v${{ env.VERSION }}.apk
+          files: release-apk/ArcDash-${{ env.VERSION }}.apk
           prerelease: false
 
