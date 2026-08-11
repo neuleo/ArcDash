@@ -40,8 +40,9 @@ jobs:
       - name: Calculate Dynamic Version
         id: versioning
         run: |
-          COMMITS=$(git rev-list --count HEAD)
-          VERSION="1.0.${COMMITS}"
+          MAJOR_MINOR=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1 | cut -d'.' -f1,2)
+          PATCH=$(git rev-list --count HEAD)
+          VERSION="${MAJOR_MINOR}.${PATCH}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Calculated version: $VERSION"

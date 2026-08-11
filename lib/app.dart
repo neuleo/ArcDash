@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/screens/connection_screen.dart';
 import 'package:arcdash/screens/app_shell.dart';
 import 'package:arcdash/screens/debug_screen.dart';
+import 'package:arcdash/screens/dev_tools_screen.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/stats_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
@@ -44,6 +45,7 @@ class ArcDashApp extends ConsumerWidget {
         '/': (_) => const ConnectionScreen(),
         '/dashboard': (_) => const AppShell(),
         '/debug': (_) => const DebugScreen(),
+        '/devtools': (_) => const DevToolsScreen(),
       },
     );
   }

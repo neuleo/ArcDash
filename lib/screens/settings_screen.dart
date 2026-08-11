@@ -56,6 +56,15 @@ class SettingsScreen extends ConsumerWidget {
                 DiagnosticLogExporter.shareOrCopy(context, diagnostics);
               },
             ),
+            ListTile(
+              leading:
+                  const Icon(Icons.developer_mode, color: Color(0xFF00E5FF)),
+              title: const Text('Dev Tools & KI-Kontext'),
+              subtitle: const Text(
+                  'Gesamten App-Zustand (Profil, Sessions, Logs) exportieren'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).pushNamed('/devtools'),
+            ),
             const SizedBox(height: 20),
             _SectionTitle(strings.text(AppText.dataManagement)),
             ListTile(
