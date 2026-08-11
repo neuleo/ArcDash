@@ -39,35 +39,38 @@ class TuningProfile {
     this.isStock = false,
   });
 
-  // Preset profiles
-  static TuningProfile stock() => TuningProfile(
-        name: 'Stock',
-        description: 'Factory default settings',
-        maxSpeedKph: 45.0,
-        maxLineCurrA: 60.0,
-        maxPhaseCurrA: 120.0,
-        regenStrength: 0.3,
-        throttleResponse: 1,
+  // Built-in / factory presets (Phase 14, T091).
+  // Values and bounds are derived from the verified factory baseline
+  // `reference/basemaps/unmodified_basemap.json` / `assets/basemaps/...heb`.
+  static TuningProfile stockOffroad() => TuningProfile(
+        name: 'Stock Offroad',
+        description: 'Factory off-road baseline (125 km/h, 200 A, Sport)',
+        maxSpeedKph: 125.0,
+        maxLineCurrA: 200.0,
+        maxPhaseCurrA: 300.0,
+        regenStrength: 0.1,
+        throttleResponse: 1, // Sport
         powerCurve: PowerPoint.defaultCurve(),
         createdAt: DateTime.now(),
         isStock: true,
       );
 
-  static TuningProfile street() => TuningProfile(
-        name: 'Street',
-        description: 'Smooth power for road riding',
-        maxSpeedKph: 55.0,
-        maxLineCurrA: 80.0,
-        maxPhaseCurrA: 160.0,
+  static TuningProfile ecoRange() => TuningProfile(
+        name: 'Eco Range',
+        description: 'Maximum range — gentle power (45 km/h, 100 A, Eco)',
+        maxSpeedKph: 45.0,
+        maxLineCurrA: 100.0,
+        maxPhaseCurrA: 150.0,
         regenStrength: 0.4,
-        throttleResponse: 2, // ECO
+        throttleResponse: 2, // Eco
         powerCurve: PowerPoint.smoothCurve(),
         createdAt: DateTime.now(),
+        isStock: true,
       );
 
-  static TuningProfile trail() => TuningProfile(
-        name: 'Trail',
-        description: 'Balanced power for off-road',
+  static TuningProfile custom() => TuningProfile(
+        name: 'Custom',
+        description: 'User-defined starting point',
         maxSpeedKph: 65.0,
         maxLineCurrA: 100.0,
         maxPhaseCurrA: 200.0,
@@ -75,19 +78,13 @@ class TuningProfile {
         throttleResponse: 1, // Sport
         powerCurve: PowerPoint.defaultCurve(),
         createdAt: DateTime.now(),
+        isStock: false,
       );
 
-  static TuningProfile fullSend() => TuningProfile(
-        name: 'Full Send',
-        description: '⚠ Maximum power — race use only',
-        maxSpeedKph: 85.0,
-        maxLineCurrA: 150.0,
-        maxPhaseCurrA: 300.0,
-        regenStrength: 0.1,
-        throttleResponse: 0, // Line/Race
-        powerCurve: PowerPoint.aggressiveCurve(),
-        createdAt: DateTime.now(),
-      );
+  /// All factory presets shown in the tuning UI. User-created presets are the
+  /// same type but persisted via [StorageService] and shown alongside these.
+  static List<TuningProfile> factoryPresets() =>
+      [stockOffroad(), ecoRange(), custom()];
 
   TuningProfile copyWith({
     String? name,

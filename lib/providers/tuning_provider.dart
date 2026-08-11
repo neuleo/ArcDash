@@ -4,7 +4,11 @@ import 'package:arcdash/models/controller_identity.dart';
 import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/services/heb_file_parser.dart';
+import 'package:arcdash/services/protocol_service.dart';
+import 'package:arcdash/services/stock_heb_restore.dart';
 import 'package:arcdash/services/write_safety.dart';
+import 'package:arcdash/utils/tuning_conversions.dart';
 
 /// Identity of the connected controller. Parsed from live status during a
 /// later phase; until then the fail-closed gate keeps writes blocked.
@@ -34,6 +38,7 @@ final writeSafetyDecisionProvider = Provider<SafetyDecision>((ref) {
 class TuningState {
   final TuningProfile pendingProfile;
   final bool isApplying;
+  final bool isRestoring;
   final String? lastError;
   final bool appliedSuccessfully;
   final List<TuningProfile> savedProfiles;
@@ -41,6 +46,7 @@ class TuningState {
   const TuningState({
     required this.pendingProfile,
     this.isApplying = false,
+    this.isRestoring = false,
     this.lastError,
     this.appliedSuccessfully = false,
     this.savedProfiles = const [],
@@ -49,6 +55,7 @@ class TuningState {
   TuningState copyWith({
     TuningProfile? pendingProfile,
     bool? isApplying,
+    bool? isRestoring,
     String? lastError,
     bool? appliedSuccessfully,
     List<TuningProfile>? savedProfiles,
@@ -56,6 +63,7 @@ class TuningState {
       TuningState(
         pendingProfile: pendingProfile ?? this.pendingProfile,
         isApplying: isApplying ?? this.isApplying,
+        isRestoring: isRestoring ?? this.isRestoring,
         lastError: lastError,
         appliedSuccessfully: appliedSuccessfully ?? this.appliedSuccessfully,
         savedProfiles: savedProfiles ?? this.savedProfiles,
@@ -66,7 +74,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   final Ref _ref;
 
   TuningNotifier(this._ref)
-      : super(TuningState(pendingProfile: TuningProfile.trail())) {
+      : super(TuningState(pendingProfile: TuningProfile.custom())) {
     _loadProfiles();
   }
 
@@ -130,10 +138,11 @@ class TuningNotifier extends StateNotifier<TuningState> {
     );
   }
 
-  /// Applies all pending profile parameters to the controller.
+  /// Applies all pending profile parameters to the controller (Phase 14, T090).
   ///
   /// Fail-closed: nothing is written unless the safety evaluator authorizes
   /// the write (connected, standstill at 0.0 km/h, fresh stream, no faults).
+  /// The serialized write packets are sent over the BLE transport.
   Future<bool> applyProfile() async {
     if (state.isApplying) return false;
     final decision = _ref.read(writeSafetyDecisionProvider);
@@ -145,22 +154,102 @@ class TuningNotifier extends StateNotifier<TuningState> {
       );
       return false;
     }
-    // Wiring the serialized BLE writes is part of Phase 14 (T090); the write
-    // path stays read-only until then.
+
+    final profile = state.pendingProfile;
+    final writes = <(int, int)>[
+      (
+        FardriverAddr.maxSpeed,
+        TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph),
+      ),
+      (
+        FardriverAddr.maxLineCurr,
+        TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA),
+      ),
+      (
+        FardriverAddr.throttleResponse,
+        TuningConversions.throttleResponseToRaw(profile.throttleResponse),
+      ),
+    ];
+
+    state = state.copyWith(isApplying: true, lastError: null);
+
+    final transport = _ref.read(bluetoothServiceProvider);
+    for (final (address, value) in writes) {
+      final written =
+          await transport.write(ProtocolService.buildWritePacket(address, value));
+      if (!written) {
+        state = state.copyWith(
+          isApplying: false,
+          appliedSuccessfully: false,
+          lastError:
+              'Write to 0x${address.toRadixString(16).padLeft(2, '0')} '
+              'was not acknowledged.',
+        );
+        return false;
+      }
+    }
+
     state = state.copyWith(
       isApplying: false,
-      appliedSuccessfully: false,
-      lastError: 'Write engine not yet enabled — live writing ships in Phase 14.',
+      appliedSuccessfully: true,
+      lastError: null,
     );
-    return false;
+    return true;
   }
 
-  /// Restores stock parameters from backup.
-  Future<bool> restoreStock() async {
-    state = state.copyWith(
-      lastError: 'Restore locked until the safe write engine is complete.',
-    );
-    return false;
+  /// Restores the factory baseline from `unmodified_basemap.heb` (Phase 15,
+  /// T092). Every 16-bit register of the HEB is written back serially. The
+  /// optional [basemapBytes] parameter allows injecting the file content
+  /// (e.g. from tests); the bundled asset is used when omitted.
+  Future<bool> restoreStock({List<int>? basemapBytes}) async {
+    if (state.isRestoring || state.isApplying) return false;
+    final decision = _ref.read(writeSafetyDecisionProvider);
+    if (!decision.allowed) {
+      state = state.copyWith(
+        isRestoring: false,
+        appliedSuccessfully: false,
+        lastError: describeSafety(decision),
+      );
+      return false;
+    }
+
+    final planner = const StockHebRestorePlanner();
+    try {
+      final heb = basemapBytes != null
+          ? HebFile.parse(basemapBytes)
+          : await planner.loadFromAsset();
+      final plan = planner.plan(heb);
+
+      state = state.copyWith(isRestoring: true, lastError: null);
+
+      final transport = _ref.read(bluetoothServiceProvider);
+      for (final write in plan.writes) {
+        final written = await transport.write(write.toPacket());
+        if (!written) {
+          state = state.copyWith(
+            isRestoring: false,
+            appliedSuccessfully: false,
+            lastError:
+                'Restore aborted: write to $write failed.',
+          );
+          return false;
+        }
+      }
+
+      state = state.copyWith(
+        isRestoring: false,
+        appliedSuccessfully: true,
+        lastError: null,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isRestoring: false,
+        appliedSuccessfully: false,
+        lastError: 'Restore failed: $e',
+      );
+      return false;
+    }
   }
 
   Future<void> saveCurrentProfile(String name) async {
@@ -168,6 +257,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
     final profile = state.pendingProfile.copyWith(
       name: name,
       createdAt: DateTime.now(),
+      isStock: false,
     );
     await storage.saveProfile(profile);
     _loadProfiles();
@@ -176,6 +266,13 @@ class TuningNotifier extends StateNotifier<TuningState> {
   Future<void> deleteProfile(String name) async {
     final storage = _ref.read(storageServiceProvider);
     await storage.deleteProfile(name);
+    if (state.pendingProfile.name == name) {
+      state = state.copyWith(
+        pendingProfile: TuningProfile.custom(),
+        appliedSuccessfully: false,
+        lastError: null,
+      );
+    }
     _loadProfiles();
   }
 }
