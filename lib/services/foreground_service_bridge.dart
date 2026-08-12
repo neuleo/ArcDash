@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/services.dart';
 
 enum ServiceMessageType { status, streetLegalRequest, result, error }
@@ -47,10 +47,60 @@ class ServiceMessage {
 }
 
 class ForegroundServiceBridge {
-  static const _channel = MethodChannel('com.arcdash.arcdash/service');
+  static const MethodChannel _channel =
+      MethodChannel('com.arcdash.arcdash/service');
 
-  const ForegroundServiceBridge();
+  final StreamController<String> _macroDroidTriggerController =
+      StreamController<String>.broadcast();
 
-  Future<void> start() => _channel.invokeMethod<void>('start');
-  Future<void> stop() => _channel.invokeMethod<void>('stop');
+  ForegroundServiceBridge() {
+    _channel.setMethodCallHandler(_handleMethodCall);
+  }
+
+  Stream<String> get onMacroDroidTrigger => _macroDroidTriggerController.stream;
+
+  Future<dynamic> _handleMethodCall(MethodCall call) async {
+    if (call.method == 'onMacroDroidTrigger') {
+      final args = call.arguments as Map?;
+      final action = args?['action'] as String? ??
+          'com.arcdash.arcdash.APPLY_STREET_LEGAL';
+      _macroDroidTriggerController.add(action);
+      return true;
+    }
+    return null;
+  }
+
+  Future<void> start() async {
+    try {
+      await _channel.invokeMethod<void>('start');
+    } catch (_) {}
+  }
+
+  Future<void> stop() async {
+    try {
+      await _channel.invokeMethod<void>('stop');
+    } catch (_) {}
+  }
+
+  Future<void> updateNotification(String text) async {
+    try {
+      await _channel.invokeMethod<void>('updateNotification', {'text': text});
+    } catch (_) {}
+  }
+
+  Future<void> vibrateSuccess() async {
+    try {
+      await _channel.invokeMethod<void>('vibrateSuccess');
+    } catch (_) {}
+  }
+
+  Future<void> vibrateError() async {
+    try {
+      await _channel.invokeMethod<void>('vibrateError');
+    } catch (_) {}
+  }
+
+  void dispose() {
+    _macroDroidTriggerController.close();
+  }
 }

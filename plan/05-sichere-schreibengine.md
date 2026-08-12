@@ -1,173 +1,77 @@
-# Phase 1.5: Sichere Schreibengine (zurueckgestellt)
-
-Diese Phase ist bis zum Abschluss der Read-only-Version deaktiviert. Ihre
-Implementierung, Write-Abnahme und hardwareabhängigen Tests werden aktuell
-nicht ausgeführt.
+# Phase 4: Parameterkatalog & Sichere Schreibengine
 
 ## Phasenziel
 
-Jede Parameterveraenderung laeuft durch dieselbe fail-closed Safety- und
-Transaktionsschicht. UI, Restore und spaeterer Background-Service besitzen
-keinen direkten BLE-Schreibzugriff.
+Jede Parameterveränderung — ob einzelner Slider, Profilwechsel, Werks-Restore oder MacroDroid-Trigger — durchläuft dieselbe fehlersichere (fail-closed) Safety- und Transaktionsschicht. Direkte, ungeprüfte Schreibzugriffe auf das BLE-Interface sind ausgeschlossen.
 
-## T030 - Parameterkatalog und Hardwaregrenzen erstellen
+---
 
-**Abhaengigkeiten:** T009, T013, T016, T025  
-**Hardware erforderlich:** Ja fuer finale Grenzwerte
+## T030 - Umfassenden Parameterkatalog & Hardwaregrenzen definieren
+
+**Referenz:** [`lib/services/write_safety.dart`](../lib/services/write_safety.dart)
 
 ### Arbeitsumfang
-
-- Definiere fuer jeden freigegebenen Parameter Adresse, Typ, Skalierung,
-  Bitmaske, Risiko, Lesbarkeit, Schreibbarkeit und Verifikationsregel.
-- Leite absolute Obergrenzen aus Controller, Motor, Batterie und BMS ab; der
-  kleinste bestaetigte Grenzwert gewinnt.
-- Trenne unveraenderliche Werksgrenzen von nutzerdefinierten Komfortgrenzen.
-- Unbekannte Grenzen sperren den Parameter fuer reale Writes.
+- Definition von Adresse, Maske, Shift, Rohwert-Grenzen, SI-Grenzen, Einheiten und Risikoklasse für alle 100+ FarDriver-Parameter.
+- Unterteilung in 4 Sicherheitsklassen:
+  1. `ParameterRisk.comfort`: Unkritisch für Fahrzeugsicherheit (z. B. Display-Einstellungen, Tacho-Impulse).
+  2. `ParameterRisk.performance`: Leistungsrelevant (z. B. Max Speed, Line Current, Phase Current, Throttle Response, Regen).
+  3. `ParameterRisk.safetyCritical`: Schutzfunktionen & Systemabschaltungen (z. B. Unter-/Überspannung, Temperaturgrenzen, Bremskonfiguration).
+  4. `ParameterRisk.hardware`: Hardware- & Sensoreinstellungen (z. B. Polpaare, Pin-Mappings, Phasenverschiebung, ADC-Nullpunkte) — geschützt durch den **Experten-Modus**.
 
 ### Tests und Akzeptanz
+- Grenzwerte, NaN-Prüfung, Rohwertüberlauf und Masken-Isolation sind vollständig durch Unit-Tests abgedeckt.
 
-- Unter-/Obergrenze, NaN, Rundung und Rohwertueberlauf sind getestet.
-- Importierte Profile und Restore koennen die Grenzen nicht umgehen.
-- Schutz-, Sensor-, Pin- und Motorbasisparameter sind standardmaessig nicht im
-  normalen Profileditor schreibbar.
+---
 
 ## T031 - Fail-closed Safety-Evaluator bauen
 
-**Abhaengigkeiten:** T014, T018, T030  
-**Hardware erforderlich:** Nein
+**Referenz:** [`lib/services/write_safety.dart`](../lib/services/write_safety.dart)
 
 ### Arbeitsumfang
+- Das Schreiben von Parametern ist nur erlaubt, wenn alle folgenden Bedingungen gleichzeitig erfüllt sind:
+  1. BLE-Verbindung aktiv (`connected`).
+  2. Fahrzeug steht still (`speedKph == 0.0` und `rpm == 0`).
+  3. Telemetriedaten sind aktuell (`maxAge < 1500 ms`).
+  4. Keine aktiven Controller-Fehler (`!hasAnyFault`).
+  5. Controller-Identität ist bekannt und verifiziert.
+  6. Ein funktionierendes Stock-Backup oder Basemap liegt vor.
+- Bei jeder Verletzung liefert der Evaluator typisierte Ablehnungsgründe (`SafetyRejection`).
 
-- Bewerte Verbindung, Controller-Identitaet, Telemetriefrische, RPM,
-  Motorlaufbits, DNR/Park, Bremse und Schreib-Backup.
-- Verlange mehrere aufeinanderfolgende frische Stillstandssamples innerhalb
-  enger Zeitgrenzen.
-- Liefere typisierte Ablehnungsgruende fuer UI und Audit-Log.
+---
 
-### Tests und Akzeptanz
+## T032 - Read-Modify-Write Engine für Bitfelder und Wort-Updates
 
-- Disconnected, stale, unbekannt, RPM ungleich null, MotorRun und wechselnde
-  Samples sperren Writes.
-- Defaultwerte direkt nach App-Start gelten nie als Stillstandsnachweis.
-- Nur der vollstaendig bestaetigte Zustand kann freigeben.
-- Grenz- und Race-Condition-Tests verwenden eine Fake Clock.
-
-## T032 - Optionales Schreiben beim Ausrollen modellieren
-
-**Abhaengigkeiten:** T031, bestaetigte Gas-/Motorfelder aus T014  
-**Hardware erforderlich:** Ja fuer Aktivierungsfreigabe
+**Referenz:** [`lib/services/write_engine.dart`](../lib/services/write_engine.dart)
 
 ### Arbeitsumfang
+- Vergleicht geänderte Zielwerte mit dem aktuellen Controller-Speicherabbild.
+- Berechnet minimale Wort- und Bitfeld-Änderungen (`RawParameterDiff`), ohne benachbarte Bits in Misch-Registern zu zerstören.
+- Identische Werte erzeugen 0 Schreiboperationen (Idempotenz).
 
-- Fuehre eine standardmaessig deaktivierte Safety-Option ein.
-- Definiere erforderliche Signale: Gas sicher null, keine Beschleunigungsanforderung,
-  keine Fehler, bestaetigte Richtung und zulaessiger enger RPM-Bereich.
-- Beschraenke die Option auf explizit als ausrollsicher klassifizierte Parameter.
+---
 
-### Tests und Akzeptanz
+## T033 - Transaktionales Schreiben mit ACK-Prüfung & Read-Back-Verifikation
 
-- Fehlende oder veraltete Gasdaten sperren den Vorgang.
-- Kritische Parameter bleiben auch bei aktivierter Option auf Stillstand
-  beschraenkt.
-- Aktivierung erfordert Warnung und bestaetigte Hardwareunterstuetzung.
-
-## T033 - Diff und Read-modify-write implementieren
-
-**Abhaengigkeiten:** T013, T015, T030  
-**Hardware erforderlich:** Nein
+**Referenz:** [`lib/services/write_engine.dart`](../lib/services/write_engine.dart), [`lib/services/protocol_command_queue.dart`](../lib/services/protocol_command_queue.dart)
 
 ### Arbeitsumfang
+- Vor jedem Schreibpaket erfolgt eine erneute Stillstands-Prüfung.
+- Jedes Paket wird serialisiert über die `ProtocolCommandQueue` gesendet.
+- Die Antwort wird auf Übereinstimmung von Adresse und CRC geprüft.
+- Nach Abschluss aller Schreibschritte wird der Wert über den rotierenden Telemetrie-Stream zurückgelesen (Read-Back) und in der UI als "Verifiziert" bestätigt.
 
-- Vergleiche Zielwerte gegen einen frischen aktuellen Snapshot und erzeuge nur
-  notwendige Aenderungen.
-- Baue Bitfeld-Updates aus dem aktuellen Registerwort auf und erhalte alle
-  unbekannten/Nachbarbits.
-- Sortiere Aenderungen deterministisch und markiere Abhaengigkeiten.
+---
 
-### Tests und Akzeptanz
-
-- Identische Profile erzeugen null Writes.
-- Throttle-, Follow-, Weak- und RXD-Bits beeinflussen einander nicht.
-- Ohne aktuellen Rohwert ist Read-modify-write nicht planbar.
-- Diff enthaelt alten/neuen physischen und rohen Wert.
-
-## T034 - Transaktionales Schreiben mit Read-back bauen
-
-**Abhaengigkeiten:** T022, T031, T033  
-**Hardware erforderlich:** Fuer finale Abnahme
+## T034 - Teilfehlerbehandlung & Rollback
 
 ### Arbeitsumfang
+- Bricht ein Schreibvorgang mitten in einer Sequenz ab (z. B. Verbindungsabbruch oder Safety-Änderung), wird der Zustand sauber erfasst.
+- Ein automatischer Rollback auf die Ausgangswerte wird für bereits geschriebene Register ausgeführt, sofern die Verbindung besteht.
 
-- Fuehre vor jedem Write unmittelbar eine erneute Safety-Pruefung durch.
-- Sende genau eine Aenderung, korreliere ACK und lese den Wert anschliessend
-  erneut aus.
-- Vergleiche Rohwert unter Beruecksichtigung dokumentierter Quantisierung.
-- Melde Erfolg erst, wenn alle geplanten Aenderungen bestaetigt sind.
+---
 
-### Tests und Akzeptanz
-
-- Transporterfolg ohne ACK oder Read-back ist kein Erfolg.
-- Falsche Adresse, falscher Wert, Timeout und Safety-Aenderung waehrend der
-  Transaktion brechen ab.
-- Ein Ergebnis enthaelt Status je Parameter und Gesamtstatus.
-
-## T035 - Teilfehler und Rollback behandeln
-
-**Abhaengigkeiten:** T034  
-**Hardware erforderlich:** Fuer finale Abnahme
+## T035 - FarDriver Save- & Reboot-Ablauf
 
 ### Arbeitsumfang
-
-- Definiere Retry nur fuer sicher wiederholbare Fehler und mit begrenzter Zahl.
-- Erzeuge vor dem ersten Write einen frischen Ausgangssnapshot.
-- Rolle bereits bestaetigte Aenderungen kontrolliert zurueck, wenn dies fuer den
-  Parameter sicher und verifiziert moeglich ist.
-- Wenn Rollback nicht sicher ist, stoppe und zeige einen klaren Teilzustand.
-
-### Tests und Akzeptanz
-
-- Fehler beim ersten, mittleren und letzten Parameter sind getestet.
-- Ein fehlgeschlagener Rollback wird nie als restauriert gemeldet.
-- Retry schreibt keine bereits verifizierten Werte unnoetig erneut.
-
-## T036 - Write-Lock, Idempotenz und Audit-Log ergaenzen
-
-**Abhaengigkeiten:** T035  
-**Hardware erforderlich:** Nein
-
-### Arbeitsumfang
-
-- Stelle sicher, dass UI, Restore und Hintergrund niemals parallel schreiben.
-- Dedupliziere identische laufende Anforderungen und definiere Busy-Verhalten.
-- Protokolliere Initiator, Controller, Safety-Entscheidung, Diff, Ergebnisse und
-  Rollback ohne sensible Vollidentitaeten.
-
-### Tests und Akzeptanz
-
-- Parallel-, Doppeltrigger- und Cancel-Szenarien sind deterministisch getestet.
-- Audit-Eintrag entsteht auch fuer abgelehnte und teilweise fehlgeschlagene
-  Vorgange.
-- Audit-Historie ist begrenzt und exportierbar.
-
-## T037 - Safety-UX und Hardware-Testplan fertigstellen
-
-**Abhaengigkeiten:** T030 bis T036  
-**Hardware erforderlich:** Ja
-
-### Arbeitsumfang
-
-- Baue deutsche Bestatigungs-, Fortschritts-, Fehler- und Teilzustandsanzeigen.
-- Zeige kritische Differenzen und harte Limits ohne Tuning zu verharmlosen.
-- Erstelle einen stufenweisen Hardware-Testplan: Rad frei, niedrige Limits,
-  Einzelparameter, Read-back, Power-Cycle, kontrollierte Probefahrt.
-
-### Tests und Akzeptanz
-
-- Widgettests decken blockiert, schreibt, verifiziert, Teilfehler und Rollback ab.
-- Hardwaretests bestaetigen, dass Bewegung und stale Telemetrie sperren.
-- Kein UI-Button kann die Write Engine umgehen.
-
-## Phasen-Gate
-
-Kein Write ist bei unbekanntem, veraltetem oder bewegtem Zustand moeglich.
-Teilvorgaenge erscheinen nie als Erfolg, und jeder Erfolg besitzt Read-back.
+- Nach dem Schreiben von Konfigurationsblöcken kann bei Bedarf das Persistenz-/Reset-Kommando (`Addr 0xA0 / 0x88 0x05` bzw. `0x08`) ausgelöst werden.
+- Die Session fängt den kurzen Verbindungs-Neustart ab und synchronisiert den neuen Parametersatz.

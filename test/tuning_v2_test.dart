@@ -108,8 +108,14 @@ void main() {
   group('T090/T091 - factory presets', () {
     test('factory presets match the T091 specification', () {
       final presets = TuningProfile.factoryPresets();
-      expect(
-          presets.map((p) => p.name), ['Stock Offroad', 'Eco Range', 'Custom']);
+      expect(presets.map((p) => p.name), [
+        'Stock Offroad',
+        'Street Legal',
+        'Eco Range',
+        'Trail / Enduro',
+        'Extreme Sport',
+        'Custom'
+      ]);
 
       final stock = TuningProfile.stockOffroad();
       expect(stock.maxSpeedKph, 125);

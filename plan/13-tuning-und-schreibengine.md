@@ -1,160 +1,83 @@
-# Phase 12-17: Version 2 — Schreibengine, Tuning & Werks-Restore
+# Phase 6: Multi-Kategorie Tuning-UI & Visuelle Editoren
 
-Diese Phasendatei spezifiziert die Umsetzung von **Version 2** für ArcDash: Das sichere Schreiben von Parametern in den FarDriver-Controller, ein dedizierter **Tuning-Tab** in der Hauptnavigation, ein **Werks-Restore aus der `Unmodified Basemap.heb`** sowie **Read-Back-Verifikation**.
-
----
-
-## Phase 12: Haupt-Navigation & UI-Struktur
-
-### T086 - 4-Tab-Hauptnavigation etablieren
-**Abhaengigkeiten:** T054  
-**Hardware erforderlich:** Nein  
-
-#### Arbeitsumfang
-- Erweitere `lib/screens/app_shell.dart` um ein 4-Tab-Layout:
-  1. `Cockpit` (Dashboard & Telemetrie)
-  2. `Tuning` (Parameter-Steuerung & Presets)
-  3. `Fahrten` (Session-Historie & Statistiken)
-  4. `Einstellungen` (Verbindung, Kalibrierung, Dev-Tools)
-- Passe sowohl Hochformat (`NavigationBar`) als auch Querformat (`NavigationRail`) nahtlos an.
-
-#### Tests und Akzeptanz
-- Alle 4 Tabs lassen sich umschalten.
-- Der aktive Tab wird optisch hervorgehoben (Neon-Grün).
-- Keine UI-Overflows im Hoch- oder Querformat.
+Diese Phasendatei spezifiziert das **Tuning-Cockpit** in ArcDash. Es ersetzt die unübersichtliche chinesische Original-App durch eine hochmoderne, AMOLED-optimierte Benutzeroberfläche mit interaktiven Kurven-Editoren, Pin-Manager und geschütztem Experten-Modus.
 
 ---
 
-### T087 - TuningScreen als eigener Tab ausbauen
-**Abhaengigkeiten:** T086  
-**Hardware erforderlich:** Nein  
+## T086 - 4-Tab-Hauptnavigation etablieren
+**Status:** [x] Abgeschlossen  
+**Referenz:** [`lib/screens/app_shell.dart`](../lib/screens/app_shell.dart)
 
-#### Arbeitsumfang
-- Integriere den `TuningScreen` direkt als Haupt-Screen des `Tuning`-Tabs.
-- Zeige Safety-Banner, Preset-Auswahl, Parameter-Slider (Max Speed, Line Current, Throttle Response) und Restore-Optionen an.
-
-#### Tests und Akzeptanz
-- Der Screen passt sich flexibel an Bildschirmgrößen an.
-- Alle UI-Elemente sind barrierefrei und gut lesbar.
+- `Cockpit`: Live-Telemetrie, Leistungsbogen, GPS-Speed, Reichweite.
+- `Tuning`: Parameter-Steuerung, Presets, Kurven-Editoren.
+- `Fahrten`: Session-Statistiken & GPS-Fahrtenhistorie.
+- `Einstellungen`: Verbindung, Diagnose, Einheiten, Kalibrierung.
 
 ---
 
-## Phase 13: Fail-Closed Safety Engine & Parameterkatalog
-
-### T088 - Fail-Closed Safety Evaluator bauen
-**Abhaengigkeiten:** T031, T087  
-**Hardware erforderlich:** Nein (mit Fake Transport simulierbar)  
-
-#### Arbeitsumfang
-- Baue einen universellen Safety-Evaluator in der Schreibengine:
-  - Schreiben ist **ausschließlich** erlaubt, wenn:
-    1. BLE-Verbindung aktiv ist (`connected`).
-    2. Das Fahrzeug steht (`speedKph == 0.0`).
-    3. Die Telemetrie frisch ist (`maxAge < 1.5s`).
-    4. Keine Fehler/Faults im Controller vorliegen (`!hasAnyFault`).
-- Liefere typisierte Ablehnungsgründe (z.B. `vehicle_moving`, `telemetry_stale`, `fault_active`) für UI und Audit-Log.
-
-#### Tests und Akzeptanz
-- Bei Geschwindigkeit > 0.5 km/h oder Trennung wird der Schreibvorgang sofort blockiert.
-- Der Benutzer sieht einen klaren Hinweis, warum der Vorgang gesperrt ist.
+## T087 - TuningScreen als modulares Haupt-Cockpit
+**Status:** [x] Abgeschlossen / Im Ausbau  
+**Referenz:** [`lib/screens/tuning_screen.dart`](../lib/screens/tuning_screen.dart)
 
 ---
 
-### T089 - Parameterkatalog & Hardwaregrenzen aus Basemap festlegen
-**Abhaengigkeiten:** T030, T088  
-**Hardware erforderlich:** Nein  
+## T096 - Quick-Tuning Bar für Alltags-Fahrer
 
-#### Arbeitsumfang
-- Leite die sicheren Parametergrenzen aus der `reference/basemaps/unmodified_basemap.json` ab:
-  - **Max Speed (`Addr12 / 0x15`)**: 10 bis 130 km/h (Werksstandard 125 km/h)
-  - **Max Line Current / Akkugrenzstrom (`Addr18 / 0x19`)**: 10 bis 300 A (Werksstandard 200 A)
-  - **Throttle Response / Gasannahme (`Addr18 / 0x19`)**: Eco (0), Trail (1), Sport (2), Race (3)
-- Definiere Skalierungsformeln und Byte-Masken.
-
-#### Tests und Akzeptanz
-- Parameter außerhalb der Hardware-Grenzen werden vom Validator abgelehnt.
-- Alle Werte konvertieren exakt zwischen SI-Einheiten (km/h, A) und FarDriver-Byte-Formaten.
+### Arbeitsumfang
+- Schneller Zugriff auf die wichtigsten Fahrparameter:
+  - **Fahrmodus-Presets**: 1-Tap-Umschaltung zwischen *Stock Offroad*, *Street Legal*, *Eco Range*, *Trail*, *Sport*.
+  - **Max Speed**: Slider mit Sofortanzeige in km/h.
+  - **Peak Power & Line Current**: Slider in kW / Amps.
+  - **Throttle Response**: Schnellauswahl zwischen *Line (Race)*, *Sport*, *Eco*.
+  - **Rekuperations-Stärke**: Bremsenergierückgewinnung in %.
 
 ---
 
-## Phase 14: Presets & Live-Tuning
+## T097 - 10-Kategorien Parameter-Matrix
 
-### T090 - Live-Tuning Slider & Parameter-Steuerung
-**Abhaengigkeiten:** T088, T089  
-**Hardware erforderlich:** Ja fuer reale BLE-Schreibtests  
-
-#### Arbeitsumfang
-- Verbinde die Slider im `TuningScreen` mit den Schreib-Methoden von `ProtocolService`:
-  - `setMaxSpeedPacket(maxSpeedKph)`
-  - `setMaxLineCurrPacket(maxLineCurrA)`
-  - `setThrottleResponsePacket(mode)`
-- Sende die Kommandos serialisiert über die `CommandQueue`.
-
-#### Tests und Akzeptanz
-- Slider lassen sich flüssig bedienen.
-- Nach Stillstands-Prüfung wird das Schreibpaket gesendet.
+### Arbeitsumfang
+Strukturierung aller 100+ FarDriver-Parameter in übersichtliche, einklappbare Akkordeons / Unter-Tabs:
+1. **Fahrdynamik & Motor-Grundparameter** (Rated Speed/Voltage/Power, BackSpeed, Acc/Dec Steps).
+2. **Drehzahl-Leistungskurve (Ratios in Speed)**: 18 Stützpunkte von 500 bis 9000 RPM.
+3. **Rekuperations-Kurve (Energy Regen)**: 18 Stützpunkte von 500 bis 9000 RPM.
+4. **Gangstufen & Geschwindigkeitsmodi**: Modus 1 (DL), Modus 2 (DM), Modus 3/4 (DH/Boost).
+5. **Hardware-Pins & Funktionsschalter**: Konfiguration aller 14 physikalischen Controller-Pins.
+6. **Display-, Tacho- & CAN-Bus-Konfiguration**: Reifengrößen, Tacho-Impulse, CAN-Baudrate.
+7. **Schutzgrenzen & Abschaltungen**: Unter-/Überspannung, Motor-/MOSFET-Temperaturschutz.
+8. **PID-Regler & Feldschwächung**: AN (Wave Type), LM (Wave Interval), Start/Mid/Max KI & KP.
+9. **Spezialfunktionen & Produkt-Flags**: Rückwärtsgang, Parkbremse, Anti-Theft, EABS, Follow-Mode.
+10. **Kalibrierung & Diagnose**: ADC-Nullpunkte, Phasenstrom-Koeffizienten, Speicherzyklen.
 
 ---
 
-### T091 - Tuning-Presets System
-**Abhaengigkeiten:** T090  
-**Hardware erforderlich:** Nein  
+## T098 - Interaktiver 18-Punkte Drehzahlkurven-Editor
 
-#### Arbeitsumfang
-- Baue konfigurierbare Presets:
-  - `Stock Offroad`: 125 km/h / 200 A / Sport
-  - `Eco Range`: 45 km/h / 100 A / Eco
-  - `Custom`: Benutzerdefiniert
-- Erlaube 1-Klick-Laden & Vorschau aller Parameter vor dem Schreiben.
-
-#### Tests und Akzeptanz
-- Wechsel zwischen Presets aktualisiert die Slider-Vorschau instantan.
+### Arbeitsumfang
+- Visueller Chart-Editor für die 18 Drehzahl-Stützpunkte (500 bis 9000 RPM in 500er-Schritten).
+- Touch-Bedienung: Punkte können direkt auf der Kurve oder über dedizierte Schieberegler angepasst werden.
+- Kurven-Vorlagen: *Linear*, *Aggressive Power*, *Smooth Eco*, *Top-End Weakening*.
 
 ---
 
-## Phase 15: Werks-Restore & Read-Back Verifikation
+## T099 - Interaktiver Rekuperationskurven-Editor
 
-### T092 - Werks-Restore Engine (aus `Unmodified Basemap.heb`)
-**Abhaengigkeiten:** T090, T091  
-**Hardware erforderlich:** Ja fuer Flashen  
-
-#### Arbeitsumfang
-- Implementiere einen **"Werkseinstellungen wiederherstellen"**-Button.
-- Lade die `assets/basemaps/unmodified_basemap.heb` und flashe alle Parameter-Blöcke atomar zurück in den Controller.
-
-#### Tests und Akzeptanz
-- Der Benutzer muss den Vorgang in einem Sicherheitsdialog bestätigen.
-- Alle Werksregister werden nacheinander geschrieben.
+### Arbeitsumfang
+- Visueller Chart-Editor für die Rekuperationsströme (-% bis 0%) über das gesamte Drehzahlspektrum (500 bis 9000 RPM).
+- Visualisierung in Kontrast-Grün/Cyan zur intuitiven Unterscheidung von Antriebsleistung.
 
 ---
 
-### T093 - Read-Back Verifikation & Erfolgs-Quittung
-**Abhaengigkeiten:** T092  
-**Hardware erforderlich:** Ja  
+## T100 - Pin- & Hardware-Funktions-Manager
 
-#### Arbeitsumfang
-- Lies nach dem Schreiben die Register über den Status-Stream zurück.
-- Vergleiche geschriebenen Wert mit dem im Controller aktiven Wert.
-- Zeige in der UI einen grünen Bestätigungs-Haken ("Verifiziert").
-
-#### Tests und Akzeptanz
-- Wenn Read-back übereinstimmt, erscheint die Bestätigung.
-- Bei Abweichung erscheint ein Warnhinweis.
+### Arbeitsumfang
+- Übersichtliche Matrix für alle 14 programmierbaren Anschlusspins des FarDriver-Controllers (Pause, SideStand, Cruise, Boost, LowSpeed, HighSpeed, Reverse, Forward, SwitchVol, Seat, AntiTheft, Charge, SpeedLimit, Repair).
+- Dropdown-Auswahl mit validierten Pin-Optionen (`NC`, `PIN2`, `PIN3`, `PIN5`, `PIN8`, `PIN9`, `PIN14`, `PIN15`, `PIN17`, `PIN18`, `PIN24`, `PD1`, `PB4`, `Invalid`).
 
 ---
 
-## Phase 16 & 17: Qualitätssicherung & Release (v2.0.0)
+## T101 - Expert-Mode Guardrails & Vorher-Nachher Diff-Dialog
 
-### T094 - Unit- & Widget-Tests erweitern
-**Abhaengigkeiten:** T086 bis T093  
-**Hardware erforderlich:** Nein  
-
-#### Arbeitsumfang
-- Teste alle neuen Schreibengine-, Safety- und Restore-Funktionen im Docker-Container.
-
-### T095 - Release v2.0.0 auf GitHub Actions veröffentlichen
-**Abhaengigkeiten:** T094  
-**Hardware erforderlich:** Nein  
-
-#### Arbeitsumfang
-- Tagge das Release als `v2.0.0` und verifiziere den APK-Build über die GitHub API.
+### Arbeitsumfang
+- **Experten-Schutzschalter**: Hardwarekritische Parameter (z. B. Polpaare, Pin-Mappings, Phasenwinkel) sind standardmäßig gesperrt und werden erst nach Bestätigung eines Warnhinweises editierbar.
+- **Diff-Inspektor**: Vor dem Schreiben auf den Controller öffnet sich ein übersichtlicher Dialog, der jede geänderte Eigenschaft (Alter Wert → Neuer Wert) farblich hervorhebt.
+- **Live-Verifikation**: Nach erfolgreichem Schreiben und Read-Back erscheint ein grüner Bestätigungshaken.

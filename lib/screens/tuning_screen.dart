@@ -7,17 +7,25 @@ import 'package:arcdash/providers/tuning_provider.dart';
 import 'package:arcdash/services/profile_tools.dart';
 import 'package:arcdash/services/write_safety.dart';
 import 'package:arcdash/utils/tuning_conversions.dart';
+import 'package:arcdash/widgets/pin_mapping_manager.dart';
+import 'package:arcdash/widgets/regen_curve_editor.dart';
+import 'package:arcdash/widgets/speed_curve_editor.dart';
+import 'package:arcdash/widgets/tuning_diff_dialog.dart';
 
-class TuningScreen extends ConsumerWidget {
+class TuningScreen extends ConsumerStatefulWidget {
   const TuningScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TuningScreen> createState() => _TuningScreenState();
+}
+
+class _TuningScreenState extends ConsumerState<TuningScreen> {
+  @override
+  Widget build(BuildContext context) {
     final tuningState = ref.watch(tuningProvider);
     final safety = ref.watch(writeSafetyDecisionProvider);
     final profile = tuningState.pendingProfile;
     final notifier = ref.read(tuningProvider.notifier);
-    final isMoving = safety.rejections.contains(SafetyRejection.moving);
     final editorValidation = const ProfileValidator().validateParameters({
       'maxSpeedKph': profile.maxSpeedKph,
       'maxLineCurrA': profile.maxLineCurrA,
@@ -27,15 +35,11 @@ class TuningScreen extends ConsumerWidget {
     });
     final editorEnabled = editorValidation.valid;
 
-    // Read-back verification (Phase 15, T093): confirmation only appears once
-    // the written values are reflected in the ControllerState.
     final controllerState = ref.watch(controllerProvider);
     final expectedSpeedRaw =
         TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph);
     final expectedLineCurrRaw =
         TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA);
-    final readBackVerified = controllerState.maxSpeedRaw == expectedSpeedRaw &&
-        controllerState.maxLineCurrRaw == expectedLineCurrRaw;
     final applied = tuningState.appliedSuccessfully;
 
     return Scaffold(
@@ -53,6 +57,39 @@ class TuningScreen extends ConsumerWidget {
         ),
         centerTitle: false,
         elevation: 0,
+        actions: [
+          // Expert Mode Switch
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: FilterChip(
+              label: Text(
+                tuningState.expertModeEnabled ? 'EXPERT ON' : 'EXPERT OFF',
+                style: TextStyle(
+                  color: tuningState.expertModeEnabled
+                      ? const Color(0xFFFF9800)
+                      : const Color(0xFF64748B),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+              selected: tuningState.expertModeEnabled,
+              onSelected: (val) {
+                if (val) {
+                  _showExpertWarningDialog(context, notifier);
+                } else {
+                  notifier.toggleExpertMode(false);
+                }
+              },
+              backgroundColor: const Color(0xFF1E293B),
+              selectedColor: const Color(0xFFFF9800).withValues(alpha: 0.15),
+              side: BorderSide(
+                color: tuningState.expertModeEnabled
+                    ? const Color(0xFFFF9800)
+                    : const Color(0xFF334155),
+              ),
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: const Color(0xFF1A2030)),
@@ -64,27 +101,12 @@ class TuningScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Safety warning banner
+              // Safety Warning Banner
               _WarningBanner(decision: safety),
               const SizedBox(height: 20),
 
-              // Presets
-              if (!editorEnabled)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF9800).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: const Color(0xFFFF9800).withOpacity(0.3)),
-                  ),
-                  child: const Text(
-                    'PROFILE EDITOR LOCKED: hardware limits and verified controller data are required.',
-                    style: TextStyle(color: Color(0xFFFF9800), fontSize: 12),
-                  ),
-                ),
-              _SectionHeader(title: 'PRESETS'),
+              // Presets Section
+              _SectionHeader(title: 'PRESETS & FAHRMODI'),
               const SizedBox(height: 10),
               _PresetGrid(
                 factoryPresets: TuningProfile.factoryPresets(),
@@ -119,12 +141,10 @@ class TuningScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Controls
-              _SectionHeader(
-                  title: 'HAUPTLEISTUNG & MODI 3 / 4 (HIGH / BOOST)'),
+              // Quick Tuning Bar
+              _SectionHeader(title: 'HAUPTLEISTUNG & DYNAMIK (QUICK TUNING)'),
               const SizedBox(height: 14),
 
-              // Max Speed
               _TuningSlider(
                 label: 'Max Speed',
                 icon: Icons.speed,
@@ -142,49 +162,42 @@ class TuningScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 14),
 
-              // Peak Torque — maps to phase current (20–500 A → 0–100%)
               _TuningSlider(
-                label: 'Peak Torque',
+                label: 'Peak Torque (Phasenstrom / Drehmoment)',
                 icon: Icons.rotate_right,
-                value: (profile.maxPhaseCurrA / 500.0 * 100).clamp(0, 100),
-                min: 5,
-                max: 100,
-                unit: '%',
-                displayValue: (profile.maxPhaseCurrA / 500.0 * 100)
-                    .clamp(0, 100)
-                    .toStringAsFixed(0),
+                value: profile.maxPhaseCurrA,
+                min: 20,
+                max: 550,
+                unit: 'A',
+                displayValue: '${profile.maxPhaseCurrA.toStringAsFixed(0)} A',
                 onChanged: editorEnabled
-                    ? (pct) => notifier.updateMaxPhaseCurr(
-                        (pct / 100.0 * 500.0).clamp(20, 500))
+                    ? (a) => notifier.updateMaxPhaseCurr(a)
                     : null,
                 accentColor: const Color(0xFF39FF14),
-                warningThreshold: 90,
+                warningThreshold: 500,
               ),
               const SizedBox(height: 14),
 
-              // Peak Power — maps to line current (10–300 A × 80 V = 0.8–24.0 kW)
               _TuningSlider(
-                label: 'Peak Power',
+                label: 'Peak Power (Batterie-Dauerstrom)',
                 icon: Icons.electric_bolt,
-                value: (profile.maxLineCurrA * 80.0 / 1000.0).clamp(0.8, 25.0),
-                min: 0.8,
-                max: 25.0,
-                unit: 'kW',
+                value: profile.maxLineCurrA,
+                min: 10,
+                max: 300,
+                unit: 'A',
                 displayValue:
-                    (profile.maxLineCurrA * 80.0 / 1000.0).toStringAsFixed(1),
-                onChanged: editorEnabled
-                    ? (kw) => notifier
-                        .updateMaxLineCurr((kw * 1000.0 / 80.0).clamp(10, 300))
-                    : null,
+                    '${profile.maxLineCurrA.toStringAsFixed(0)} A (${(profile.maxLineCurrA * 72 / 1000).toStringAsFixed(1)} kW)',
+                onChanged:
+                    editorEnabled ? (a) => notifier.updateMaxLineCurr(a) : null,
                 accentColor: const Color(0xFFFF9800),
-                warningThreshold: 24.0,
+                warningThreshold: 250,
                 verified: applied &&
                     controllerState.maxLineCurrRaw == expectedLineCurrRaw,
               ),
               const SizedBox(height: 14),
 
               _TuningSlider(
-                label: 'Boost Mode (Bst) Timer',
+                label: 'Boost-Modus Dauer (Timer)',
                 icon: Icons.bolt,
                 value: profile.boostTimeSeconds.toDouble(),
                 min: 0,
@@ -198,8 +211,8 @@ class TuningScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Throttle response
-              _SectionHeader(title: 'THROTTLE RESPONSE'),
+              // Throttle Response
+              _SectionHeader(title: 'GASANNAHME (THROTTLE RESPONSE)'),
               const SizedBox(height: 10),
               _ThrottleResponseSelector(
                 value: profile.throttleResponse,
@@ -208,19 +221,20 @@ class TuningScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Mode 1 (LOW) & Mode 2 (MEDIUM)
+              // Mode 1 (DL) & Mode 2 (DM) Scaling
               _SectionHeader(
                   title: 'MODUS 1 (LOW / DL) & MODUS 2 (MEDIUM / DM)'),
               const SizedBox(height: 14),
 
               _TuningSlider(
-                label: 'Modus 1 (LOW / DL) Strom',
+                label: 'Modus 1 (LOW / DL) Stromstärke',
                 icon: Icons.eco_outlined,
                 value: profile.lowSpeedLineCurrPct,
                 min: 10,
                 max: 100,
                 unit: '%',
-                displayValue: profile.lowSpeedLineCurrPct.toStringAsFixed(0),
+                displayValue:
+                    '${profile.lowSpeedLineCurrPct.toStringAsFixed(0)}%',
                 onChanged:
                     editorEnabled ? notifier.updateLowSpeedLineCurr : null,
                 accentColor: const Color(0xFF54E39E),
@@ -228,67 +242,97 @@ class TuningScreen extends ConsumerWidget {
               const SizedBox(height: 14),
 
               _TuningSlider(
-                label: 'Modus 2 (MEDIUM / DM) Strom',
+                label: 'Modus 2 (MEDIUM / DM) Stromstärke',
                 icon: Icons.alt_route,
                 value: profile.midSpeedLineCurrPct,
                 min: 10,
                 max: 100,
                 unit: '%',
-                displayValue: profile.midSpeedLineCurrPct.toStringAsFixed(0),
+                displayValue:
+                    '${profile.midSpeedLineCurrPct.toStringAsFixed(0)}%',
                 onChanged:
                     editorEnabled ? notifier.updateMidSpeedLineCurr : null,
                 accentColor: const Color(0xFF00E5FF),
               ),
               const SizedBox(height: 24),
 
-              // Accordion: Advanced Settings (Spannung, Temps, Flux, Reverse)
-              Theme(
-                data: Theme.of(context)
-                    .copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  title: const Text(
-                    'ERWEITERT (SPANNUNG, TEMPS & FLUX)',
-                    style: TextStyle(
-                      color: Color(0xFF00E5FF),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
+              // Accordion 1: 18-Point Speed Curve Editor
+              _AccordionSection(
+                title: 'DREHZAHL-LEISTUNGSKURVE (500–9000 RPM)',
+                icon: Icons.auto_graph,
+                accentColor: const Color(0xFF00E5FF),
+                child: SpeedCurveEditor(
+                  ratios: profile.speedRatios,
+                  onChanged: (ratios) => notifier.updateSpeedRatios(ratios),
+                  enabled: editorEnabled,
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Accordion 2: 18-Point Regen Curve Editor
+              _AccordionSection(
+                title: 'REKUPERATIONS-KURVE & MOTORBREMSE',
+                icon: Icons.bolt,
+                accentColor: const Color(0xFF39FF14),
+                child: RegenCurveEditor(
+                  regenRatios: profile.regenRatios,
+                  onChanged: (regen) => notifier.updateRegenRatios(regen),
+                  enabled: editorEnabled,
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Accordion 3: Pin Mapping Manager
+              _AccordionSection(
+                title: 'HARDWARE-PINS & FUNKTIONSSCHALTER',
+                icon: Icons.cable,
+                accentColor: const Color(0xFFFF9800),
+                child: PinMappingManager(
+                  pinMappings: profile.pinMappings,
+                  onChanged: (key, val) => notifier.updatePinMapping(key, val),
+                  enabled: editorEnabled && tuningState.expertModeEnabled,
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Accordion 4: Protection & Cutoffs
+              _AccordionSection(
+                title: 'SCHUTZGRENZEN & ABSCHALTUNGEN (VOLTAGE & TEMPS)',
+                icon: Icons.shield,
+                accentColor: const Color(0xFFFF5470),
+                child: Column(
                   children: [
-                    const SizedBox(height: 10),
                     _TuningSlider(
-                      label: 'Unterspannungsschutz (Min Volt)',
-                      icon: Icons.battery_alert_outlined,
+                      label: 'Unterspannungsabschaltung (LVC)',
+                      icon: Icons.battery_alert,
                       value: profile.lowVoltCutoffV,
-                      min: 50.0,
-                      max: 80.0,
+                      min: 45,
+                      max: 85,
                       unit: 'V',
                       displayValue:
                           '${profile.lowVoltCutoffV.toStringAsFixed(1)} V',
                       onChanged:
                           editorEnabled ? notifier.updateLowVoltCutoff : null,
-                      accentColor: const Color(0xFFFF9800),
+                      accentColor: const Color(0xFFFF5470),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     _TuningSlider(
-                      label: 'Überspannungsschutz (Max Volt)',
-                      icon: Icons.battery_charging_full_outlined,
+                      label: 'Überspannungsschutz (OVP)',
+                      icon: Icons.flash_on,
                       value: profile.overVoltCutoffV,
-                      min: 80.0,
-                      max: 100.0,
+                      min: 75,
+                      max: 105,
                       unit: 'V',
                       displayValue:
                           '${profile.overVoltCutoffV.toStringAsFixed(1)} V',
                       onChanged:
                           editorEnabled ? notifier.updateOverVoltCutoff : null,
-                      accentColor: const Color(0xFF54E39E),
+                      accentColor: const Color(0xFFFF5470),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     _TuningSlider(
-                      label: 'Motor OverTemp Schutz',
-                      icon: Icons.thermostat_outlined,
+                      label: 'Motor-Temperaturschutz',
+                      icon: Icons.thermostat,
                       value: profile.motorTempLimitC,
                       min: 80,
                       max: 150,
@@ -297,15 +341,15 @@ class TuningScreen extends ConsumerWidget {
                           '${profile.motorTempLimitC.toStringAsFixed(0)} °C',
                       onChanged:
                           editorEnabled ? notifier.updateMotorTempLimit : null,
-                      accentColor: const Color(0xFFFF5470),
+                      accentColor: const Color(0xFFFF9800),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     _TuningSlider(
-                      label: 'Controller OverTemp Schutz',
+                      label: 'Controller-Temperaturschutz',
                       icon: Icons.device_thermostat,
                       value: profile.controllerTempLimitC,
                       min: 60,
-                      max: 110,
+                      max: 115,
                       unit: '°C',
                       displayValue:
                           '${profile.controllerTempLimitC.toStringAsFixed(0)} °C',
@@ -314,176 +358,99 @@ class TuningScreen extends ConsumerWidget {
                           : null,
                       accentColor: const Color(0xFFFF9800),
                     ),
-                    const SizedBox(height: 14),
-                    _TuningSlider(
-                      label: 'Feldschwächung (Flux Weakening)',
-                      icon: Icons.auto_mode_outlined,
-                      value: profile.fluxWeakeningCurrA,
-                      min: 0,
-                      max: 150,
-                      unit: 'A',
-                      displayValue:
-                          '${profile.fluxWeakeningCurrA.toStringAsFixed(0)} A',
-                      onChanged: editorEnabled
-                          ? notifier.updateFluxWeakeningCurr
-                          : null,
-                      accentColor: const Color(0xFF00E5FF),
-                    ),
-                    const SizedBox(height: 14),
-                    _TuningSlider(
-                      label: 'Rückwärtsgang Speed Limit',
-                      icon: Icons.replay_outlined,
-                      value: profile.reverseSpeedPct,
-                      min: 10,
-                      max: 100,
-                      unit: '%',
-                      displayValue:
-                          '${profile.reverseSpeedPct.toStringAsFixed(0)} %',
-                      onChanged:
-                          editorEnabled ? notifier.updateReverseSpeed : null,
-                      accentColor: const Color(0xFF8B949E),
-                    ),
-                    const SizedBox(height: 14),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-              // Error message
-              if (tuningState.lastError != null)
+              // Apply & Restore Buttons
+              if (applied)
                 Container(
                   padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 12),
+                  margin: const EdgeInsets.only(bottom: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF1744).withOpacity(0.1),
+                    color: const Color(0xFF39FF14).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: const Color(0xFFFF1744).withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    tuningState.lastError!,
-                    style: const TextStyle(
-                      color: Color(0xFFFF1744),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-
-              // Success message
-              if (tuningState.appliedSuccessfully)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF39FF14).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: const Color(0xFF39FF14).withOpacity(0.3)),
+                        color: const Color(0xFF39FF14).withValues(alpha: 0.3)),
                   ),
                   child: Row(
-                    children: [
-                      const Icon(Icons.check_circle,
-                          color: Color(0xFF39FF14), size: 16),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Profile applied successfully',
+                    children: const [
+                      Icon(Icons.check_circle,
+                          color: Color(0xFF39FF14), size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'PARAMETER ERFOLGREICH GESCHRIEBEN & VERIFIZIERT',
                         style: TextStyle(
-                          color: Color(0xFF39FF14),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                            color: Color(0xFF39FF14),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
                 ),
 
-              // Apply button
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: tuningState.isApplying ||
-                          tuningState.isRestoring ||
-                          !safety.allowed
-                      ? null
-                      : () => _showApplyDialog(context, ref, profile),
+                child: ElevatedButton.icon(
+                  onPressed: safety.allowed && !tuningState.isApplying
+                      ? () => _showDiffDialog(context, notifier, profile)
+                      : null,
+                  icon: tuningState.isApplying
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Icon(Icons.send, size: 20),
+                  label: Text(
+                    tuningState.isApplying
+                        ? 'SCHREIBE & VERIFIZIERE...'
+                        : 'AUF CONTROLLER SCHREIBEN',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E5FF),
-                    foregroundColor: const Color(0xFF080B0E),
+                    backgroundColor: const Color(0xFF39FF14),
+                    foregroundColor: Colors.black,
+                    disabledBackgroundColor: const Color(0xFF1E293B),
+                    disabledForegroundColor: const Color(0xFF475569),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    disabledBackgroundColor: const Color(0xFF2A3548),
                   ),
-                  child: tuningState.isApplying
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF080B0E),
-                          ),
-                        )
-                      : Text(
-                          isMoving
-                              ? 'STOP BIKE TO APPLY'
-                              : 'APPLY TO CONTROLLER',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 2,
-                            fontSize: 14,
-                          ),
-                        ),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Stock HEB restore (Phase 15, T092)
+              // Werks-Restore
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: tuningState.isApplying ||
-                          tuningState.isRestoring ||
-                          !safety.allowed
-                      ? null
-                      : () => _showRestoreDialog(context, ref),
-                  icon: tuningState.isRestoring
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFFFF9800),
-                          ),
-                        )
-                      : const Icon(Icons.restore, size: 18),
+                child: TextButton.icon(
+                  onPressed: safety.allowed && !tuningState.isRestoring
+                      ? () => _confirmRestore(context, notifier)
+                      : null,
+                  icon: const Icon(Icons.restore,
+                      color: Color(0xFFFF5470), size: 18),
                   label: const Text(
-                    'WERKSEINSTELLUNGEN WIEDERHERSTELLEN',
+                    'WERKSEINSTELLUNGEN WIEDERHERSTELLEN (.HEB BASEMAP)',
                     style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.5,
+                      color: Color(0xFFFF5470),
+                      fontWeight: FontWeight.w700,
                       fontSize: 12,
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFFF9800),
-                    side: BorderSide(
-                        color: const Color(0xFFFF9800).withOpacity(0.4)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
-
-              // Read-back verification (Phase 15, T093)
-              if (applied)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: _ReadBackBanner(verified: readBackVerified),
-                ),
-              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -491,311 +458,190 @@ class TuningScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showApplyDialog(
-      BuildContext context, WidgetRef ref, TuningProfile profile) async {
-    final isFullSend = _isExtremeProfile(profile);
+  void _showDiffDialog(BuildContext context, TuningNotifier notifier,
+      TuningProfile pendingProfile) {
+    showDialog(
+      context: context,
+      builder: (ctx) => TuningDiffDialog(
+        originalProfile: TuningProfile.stockOffroad(),
+        pendingProfile: pendingProfile,
+        onConfirm: () => notifier.applyProfile(),
+      ),
+    );
+  }
 
-    final confirmed = await showDialog<bool>(
+  void _showExpertWarningDialog(BuildContext context, TuningNotifier notifier) {
+    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF111518),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: isFullSend
-                ? const Color(0xFFFF1744).withOpacity(0.5)
-                : const Color(0xFF2A3548),
-          ),
-        ),
+        backgroundColor: const Color(0xFF0F172A),
         title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber,
-              color: isFullSend
-                  ? const Color(0xFFFF1744)
-                  : const Color(0xFFFF9800),
-              size: 22,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              isFullSend ? 'EXTREME WARNING' : 'APPLY CHANGES?',
-              style: TextStyle(
-                color: isFullSend ? const Color(0xFFFF1744) : Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isFullSend) ...[
-              const Text(
-                '⚠ This preset pushes the motor and controller to extreme limits. It can:',
-                style: TextStyle(color: Color(0xFFFF1744), fontSize: 13),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '• Overheat and permanently damage the motor\n'
-                '• Void your warranty\n'
-                '• Create dangerously high speeds\n'
-                '• Be illegal on public roads',
-                style: TextStyle(
-                    color: Color(0xFFFF9800), fontSize: 13, height: 1.6),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Text(
-              'Writing to: ${profile.name}\n'
-              'Max Speed: ${profile.maxSpeedKph.toStringAsFixed(0)} km/h\n'
-              'Peak Torque: ${(profile.maxPhaseCurrA / 400.0 * 100).toStringAsFixed(0)}%\n'
-              'Peak Power: ${(profile.maxLineCurrA * 72.0 / 1000.0).toStringAsFixed(1)} kW',
-              style: const TextStyle(
-                color: Color(0xFF8899AA),
-                fontSize: 13,
-                height: 1.6,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Changes are written directly to the controller. A stock backup will be preserved.',
-              style: TextStyle(
-                color: Color(0xFF4A5568),
-                fontSize: 12,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'CANCEL',
-              style: TextStyle(color: Color(0xFF4A5568), letterSpacing: 1),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isFullSend
-                  ? const Color(0xFFFF1744)
-                  : const Color(0xFF00E5FF),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              isFullSend ? 'I UNDERSTAND, APPLY' : 'APPLY',
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-                color: Color(0xFF080B0E),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      HapticFeedback.heavyImpact();
-      await ref.read(tuningProvider.notifier).applyProfile();
-    }
-  }
-
-  Future<void> _showRestoreDialog(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF111518),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: const Color(0xFFFF9800).withOpacity(0.5)),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.restore, color: Color(0xFFFF9800), size: 22),
+          children: const [
+            Icon(Icons.warning, color: Color(0xFFFF9800)),
             SizedBox(width: 8),
-            Text(
-              'WERKSRESTORE?',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-              ),
-            ),
+            Text('EXPERTMAP FREISCHALTEN',
+                style: TextStyle(color: Colors.white, fontSize: 16)),
           ],
         ),
         content: const Text(
-          'Alle Parameter werden zurück auf die Werks-Baseline gesetzt '
-          '(unmodified_basemap.heb). Das Fahrzeug muss ausgeschaltet und '
-          'stillstehen.\n\n'
-          'Dieser Vorgang überschreibt dein aktuelles Tuning. Ein Backup '
-          'deiner Werte bleibt erhalten.',
-          style: TextStyle(color: Color(0xFF8899AA), fontSize: 13, height: 1.6),
+          'Der Experten-Modus erlaubt das Verändern hardwarekritischer Parameter wie Pin-Mappings, Polpaare und Kalibrierungen.\n\nFehlerhafte Werte können den Motor oder Controller beschädigen. Bitte nur mit Fachkenntnis anpassen.',
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'CANCEL',
-              style: TextStyle(color: Color(0xFF4A5568), letterSpacing: 1),
-            ),
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('ABBRECHEN', style: TextStyle(color: Colors.white)),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () {
+              notifier.toggleExpertMode(true);
+              Navigator.pop(ctx);
+            },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9800),
-              foregroundColor: const Color(0xFF080B0E),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'WIEDERHERSTELLEN',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-                color: Color(0xFF080B0E),
-              ),
-            ),
+                backgroundColor: const Color(0xFFFF9800)),
+            child: const Text('FREISCHALTEN',
+                style: TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
-
-    if (confirmed != true) return;
-    HapticFeedback.heavyImpact();
-    await ref.read(tuningProvider.notifier).restoreStock();
   }
 
-  Future<void> _showSavePresetDialog(
-      BuildContext context, WidgetRef ref) async {
-    final existing = ref
-        .read(tuningProvider)
-        .savedProfiles
-        .map((p) => p.name.toLowerCase())
-        .toSet();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (ctx) => _SavePresetDialog(existingNames: existing),
-    );
-    if (name == null) return;
-    HapticFeedback.selectionClick();
-    await ref.read(tuningProvider.notifier).saveCurrentProfile(name);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Preset "$name" gespeichert')),
-      );
-    }
-  }
-
-  Future<void> _confirmDeletePreset(
-      BuildContext context, WidgetRef ref, String name) async {
-    final confirmed = await showDialog<bool>(
+  void _confirmRestore(BuildContext context, TuningNotifier notifier) {
+    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF111518),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: const Color(0xFFFF1744).withOpacity(0.4)),
-        ),
-        title: const Text(
-          'PRESET LÖSCHEN?',
-          style: TextStyle(color: Color(0xFFFF1744), fontSize: 14),
-        ),
-        content: Text(
-          '"$name" wird dauerhaft gelöscht.',
-          style: const TextStyle(color: Color(0xFF8899AA), fontSize: 13),
+        backgroundColor: const Color(0xFF0F172A),
+        title: const Text('WERKSEINSTELLUNGEN WIEDERHERSTELLEN?',
+            style: TextStyle(color: Colors.white, fontSize: 16)),
+        content: const Text(
+          'Alle 156 Register werden atomar aus der "unmodified_basemap.heb" zurückgeschrieben.',
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'CANCEL',
-              style: TextStyle(color: Color(0xFF4A5568), letterSpacing: 1),
-            ),
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('ABBRECHEN', style: TextStyle(color: Colors.white)),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () {
+              Navigator.pop(ctx);
+              notifier.restoreStock();
+            },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF1744),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'LÖSCHEN',
-              style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1),
-            ),
+                backgroundColor: const Color(0xFFFF5470)),
+            child: const Text('RESTORE STARTEN',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
-    HapticFeedback.mediumImpact();
-    await ref.read(tuningProvider.notifier).deleteProfile(name);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Preset "$name" gelöscht')),
-      );
-    }
+  }
+
+  void _showSavePresetDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: const Text('PRESET SPEICHERN',
+            style: TextStyle(color: Colors.white, fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Preset Name (z.B. Mein Trail)',
+            hintStyle: TextStyle(color: Color(0xFF64748B)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('ABBRECHEN', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                ref.read(tuningProvider.notifier).saveCurrentProfile(name);
+                Navigator.pop(ctx);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00E5FF)),
+            child: const Text('SPEICHERN',
+                style: TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeletePreset(BuildContext context, WidgetRef ref, String name) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: Text('PRESET "$name" LÖSCHEN?',
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('ABBRECHEN', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(tuningProvider.notifier).deleteProfile(name);
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF5470)),
+            child: const Text('LÖSCHEN',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-/// A preset is treated as "extreme" (extra warning) only when it is a
-/// user-created profile pushing beyond factory bounds.
-bool _isExtremeProfile(TuningProfile profile) =>
-    !profile.isStock &&
-    (profile.maxLineCurrA >= 250 || profile.maxSpeedKph > 110.0);
-
 class _WarningBanner extends StatelessWidget {
   final SafetyDecision decision;
+
   const _WarningBanner({required this.decision});
 
   @override
   Widget build(BuildContext context) {
-    if (!decision.allowed) {
-      final moving = decision.rejections.contains(SafetyRejection.moving);
+    if (decision.allowed) {
       return Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: (moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800))
-              .withOpacity(moving ? 0.12 : 0.1),
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF39FF14).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: (moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800))
-                .withOpacity(0.4),
-          ),
+              color: const Color(0xFF39FF14).withValues(alpha: 0.25)),
         ),
         child: Row(
-          children: [
-            Icon(
-              moving ? Icons.warning : Icons.lock_outline,
-              color: moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800),
-              size: 18,
-            ),
-            const SizedBox(width: 10),
+          children: const [
+            Icon(Icons.check_circle_outline,
+                color: Color(0xFF39FF14), size: 18),
+            SizedBox(width: 10),
             Expanded(
               child: Text(
-                moving
-                    ? 'VEHICLE MOVING — Tuning locked until stationary'
-                    : 'TUNING LOCKED — ${describeSafety(decision)}',
+                'SCHREIBENGINE BEREIT (Fahrzeug steht still, Telemetrie aktiv)',
                 style: TextStyle(
-                  color: moving
-                      ? const Color(0xFFFF1744)
-                      : const Color(0xFFFF9800),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  height: 1.5,
-                ),
+                    color: Color(0xFF39FF14),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -804,25 +650,24 @@ class _WarningBanner extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF9800).withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFF9800).withOpacity(0.3)),
+        color: const Color(0xFFFF5470).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border:
+            Border.all(color: const Color(0xFFFF5470).withValues(alpha: 0.3)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.warning_amber_outlined,
-              color: Color(0xFFFF9800), size: 18),
-          SizedBox(width: 10),
+          const Icon(Icons.lock_outline, color: Color(0xFFFF5470), size: 18),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Aggressive tuning can overheat the motor, void warranty, or be illegal on public roads. Ride responsibly.',
-              style: TextStyle(
-                color: Color(0xFFFF9800),
-                fontSize: 12,
-                height: 1.5,
-              ),
+              'SCHREIBEN GESPERRT: ${describeSafety(decision)}',
+              style: const TextStyle(
+                  color: Color(0xFFFF5470),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -833,6 +678,7 @@ class _WarningBanner extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
+
   const _SectionHeader({required this.title});
 
   @override
@@ -840,138 +686,57 @@ class _SectionHeader extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        color: Color(0xFF4A5568),
+        color: Color(0xFF64748B),
         fontSize: 11,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         letterSpacing: 2,
       ),
     );
   }
 }
 
-class _PresetGrid extends StatelessWidget {
-  final List<TuningProfile> factoryPresets;
-  final List<TuningProfile> customPresets;
-  final String selectedName;
-  final ValueChanged<TuningProfile> onSelect;
-  final ValueChanged<String> onDelete;
+class _AccordionSection extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color accentColor;
+  final Widget child;
 
-  const _PresetGrid({
-    required this.factoryPresets,
-    required this.customPresets,
-    required this.selectedName,
-    required this.onSelect,
-    required this.onDelete,
+  const _AccordionSection({
+    required this.title,
+    required this.icon,
+    required this.accentColor,
+    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    final presets = [...factoryPresets, ...customPresets];
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: presets.map((p) {
-        final deletable = customPresets.contains(p);
-        return _PresetChip(
-          preset: p,
-          isSelected: p.name == selectedName,
-          deletable: deletable,
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onSelect(p);
-          },
-          onDelete: deletable ? () => onDelete(p.name) : null,
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _PresetChip extends StatelessWidget {
-  final TuningProfile preset;
-  final bool isSelected;
-  final bool deletable;
-  final VoidCallback onTap;
-  final VoidCallback? onDelete;
-
-  const _PresetChip({
-    required this.preset,
-    required this.isSelected,
-    required this.deletable,
-    required this.onTap,
-    this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = preset.name == 'Custom'
-        ? const Color(0xFF8899AA)
-        : const Color(0xFF00E5FF);
-    final width =
-        (preset.name.length * 7.2 + 48).clamp(100.0, 180.0).toDouble();
-
-    return SizedBox(
-      width: width,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          GestureDetector(
-            onTap: onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? color.withOpacity(0.15)
-                    : const Color(0xFF111518),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isSelected ? color : const Color(0xFF2A3548),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isSelected) ...[
-                    Icon(Icons.check, color: color, size: 12),
-                    const SizedBox(width: 4),
-                  ],
-                  Flexible(
-                    child: Text(
-                      preset.name.toUpperCase(),
-                      style: TextStyle(
-                        color: isSelected ? color : const Color(0xFF4A5568),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+    return Material(
+      color: const Color(0xFF0F172A),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF1E293B)),
+        ),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            leading: Icon(icon, color: accentColor, size: 20),
+            title: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
               ),
             ),
+            childrenPadding: const EdgeInsets.all(14),
+            children: [child],
           ),
-          if (deletable)
-            Positioned(
-              right: -5,
-              top: -5,
-              child: GestureDetector(
-                onTap: onDelete,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF1744),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 11),
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -1004,137 +769,148 @@ class _TuningSlider extends StatelessWidget {
     this.verified = false,
   });
 
-  bool get _isWarning => warningThreshold != null && value >= warningThreshold!;
-
   @override
   Widget build(BuildContext context) {
-    final color = _isWarning ? const Color(0xFFFF9800) : accentColor;
+    final isWarning = warningThreshold != null && value >= warningThreshold!;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF111518),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _isWarning
-              ? const Color(0xFFFF9800).withOpacity(0.35)
-              : const Color(0xFF1A2030),
-        ),
+            color: isWarning
+                ? const Color(0xFFFF5470).withValues(alpha: 0.5)
+                : const Color(0xFF1E293B)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 17),
-              ),
-              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  children: [
+                    Icon(icon, color: accentColor, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Color(0xFFCBD5E1),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '$displayValue',
-                style: TextStyle(
-                  color: color,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  unit,
-                  style: TextStyle(
-                    color: color.withOpacity(0.7),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              if (verified)
-                Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: Tooltip(
-                    message: 'Verifiziert',
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF39FF14).withOpacity(0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.verified,
-                        color: Color(0xFF39FF14),
-                        size: 16,
-                      ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (verified)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 6),
+                      child:
+                          Icon(Icons.check, color: Color(0xFF39FF14), size: 14),
+                    ),
+                  Text(
+                    displayValue,
+                    style: TextStyle(
+                      color: isWarning ? const Color(0xFFFF5470) : accentColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 6),
           SliderTheme(
             data: SliderThemeData(
-              trackHeight: 3,
-              activeTrackColor: color,
-              inactiveTrackColor: const Color(0xFF1A2030),
-              thumbColor: color,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-              overlayColor: color.withOpacity(0.15),
+              trackHeight: 4,
+              activeTrackColor:
+                  isWarning ? const Color(0xFFFF5470) : accentColor,
+              inactiveTrackColor: const Color(0xFF1E293B),
+              thumbColor: isWarning ? const Color(0xFFFF5470) : accentColor,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              overlayColor: accentColor.withValues(alpha: 0.2),
             ),
             child: Slider(
               value: value.clamp(min, max),
               min: min,
               max: max,
-              onChanged: onChanged == null
-                  ? null
-                  : (v) {
-                      HapticFeedback.selectionClick();
-                      onChanged!(v);
-                    },
+              onChanged: onChanged,
             ),
           ),
-          if (_isWarning)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: [
-                  const SizedBox(width: 4),
-                  const Icon(Icons.warning_amber,
-                      color: Color(0xFFFF9800), size: 12),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'High — monitor temps closely',
-                    style: TextStyle(
-                      color: Color(0xFFFF9800),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
+    );
+  }
+}
+
+class _PresetGrid extends StatelessWidget {
+  final List<TuningProfile> factoryPresets;
+  final List<TuningProfile> customPresets;
+  final String selectedName;
+  final ValueChanged<TuningProfile> onSelect;
+  final ValueChanged<String> onDelete;
+
+  const _PresetGrid({
+    required this.factoryPresets,
+    required this.customPresets,
+    required this.selectedName,
+    required this.onSelect,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final allPresets = [...factoryPresets, ...customPresets];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: allPresets.map((preset) {
+        final isSelected = preset.name == selectedName;
+        return InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onSelect(preset);
+          },
+          onLongPress: !preset.isStock ? () => onDelete(preset.name) : null,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? const Color(0xFF39FF14).withValues(alpha: 0.12)
+                  : const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFF39FF14)
+                    : const Color(0xFF1E293B),
+                width: isSelected ? 1.5 : 1,
+              ),
+            ),
+            child: Text(
+              preset.name,
+              style: TextStyle(
+                color: isSelected
+                    ? const Color(0xFF39FF14)
+                    : const Color(0xFFCBD5E1),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -1150,209 +926,61 @@ class _ThrottleResponseSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final options = [
-      (0, 'RACE', const Color(0xFFFF1744)),
-      (1, 'SPORT', const Color(0xFFFF9800)),
-      (2, 'ECO', const Color(0xFF39FF14)),
+    const modes = [
+      (id: 0, label: 'Line / Race', desc: 'Direkt & Aggressiv'),
+      (id: 1, label: 'Sport', desc: 'Linear & Berechenbar'),
+      (id: 2, label: 'ECO', desc: 'Sanft & Sparsam'),
     ];
 
     return Row(
-      children: options.map((opt) {
-        final (val, label, color) = opt;
-        final isSelected = value == val;
+      children: modes.map((m) {
+        final isSelected = value == m.id;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(right: val < 2 ? 8 : 0),
-            child: GestureDetector(
-              onTap: onChanged == null
-                  ? null
-                  : () {
-                      HapticFeedback.selectionClick();
-                      onChanged!(val);
-                    },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: InkWell(
+              onTap: onChanged != null ? () => onChanged!(m.id) : null,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? color.withOpacity(0.15)
-                      : const Color(0xFF111518),
+                      ? const Color(0xFF00E5FF).withValues(alpha: 0.15)
+                      : const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isSelected ? color : const Color(0xFF2A3548),
+                    color: isSelected
+                        ? const Color(0xFF00E5FF)
+                        : const Color(0xFF1E293B),
                   ),
                 ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: isSelected ? color : const Color(0xFF4A5568),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
+                child: Column(
+                  children: [
+                    Text(
+                      m.label,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF00E5FF)
+                            : const Color(0xFFCBD5E1),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      m.desc,
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         );
       }).toList(),
-    );
-  }
-}
-
-class _ReadBackBanner extends StatelessWidget {
-  final bool verified;
-
-  const _ReadBackBanner({required this.verified});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = verified ? const Color(0xFF39FF14) : const Color(0xFFFF9800);
-    final icon = verified ? Icons.verified : Icons.pending_outlined;
-    final title = verified ? 'VERIFIZIERT' : 'READ-BACK AUSSTEHEND';
-    final subtitle = verified
-        ? 'Geschriebene Werte wurden im Controller bestätigt.'
-        : 'Warte auf Controller-Bestätigung der geschriebenen Werte…';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style:
-                      const TextStyle(color: Color(0xFF4A5568), fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SavePresetDialog extends StatefulWidget {
-  final Set<String> existingNames;
-
-  const _SavePresetDialog({required this.existingNames});
-
-  @override
-  State<_SavePresetDialog> createState() => _SavePresetDialogState();
-}
-
-class _SavePresetDialogState extends State<_SavePresetDialog> {
-  final TextEditingController _controller = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  String? _validate(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return 'Name erforderlich';
-    if (widget.existingNames.contains(trimmed.toLowerCase())) {
-      return 'Name bereits vergeben';
-    }
-    return null;
-  }
-
-  void _submit() {
-    final error = _validate(_controller.text);
-    if (error != null) {
-      setState(() => _error = error);
-      return;
-    }
-    Navigator.pop(context, _controller.text.trim());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF111518),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF2A3548)),
-      ),
-      title: const Text(
-        'NEUES PRESET SPEICHERN',
-        style: TextStyle(fontSize: 14, letterSpacing: 1.2),
-      ),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        textCapitalization: TextCapitalization.words,
-        maxLength: 24,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: 'Preset-Name',
-          labelStyle: const TextStyle(color: Color(0xFF8899AA)),
-          hintText: 'z. B. Meine Trail-Stufe',
-          hintStyle: const TextStyle(color: Color(0xFF4A5568)),
-          errorText: _error,
-          errorStyle: const TextStyle(color: Color(0xFFFF1744)),
-          enabledBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF2A3548)),
-          ),
-          focusedBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF00E5FF)),
-          ),
-        ),
-        onSubmitted: (_) => _submit(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'CANCEL',
-            style: TextStyle(color: Color(0xFF4A5568), letterSpacing: 1),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00E5FF),
-            foregroundColor: const Color(0xFF080B0E),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          child: const Text(
-            'SPEICHERN',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1,
-              color: Color(0xFF080B0E),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

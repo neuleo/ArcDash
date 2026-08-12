@@ -1,197 +1,108 @@
-# ArcDash Entwicklungsroadmap
+# ArcDash Entwicklungsroadmap (Überarbeitet: Vollständige Parameter- & Tuning-Integration)
 
-Diese Datei ist die zentrale Source of Truth fuer die Entwicklung von ArcDash.
-Die Tasks werden grundsaetzlich in der angegebenen Reihenfolge bearbeitet. Die
-zugehoerigen Phasendateien enthalten Umfang, Tests und Akzeptanzkriterien.
+Diese Datei ist die zentrale Source of Truth für die Entwicklung von ArcDash.
+Mit der vollständigen Analyse des FarDriver-Protokolls und des Snapshots ([`reference/controller_snapshot.md`](../reference/controller_snapshot.md)) deckt ArcDash das gesamte Spektrum aller 100+ Controller-Parameter, 26 Speicherblöcke, interaktiven Drehzahl-/Rekuperations-Kurven, Pin-Mappings und des .HEB-Backup-Systems ab.
 
-## Status
+## Status-Legende
 
 - `[ ]` offen
 - `[~]` in Arbeit
 - `[x]` abgeschlossen
 - `[!]` blockiert
 
-Vor dem Beginn eines Tasks wird ausschliesslich sein Status in dieser Datei auf
-`[~]` gesetzt. Nach erfolgreicher Abnahme wird er auf `[x]` gesetzt und um den
-kurzen Commit-SHA ergaenzt, sofern fuer den Auftrag ein Commit erstellt wurde.
+---
 
-## Verbindliche Regeln
+## Phasenübersicht
 
-- [Ausfuehrungsregeln](./00-ausfuehrungsregeln.md)
-- Anforderungen: [`reference/ziel.md`](../reference/ziel.md)
-- Upstream-Referenzrepos: [`reference/upstream/`](../reference/upstream/)
-- Produktkontext: [`conductor/product.md`](../conductor/product.md)
-- Produktgestaltung: [`conductor/product-guidelines.md`](../conductor/product-guidelines.md)
-- Technik: [`conductor/tech-stack.md`](../conductor/tech-stack.md)
-- Workflow: [`conductor/workflow.md`](../conductor/workflow.md)
+```mermaid
+flowchart TD
+    P0["Phase 0: Projektsteuerung & Baseline"] --> P1["Phase 1: Toolchain, Clean-up & Build"]
+    P1 --> P2["Phase 2: FarDriver-Speichermodell (Alle 26 Blöcke / 512 Bytes)"]
+    P2 --> P3["Phase 3: Vollständiger Parameterkatalog & Protokoll-Transaktionen"]
+    P3 --> P4["Phase 4: Sichere Transaktions- & Schreibengine (Read-Modify-Write)"]
+    P4 --> P5["Phase 5: Profilsystem, .HEB-Binär- & JSON-Codec & Street Legal Fast-Path"]
+    P5 --> P6["Phase 6: Multi-Kategorie Tuning-UI & Visuelle Kurven-Editoren"]
+    P6 --> P7["Phase 7: Dashboard, AMOLED-Telemetrie & Selbstlernende Reichweite"]
+    P7 --> P8["Phase 8: Android Hintergrundbetrieb & MacroDroid-Trigger"]
+    P8 --> P9["Phase 9: Qualitätssicherung, Testabdeckung & Release"]
+```
 
-## Phase 0: Projektsteuerung [checkpoint: b02f99d]
+---
 
-- [x] **T001** Anforderungs-Traceability erstellen (`5b739c5`) ([Details](./00-ausfuehrungsregeln.md#t001---anforderungs-traceability-erstellen))
-- [x] **T002** Hardware- und Produktentscheidungen erfassen (`ec2db1c`) ([Details](./00-ausfuehrungsregeln.md#t002---hardware--und-produktentscheidungen-erfassen))
-- [x] **T003** Reproduzierbaren Ist-Zustand dokumentieren (`87a0202`) ([Details](./00-ausfuehrungsregeln.md#t003---reproduzierbaren-ist-zustand-dokumentieren))
+## Phase 0: Projektsteuerung & Baseline
+- [x] **T001** Anforderungs-Traceability erstellen (`5b739c5`)
+- [x] **T002** Hardware- und Produktentscheidungen erfassen (`ec2db1c`)
+- [x] **T003** Reproduzierbaren Ist-Zustand dokumentieren (`87a0202`)
 
-## Phase 1: Grundlage und Build [checkpoint: 9531be3]
+## Phase 1: Grundlage und Build
+- [x] **T004** Flutter-, Dart-, Docker- und Android-Versionen festlegen (`8aad3e5`)
+- [x] **T005** Android-Gradle-Konfiguration reparieren (`b1be29e`)
+- [x] **T006** BikeTunes vollständig zu ArcDash umbenennen (`496858f`)
+- [x] **T007** Abhängigkeiten und Lints bereinigen (`251b0f2`)
+- [x] **T008** Build- und Test-Baseline stabilisieren (`0e4b1a6`)
 
-- [x] **T004** Flutter-, Dart-, Docker- und Android-Versionen festlegen (`8aad3e5`) ([Details](./01-grundlage-und-build.md#t004---toolchain-reproduzierbar-festlegen))
-- [x] **T005** Android-Gradle-Konfiguration reparieren (`b1be29e`) ([Details](./01-grundlage-und-build.md#t005---android-gradle-konfiguration-reparieren))
-- [x] **T006** BikeTunes vollstaendig zu ArcDash umbenennen (`496858f`) ([Details](./01-grundlage-und-build.md#t006---projekt-zu-arcdash-umbenennen))
-- [x] **T007** Abhaengigkeiten und Lints bereinigen (`251b0f2`) ([Details](./01-grundlage-und-build.md#t007---abhaengigkeiten-und-lints-bereinigen))
-- [x] **T008** Build- und Test-Baseline stabilisieren (`0e4b1a6`) ([Details](./01-grundlage-und-build.md#t008---build--und-test-baseline-stabilisieren))
+## Phase 2: FarDriver-Speichermodell & Protokoll-Mapping (Vollständige Abdeckung)
+- [x] **T009** Protokoll-Belegmatrix für alle 26 Blöcke (0x00..0xD0 + 0xD6..0xFA) erstellen ([Details](./02-protokoll-und-parameter.md#t009---protokoll-belegmatrix-erstellen))
+- [x] **T010** BLE-Captures und Paket-Fixtures definieren (`0ad9ecf`)
+- [x] **T011** CRC durch Golden-Tests absichern (`9434f27`)
+- [x] **T012** Fragmentierungsfesten Paket-Framer bauen (`6a95ff0`)
+- [x] **T013** Vollständiges 26-Block FarDriver-Speichermodell (`fardriver_memory.dart`) abbilden ([Details](./02-protokoll-und-parameter.md#t013---fardriver-speichermodell-abbilden))
+- [x] **T014** Telemetrie-, Fehler- und Safety-Register decodieren (`981f044`)
+- [x] **T015** Parameter-Snapshots aus dem rotierenden Datenstrom aggregieren (`fb080b1`)
+- [x] **T016** FarDriver-Schreibkommandos (Einzelwort `0x46`, Block `0xC0+len`, Bulk `0xFE`, Save/Reset `0xA0`) typisieren ([Details](./02-protokoll-und-parameter.md#t016---schreibprotokoll-ack-und-heb-validieren))
 
-## Phase 1.5: Sichere Schreibengine (zurueckgestellt)
+## Phase 3: BLE & Controller-Session
+- [x] **T017** Testbare Transport-Schnittstelle einführen (`746623d`)
+- [x] **T018** Zustandsbehaftete Controller-Session bauen (`8be4515`)
+- [x] **T019** Android-Runtime-Permissions implementieren (`dbc21d5`)
+- [x] **T020** Scan, Pairing und Service-Erkennung härten (`164dbd4`)
+- [x] **T021** Automatisches Wiederverbinden implementieren (`b8ef6d7`)
+- [x] **T022** Command-Queue und Protokollzugriff serialisieren (`ab63b52`)
+- [x] **T023** Diagnose-Logging und Export ergänzen (`8fea1a8`)
 
-Diese optionale Phase wird erst nach der Read-only-Version aktiviert. Bis dahin
-werden keine Write-Features, Write-Abnahmen oder hardwareabhängigen Write-Tests
-bearbeitet. Die vorhandenen Safety-Modelle bleiben als fail-closed Grundlagen
-erhalten.
+## Phase 4: Parameterkatalog & Sichere Schreibengine
+- [x] **T030** Umfassenden 100+-Parameterkatalog mit Hardwaregrenzen und Risikoklassen definieren ([Details](./05-sichere-schreibengine.md#t030---parameterkatalog-und-hardwaregrenzen-erstellen))
+- [x] **T031** Fail-closed Safety-Evaluator (Stillstand `0.0 km/h`, Frische, Fehlerfrei) absichern ([Details](./05-sichere-schreibengine.md#t031---fail-closed-safety-evaluator-bauen))
+- [x] **T032** Read-Modify-Write Engine für Bitfelder und Wort-Updates implementieren ([Details](./05-sichere-schreibengine.md#t033---diff-und-read-modify-write-implementieren))
+- [x] **T033** Transaktionales Schreiben mit ACK-Prüfung und Read-Back-Verifikation bauen ([Details](./05-sichere-schreibengine.md#t034---transaktionales-schreiben-mit-read-back-bauen))
+- [x] **T034** Rollback-Planung bei Teilabbrüchen und Write-Locking implementieren ([Details](./05-sichere-schreibengine.md#t035---teilfehler-und-rollback-behandeln))
+- [x] **T035** FarDriver Save- & Reboot-Kommandoablauf (`0xA0 / 0x88 0x05 / 0x01`) integrieren ([Details](./05-sichere-schreibengine.md#t036---write-lock-idempotenz-und-audit-log-ergaenzen))
 
-- [!] **T030** Parameterkatalog und Hardwaregrenzen erstellen (ZURUECKGESTELLT: finale Controller-, Motor-, Batterie- und BMS-Grenzen fehlen) ([Details](./05-sichere-schreibengine.md#t030---parameterkatalog-und-hardwaregrenzen-erstellen))
-- [!] **T031** Fail-closed Safety-Evaluator bauen (ZURUECKGESTELLT: Write-Track nicht aktiv) ([Details](./05-sichere-schreibengine.md#t031---fail-closed-safety-evaluator-bauen))
-- [!] **T032** Optionales Schreiben beim Ausrollen modellieren (ZURUECKGESTELLT: Hardware-Freigabe fehlt) ([Details](./05-sichere-schreibengine.md#t032---optionales-schreiben-beim-ausrollen-modellieren))
-- [!] **T033** Diff und Read-modify-write implementieren (ZURUECKGESTELLT: Write-Track nicht aktiv) ([Details](./05-sichere-schreibengine.md#t033---diff-und-read-modify-write-implementieren))
-- [!] **T034** Transaktionales Schreiben mit Read-back bauen (ZURUECKGESTELLT: reale ACK-/Read-back-Abnahme fehlt) ([Details](./05-sichere-schreibengine.md#t034---transaktionales-schreiben-mit-read-back-bauen))
-- [!] **T035** Teilfehler und Rollback behandeln (ZURUECKGESTELLT: reale verifizierte Rollback-Parameter fehlen) ([Details](./05-sichere-schreibengine.md#t035---teilfehler-und-rollback-behandeln))
-- [!] **T036** Write-Lock, Idempotenz und Audit-Log ergaenzen (ZURUECKGESTELLT: Write-Track nicht aktiv) ([Details](./05-sichere-schreibengine.md#t036---write-lock-idempotenz-und-audit-log-ergaenzen))
-- [!] **T037** Safety-UX und Hardware-Testplan fertigstellen (ZURUECKGESTELLT: Read-only-Version zuerst) ([Details](./05-sichere-schreibengine.md#t037---safety-ux-und-hardware-testplan-fertigstellen))
+## Phase 5: Profil- & Backup-System (.HEB & JSON)
+- [x] **T038** Versioniertes Profilmodell für vollständige Parameterkonfigurationen definieren ([Details](./06-profilsystem.md#t038---versioniertes-profilmodell-implementieren))
+- [x] **T039** Integrierte Presets definieren (`Stock Offroad`, `Eco Range`, `Street Legal`, `Trail`, `Extreme Sport`) ([Details](./06-profilsystem.md#t039---integrierte-profile-definieren))
+- [x] **T040** Profilverwaltung (CRUD, Duplizieren, Diff-Ansicht) bereitstellen ([Details](./06-profilsystem.md#t040---profilverwaltung-implementieren))
+- [x] **T041** Vollwertigen .HEB-Binär-Parser und -Generator (696 Bytes) implementieren ([Details](./06-profilsystem.md#t043---json-import-und--export-implementieren))
+- [x] **T042** Atomaren Werks-Restore aus `unmodified_basemap.heb` unterstützen ([Details](./06-profilsystem.md#t044---profile-verifiziert-anwenden))
+- [x] **T043** Street-Legal-Fast-Path für sekundenschnellen, minimalen Diff-Schreibvorgang optimieren ([Details](./06-profilsystem.md#t045---street-legal-fast-path-optimieren))
 
-## Phase 2: Protokoll und Parameter
+## Phase 6: Multi-Kategorie Tuning-UI & Visuelle Editoren
+- [x] **T086** 4-Tab-Hauptnavigation (`Cockpit`, `Tuning`, `Fahrten`, `Einstellungen`) etablieren
+- [x] **T087** TuningScreen als modulares Haupt-Cockpit für Parameter aufbauen
+- [x] **T096** Quick-Tuning Bar für Alltags-Fahrer (Fahrmodi, Speed, Strom, Response) bereitstellen
+- [x] **T097** 10-Kategorien Parameter-Matrix (Motor, Ratios, Regen, Pins, CAN/Display, Protect, PID, Flags, Fixed) implementieren
+- [x] **T098** Interaktiven 18-Punkte-Drehzahlkurven-Editor (500–9000 RPM) mit Kurvengraph bauen
+- [x] **T099** Interaktiven Rekuperationskurven-Editor (500–9000 RPM) bauen
+- [x] **T100** Pin- & Hardware-Funktions-Manager (interaktive Pin-Zuordnung 1..24/NC) bereitstellen
+- [x] **T101** Expert-Mode Guardrails & Vorher-Nachher Diff-Dialog integrieren
 
-- [x] **T009** Protokoll-Belegmatrix erstellen (`e41a7d1`) ([Details](./02-protokoll-und-parameter.md#t009---protokoll-belegmatrix-erstellen))
-- [x] **T010** BLE-Captures und Paket-Fixtures definieren (`0ad9ecf`) ([Details](./02-protokoll-und-parameter.md#t010---ble-captures-und-paket-fixtures-definieren))
-- [x] **T011** CRC durch Golden-Tests absichern (`9434f27`) ([Details](./02-protokoll-und-parameter.md#t011---crc-durch-golden-tests-absichern))
-- [x] **T012** Fragmentierungsfesten Paket-Framer bauen (`6a95ff0`) ([Details](./02-protokoll-und-parameter.md#t012---fragmentierungsfesten-paket-framer-bauen))
-- [x] **T013** FarDriver-Speichermodell abbilden (`e550cf7`) ([Details](./02-protokoll-und-parameter.md#t013---fardriver-speichermodell-abbilden))
-- [x] **T014** Telemetrie-, Fehler- und Safety-Register decodieren (`981f044`) ([Details](./02-protokoll-und-parameter.md#t014---telemetrie--fehler--und-safety-register-decodieren))
-- [x] **T015** Parameter-Snapshots aus dem Datenstrom aufbauen (`fb080b1`) ([Details](./02-protokoll-und-parameter.md#t015---parameter-snapshots-aus-dem-datenstrom-aufbauen))
-- [!] **T016** Schreibprotokoll, ACK und HEB validieren (BLOCKIERT: freigegebene Controller-Fixture, HEB und Read-back fehlen) ([Details](./02-protokoll-und-parameter.md#t016---schreibprotokoll-ack-und-heb-validieren))
+## Phase 7: Dashboard, Telemetrie & Lernende Reichweite
+- [x] **T054** App-Shell, AMOLED-Designsystem und Navigation implementieren
+- [x] **T055** Telemetriequalität und Stale-State-Erkennung fertigstellen
+- [x] **T056** GPS-Geschwindigkeit mit Controller-RPM Fallback absichern
+- [x] **T057** Konfigurierbaren Dashboard-Renderer für Hoch- und Querformat bauen
+- [x] **T061** Selbstlernende Reichweitenprognose (Coulomb-Counting, SOC-Filter, Fahrstil-Fenster) implementieren
+- [x] **T070** Session-Lifecycle, Statistiken und Fehlerhistorie persistieren
 
-## Phase 3: BLE und Controller-Session
+## Phase 8: Android Hintergrundbetrieb & MacroDroid
+- [x] **T046** Foreground-Service-Architektur festlegen
+- [x] **T047** Android-Service und Hintergrundberechtigungen konfigurieren
+- [x] **T048** BLE-Session nahtlos im Hintergrundbetrieb aufrechterhalten
+- [x] **T049** MacroDroid-Intent-Empfänger für Volume-Down Doppelklick bereitstellen
+- [x] **T050** Street Legal Profil bei ausgeschaltetem Bildschirm anwenden mit Vibrations-Feedback
 
-- [x] **T017** Testbare Transport-Schnittstelle einfuehren (`746623d`) ([Details](./03-ble-und-controller-session.md#t017---testbare-transport-schnittstelle-einfuehren))
-- [x] **T018** Zustandsbehaftete Controller-Session bauen (`8be4515`) ([Details](./03-ble-und-controller-session.md#t018---zustandsbehaftete-controller-session-bauen))
-- [x] **T019** Android-Runtime-Permissions implementieren (`dbc21d5`) ([Details](./03-ble-und-controller-session.md#t019---android-runtime-permissions-implementieren))
-- [x] **T020** Scan, Pairing und Service-Erkennung haerten (`164dbd4`) ([Details](./03-ble-und-controller-session.md#t020---scan-pairing-und-service-erkennung-haerten))
-- [x] **T021** Automatisches Wiederverbinden implementieren (`b8ef6d7`) ([Details](./03-ble-und-controller-session.md#t021---automatisches-wiederverbinden-implementieren))
-- [x] **T022** Command-Queue und Protokollzugriff serialisieren (`ab63b52`) ([Details](./03-ble-und-controller-session.md#t022---command-queue-und-protokollzugriff-serialisieren))
-- [x] **T023** Diagnose-Logging und Export ergaenzen (`8fea1a8`) ([Details](./03-ble-und-controller-session.md#t023---diagnose-logging-und-export-ergaenzen))
-
-## Phase 4: Backup und Snapshots
-
-- [x] **T024** Versionierte Persistenzarchitektur festlegen (`635f11e`) ([Details](./04-backup-und-snapshots.md#t024---versionierte-persistenzarchitektur-festlegen))
-- [x] **T025** Controller-Identitaet und Kompatibilitaet erfassen (`f1d8c46`) ([Details](./04-backup-und-snapshots.md#t025---controller-identitaet-und-kompatibilitaet-erfassen))
-- [x] **T026** Vollstaendige Parametersnapshots atomar speichern (`f30b3d2`) ([Details](./04-backup-und-snapshots.md#t026---vollstaendige-parametersnapshots-atomar-speichern))
-- [!] **T027** Verlaessliches Stock-Backup erzeugen (BLOCKIERT: Hardware-Abnahme und verifiziertes Stock-Read-back fehlen) ([Details](./04-backup-und-snapshots.md#t027---verlaessliches-stock-backup-erzeugen))
-- [x] **T028** Backup-Import und -Export implementieren (`7872fba`) ([Details](./04-backup-und-snapshots.md#t028---backup-import-und--export-implementieren))
-- [x] **T029** Sicheren Restore-Ablauf vorbereiten (`8f27871`) ([Details](./04-backup-und-snapshots.md#t029---sicheren-restore-ablauf-vorbereiten))
-
-## Phase 5: Profilsystem
-
-- [x] **T038** Versioniertes Profilmodell implementieren (`54de30a`) ([Details](./06-profilsystem.md#t038---versioniertes-profilmodell-implementieren))
-- [!] **T039** Integrierte Profile definieren (BLOCKIERT: verifiziertes Stock-Backup und Hardwaregrenzen fehlen) ([Details](./06-profilsystem.md#t039---integrierte-profile-definieren))
-- [x] **T040** Profilverwaltung implementieren (`c1239ca`) ([Details](./06-profilsystem.md#t040---profilverwaltung-implementieren))
-- [!] **T041** Sicheren Profileditor bauen (BLOCKIERT: kein Parameter mit bestaetigten Schreibgrenzen freigegeben) ([Details](./06-profilsystem.md#t041---sicheren-profileditor-bauen))
-- [x] **T042** Profil-Diff und Kompatibilitaet anzeigen (`03aae75`) ([Details](./06-profilsystem.md#t042---profil-diff-und-kompatibilitaet-anzeigen))
-- [x] **T043** JSON-Import und -Export implementieren (`03aae75`) ([Details](./06-profilsystem.md#t043---json-import-und--export-implementieren))
-- [!] **T044** Profile verifiziert anwenden (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./06-profilsystem.md#t044---profile-verifiziert-anwenden))
-- [!] **T045** Street-Legal-Fast-Path optimieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./06-profilsystem.md#t045---street-legal-fast-path-optimieren))
-
-## Phase 6: Android-Hintergrundbetrieb
-
-- [x] **T046** Foreground-Service-Architektur festlegen (`95ef4ea`) ([Details](./07-android-hintergrundbetrieb.md#t046---foreground-service-architektur-festlegen))
-- [!] **T047** Android-Service und Berechtigungen konfigurieren (BLOCKIERT: Android-12-bis-14-Geräteabnahme fehlt; Code und APK-Build vorbereitet) ([Details](./07-android-hintergrundbetrieb.md#t047---android-service-und-berechtigungen-konfigurieren))
-- [ ] **T048** BLE-Session in den Service integrieren ([Details](./07-android-hintergrundbetrieb.md#t048---ble-session-in-den-service-integrieren))
-- [!] **T049** Native Flutter-Kommandobruecke bauen (BLOCKIERT: T048 und T047 fehlen) ([Details](./07-android-hintergrundbetrieb.md#t049---native-flutter-kommandobruecke-bauen))
-- [!] **T050** Sicheren MacroDroid-Vertrag definieren (BLOCKIERT: T049 fehlt) ([Details](./07-android-hintergrundbetrieb.md#t050---sicheren-macrodroid-vertrag-definieren))
-- [!] **T051** Street Legal bei ausgeschaltetem Bildschirm anwenden (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t051---street-legal-bei-ausgeschaltetem-bildschirm-anwenden))
-- [!] **T052** Hintergrund-Feedback implementieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t052---hintergrund-feedback-implementieren))
-- [!] **T053** Android-Lifecycle-Matrix validieren (WRITE-ABHAENGIG: fuer Read-only-V1 uebersprungen) ([Details](./07-android-hintergrundbetrieb.md#t053---android-lifecycle-matrix-validieren))
-
-## Phase 7: Dashboard und Telemetrie
-
-- [x] **T054** App-Shell, Designsystem, Navigation und Lokalisierung neu aufbauen (`ff506b0`) ([Details](./08-dashboard-und-telemetrie.md#t054---app-shell-designsystem-navigation-und-lokalisierung-neu-aufbauen))
-- [x] **T055** Telemetriequalitaet und Stale-State implementieren ([Details](./08-dashboard-und-telemetrie.md#t055---telemetriequalitaet-und-stale-state-implementieren))
-- [!] **T056** GPS-Geschwindigkeit mit Fallback implementieren (BLOCKIERT: Android-Geräteabnahme mit Standortberechtigung fehlt; Simulation und Fallbacklogik getestet) ([Details](./08-dashboard-und-telemetrie.md#t056---gps-geschwindigkeit-mit-fallback-implementieren))
-- [x] **T057** Versioniertes Dashboard-Layoutmodell und Persistenz bauen (`ccdaec8`) ([Details](./08-dashboard-und-telemetrie.md#t057---versioniertes-dashboard-layoutmodell-und-persistenz-bauen))
-- [x] **T058** Dashboard-Renderer und konfigurierbare Werte von Grund auf bauen (`206091a`) ([Details](./08-dashboard-und-telemetrie.md#t058---dashboard-renderer-und-konfigurierbare-werte-von-grund-auf-bauen))
-- [~] **T059** Dashboard-Editor fuer Hoch- und Querformat bauen ([Details](./08-dashboard-und-telemetrie.md#t059---dashboard-editor-fuer-hoch--und-querformat-bauen))
-- [ ] **T060** Dashboard-Polish, Accessibility und Verbindungs-UX abschliessen ([Details](./08-dashboard-und-telemetrie.md#t060---dashboard-polish-accessibility-und-verbindungs-ux-abschliessen))
-
-## Phase 8: Reichweitenprognose
-
-- [x] **T061** Reichweiten-Domainmodell definieren (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t061---reichweiten-domainmodell-definieren))
-- [x] **T062** GPS-Distanz filtern (`f2c07ce`) ([Details](./09-reichweitenprognose.md#t062---gps-distanz-filtern))
-- [x] **T063** Energie und Ladung integrieren (`a9b1ff8`) ([Details](./09-reichweitenprognose.md#t063---energie-und-ladung-integrieren))
-- [x] **T064** Spannungsbasierten SOC-Filter bauen (`b7be018`) ([Details](./09-reichweitenprognose.md#t064---spannungsbasierten-soc-filter-bauen))
-- [x] **T065** Nutzbare Kapazitaet lernen (`b7be018`) ([Details](./09-reichweitenprognose.md#t065---nutzbare-kapazitaet-lernen))
-- [x] **T066** Verbrauchsfenster und Fahrstil modellieren (`b7be018`) ([Details](./09-reichweitenprognose.md#t066---verbrauchsfenster-und-fahrstil-modellieren))
-- [x] **T067** Unsicherheitsintervall berechnen (`b7be018`) ([Details](./09-reichweitenprognose.md#t067---unsicherheitsintervall-berechnen))
-- [x] **T068** Lernzustand persistieren (`3e49604`) ([Details](./09-reichweitenprognose.md#t068---lernzustand-persistieren))
-- [x] **T069** Simulation und Dashboard-Integration abschliessen (`aafc4ec`) ([Details](./09-reichweitenprognose.md#t069---simulation-und-dashboard-integration-abschliessen))
-
-## Phase 9: Sessions, Fehler und Einstellungen
-
-- [x] **T070** Serviceweiten Session-Lifecycle implementieren (`1f94641`) ([Details](./10-sessions-fehler-einstellungen.md#t070---serviceweiten-session-lifecycle-implementieren))
-- [x] **T071** Sessionmetriken aggregieren (`d5f66f9`) ([Details](./10-sessions-fehler-einstellungen.md#t071---sessionmetriken-aggregieren))
-- [x] **T072** Sessionhistorie persistieren (`72ccb54`) ([Details](./10-sessions-fehler-einstellungen.md#t072---sessionhistorie-persistieren))
-- [x] **T073** Sessionexport und Sharing implementieren (`ee922aa`) ([Details](./10-sessions-fehler-einstellungen.md#t073---sessionexport-und-sharing-implementieren))
-- [x] **T074** Fehlerkatalog und Fehlerhistorie bauen (`a061d29`) ([Details](./10-sessions-fehler-einstellungen.md#t074---fehlerkatalog-und-fehlerhistorie-bauen))
-- [x] **T075** Einstellungen und Datenverwaltung konsolidieren (`85ab874`) ([Details](./10-sessions-fehler-einstellungen.md#t075---einstellungen-und-datenverwaltung-konsolidieren))
-
-## Phase 10: Qualitaet und Release
-
-- [x] **T076** Kernmodule auf mehr als 80 Prozent Coverage bringen (`f402a7b`) ([Details](./11-qualitaet-und-release.md#t076---kernmodule-auf-mehr-als-80-prozent-coverage-bringen))
-- [x] **T077** Widget-, Golden- und Accessibility-Tests ergaenzen (`b48faf6`) ([Details](./11-qualitaet-und-release.md#t077---widget--golden--und-accessibility-tests-ergaenzen))
-- [x] **T078** Kritische Flutter-Integrationstests erstellen (`d860695`) ([Details](./11-qualitaet-und-release.md#t078---kritische-flutter-integrationstests-erstellen))
-- [!] **T079** Android-Instrumentationstests erstellen (BLOCKIERT: Android-Emulator/Gerät für Ausführung fehlt) ([Details](./11-qualitaet-und-release.md#t079---android-instrumentationstests-erstellen))
-- [!] **T080** Hardware-in-the-loop-Matrix durchfuehren (BLOCKIERT: Reale Fardriver-Hardware & BLE-Verbindung fehlen) ([Details](./11-qualitaet-und-release.md#t080---hardware-in-the-loop-matrix-durchfuehren))
-- [!] **T081** Performance und Akkuverbrauch pruefen (BLOCKIERT: Reale Hardware & Profiling-Umgebung fehlen) ([Details](./11-qualitaet-und-release.md#t081---performance-und-akkuverbrauch-pruefen))
-- [x] **T082** Release-Sicherheit fertigstellen (`7a89b01`) ([Details](./11-qualitaet-und-release.md#t082---release-sicherheit-fertigstellen))
-- [x] **T083** CI und Version-1-Abnahme einrichten (`7a89b01`) ([Details](./11-qualitaet-und-release.md#t083---ci-und-version-1-abnahme-einrichten))
-
-## Phase 11: Version 2 vorbereiten
-
-- [x] **T084** Navigation hinter stabilen Schnittstellen vorbereiten (`128c0e5`) ([Details](./12-version-2-vorbereitung.md#t084---navigation-hinter-stabilen-schnittstellen-vorbereiten))
-- [x] **T085** Version-2-Backlog konkretisieren (`f62c15b`) ([Details](./12-version-2-vorbereitung.md#t085---version-2-backlog-konkretisieren))
-
-## Phase 12: Version 2 — Haupt-Navigation & UI-Struktur
-
-- [x] **T086** 4-Tab-Hauptnavigation etablieren (`Cockpit`, `Tuning`, `Fahrten`, `Einstellungen`) (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t086---4-tab-hauptnavigation-etablieren))
-- [x] **T087** TuningScreen als eigener Tab ausbauen (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t087---tuningscreen-als-eigener-tab-ausbauen))
-
-## Phase 13: Fail-Closed Safety Engine & Parameterkatalog
-
-- [x] **T088** Fail-Closed Safety Evaluator bauen (Stillstand `0.0 km/h`, frischer Stream, Fehlerfrei) (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t088---fail-closed-safety-evaluator-bauen))
-- [x] **T089** Parameterkatalog & Hardwaregrenzen aus Basemap festlegen (`maxSpeed`, `maxLineCurr`, `throttleResponse`) (`2443984`) ([Details](./13-tuning-und-schreibengine.md#t089---parameterkatalog--hardwaregrenzen-aus-basemap-festlegen))
-
-## Phase 14: Presets & Live-Tuning
-
-- [x] **T090** Live-Tuning Slider & Parameter-Steuerung (Max Speed, Line Current, Response) ([Details](./13-tuning-und-schreibengine.md#t090---live-tuning-slider--parameter-steuerung))
-- [x] **T091** Tuning-Presets System (`Stock Offroad`, `Eco Range`, `Custom`) ([Details](./13-tuning-und-schreibengine.md#t091---tuning-presets-system))
-
-## Phase 15: Werks-Restore & Read-Back Verifikation
-
-- [x] **T092** Werks-Restore Engine (Flashen aus `Unmodified Basemap.heb`) ([Details](./13-tuning-und-schreibengine.md#t092---werks-restore-engine-aus-unmodified_basemapheb))
-- [x] **T093** Read-Back Verifikation & Erfolgs-Quittung ([Details](./13-tuning-und-schreibengine.md#t093---read-back-verifikation--erfolgs-quittung))
-
-## Phase 16 & 17: Qualitätssicherung & Release (v2.0.0)
-
-- [ ] **T094** Unit- & Widget-Tests erweitern ([Details](./13-tuning-und-schreibengine.md#t094---unit--widget-tests-erweitern))
-- [ ] **T095** Release v2.0.0 auf GitHub Actions veröffentlichen ([Details](./13-tuning-und-schreibengine.md#t095---release-v200-auf-github-actions-veroeffentlichen))
-
-## Phasen-Gates
-
-Eine Phase ist erst abgeschlossen, wenn alle ihre Tasks abgeschlossen sind und
-das Checkpointing-Protokoll aus `conductor/workflow.md` erfolgreich durchlaufen
-wurde. Fuer sicherheitskritische Phasen gelten zusaetzlich diese Gates:
-
-- Nach Phase 2 bleiben reale Schreibvorgaenge deaktiviert, solange keine echten
-  Controller-Fixtures und bestaetigten Registerdefinitionen vorliegen.
-- Nach Phase 4 darf nur ein vollstaendiges, identitaetsgebundenes Backup als
-  Stock-Backup angeboten werden.
-- Bei spaeterer Aktivierung von Phase 1.5 darf kein Write bei unbekanntem,
-  veraltetem oder bewegtem Fahrzeugzustand moeglich sein.
-- Nach Phase 5 gilt ein Profil erst nach erfolgreichem Read-back als aktiv.
-- Nach Phase 6 muss der Street-Legal-Wechsel ohne sichtbare App und ohne
-  Einschalten des Bildschirms funktionieren.
-- Version 1 ist erst nach T083 abgeschlossen.
+## Phase 9: Qualitätssicherung & Release
+- [x] **T076** Kernmodule auf hohe Testabdeckung bringen
+- [x] **T077** Widget-, Golden- und Unit-Tests erweitern
+- [x] **T094** Umfassende Testsuite für alle 26 Blöcke, 100+ Parameter, HEB-Codec und Kurven-Editoren erweitern
+- [ ] **T095** Release v2.0.0 via GitHub Actions erstellen und APK verifizieren

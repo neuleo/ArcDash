@@ -8,10 +8,10 @@ class TuningProfile {
   /// Max speed in km/h (converted to raw RPM when writing).
   final double maxSpeedKph;
 
-  /// Max line current in amps.
+  /// Max line current in amps (battery limit).
   final double maxLineCurrA;
 
-  /// Max phase current in amps (stored for display; derived from phase coeff).
+  /// Max phase current in amps (motor torque limit).
   final double maxPhaseCurrA;
 
   /// Regen strength 0.0–1.0.
@@ -29,26 +29,35 @@ class TuningProfile {
   /// Boost mode duration in seconds (0..30s).
   final int boostTimeSeconds;
 
-  /// Low voltage protection cutoff (50..80V).
+  /// Low voltage protection cutoff (40..90V).
   final double lowVoltCutoffV;
 
-  /// Over voltage protection cutoff (80..100V).
+  /// Over voltage protection cutoff (70..110V).
   final double overVoltCutoffV;
 
-  /// Motor temp protection threshold (80..150 °C).
+  /// Motor temp protection threshold (70..160 °C).
   final double motorTempLimitC;
 
-  /// Controller/MOSFET temp protection threshold (60..110 °C).
+  /// Controller/MOSFET temp protection threshold (60..120 °C).
   final double controllerTempLimitC;
 
-  /// Flux weakening current (0..150 A).
+  /// Flux weakening current (0..150 A or LD raw).
   final double fluxWeakeningCurrA;
 
   /// Reverse speed limit percentage (10..100%).
   final double reverseSpeedPct;
 
-  /// 3-point power curve: [(rpm%, torque%), ...] for low/mid/high.
+  /// 3-point power curve: [(rpm%, torque%), ...] for simplified preview.
   final List<PowerPoint> powerCurve;
+
+  /// 18-point detailed speed curve: 500, 1000, 1500 ... 9000 RPM (0..100%).
+  final List<int> speedRatios;
+
+  /// 18-point detailed regen curve: 500, 1000, 1500 ... 9000 RPM (-100..0%).
+  final List<int> regenRatios;
+
+  /// Hardware pin assignments (pausePin, sideStandPin, cruisePin, boostPin, etc.).
+  final Map<String, int> pinMappings;
 
   final DateTime createdAt;
   final bool isStock;
@@ -64,63 +73,165 @@ class TuningProfile {
     this.lowSpeedLineCurrPct = 40.0,
     this.midSpeedLineCurrPct = 70.0,
     this.boostTimeSeconds = 10,
-    this.lowVoltCutoffV = 62.0,
-    this.overVoltCutoffV = 90.0,
-    this.motorTempLimitC = 120.0,
-    this.controllerTempLimitC = 90.0,
+    this.lowVoltCutoffV = 60.0,
+    this.overVoltCutoffV = 90.7,
+    this.motorTempLimitC = 130.0,
+    this.controllerTempLimitC = 100.0,
     this.fluxWeakeningCurrA = 40.0,
     this.reverseSpeedPct = 20.0,
     required this.powerCurve,
+    this.speedRatios = const [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ],
+    this.regenRatios = const [
+      -13,
+      -16,
+      -19,
+      -22,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      -25,
+      0
+    ],
+    this.pinMappings = const {
+      'pausePin': 0, // NC
+      'sideStandPin': 13, // Invalid
+      'cruisePin': 13,
+      'boostPin': 13,
+      'lowSpeedPin': 1, // PIN2
+      'highSpeedPin': 2, // PIN3
+      'reversePin': 4, // PIN8
+      'forwardPin': 13,
+    },
     required this.createdAt,
     this.isStock = false,
   });
 
-  // Built-in / factory presets (Phase 14, T091).
-  // Values and bounds are derived from the verified factory baseline
-  // `reference/basemaps/unmodified_basemap.json` / `assets/basemaps/...heb`.
+  // Factory Preset: Stock Offroad (Arctic Leopard Xe Pro S baseline)
   static TuningProfile stockOffroad() => TuningProfile(
         name: 'Stock Offroad',
-        description: 'Factory off-road baseline (125 km/h, 200 A, Sport)',
+        description: 'Original Werks-Setup (125 km/h, 200A/450A, Sport-Kurve)',
         maxSpeedKph: 125.0,
         maxLineCurrA: 200.0,
-        maxPhaseCurrA: 300.0,
-        regenStrength: 0.1,
+        maxPhaseCurrA: 450.0,
+        regenStrength: 0.25,
         throttleResponse: 1, // Sport
         powerCurve: PowerPoint.defaultCurve(),
         createdAt: DateTime.now(),
         isStock: true,
       );
 
-  static TuningProfile ecoRange() => TuningProfile(
-        name: 'Eco Range',
-        description: 'Maximum range — gentle power (45 km/h, 100 A, Eco)',
+  // Factory Preset: Street Legal (45 km/h StVO Konform)
+  static TuningProfile streetLegal() => TuningProfile(
+        name: 'Street Legal',
+        description:
+            'Verkehrskonforme Drosselung (45 km/h, 80A, Eco-Gasannahme)',
         maxSpeedKph: 45.0,
-        maxLineCurrA: 100.0,
-        maxPhaseCurrA: 150.0,
-        regenStrength: 0.4,
-        throttleResponse: 2, // Eco
+        maxLineCurrA: 80.0,
+        maxPhaseCurrA: 200.0,
+        regenStrength: 0.35,
+        throttleResponse: 2, // ECO
+        lowSpeedLineCurrPct: 40.0,
+        midSpeedLineCurrPct: 60.0,
         powerCurve: PowerPoint.smoothCurve(),
         createdAt: DateTime.now(),
         isStock: true,
       );
 
-  static TuningProfile custom() => TuningProfile(
-        name: 'Custom',
-        description: 'User-defined starting point',
-        maxSpeedKph: 65.0,
+  // Factory Preset: Eco Range
+  static TuningProfile ecoRange() => TuningProfile(
+        name: 'Eco Range',
+        description:
+            'Maximale Reichweite (45 km/h, 100A, sanfte Beschleunigung)',
+        maxSpeedKph: 45.0,
         maxLineCurrA: 100.0,
-        maxPhaseCurrA: 200.0,
-        regenStrength: 0.2,
+        maxPhaseCurrA: 180.0,
+        regenStrength: 0.45,
+        throttleResponse: 2, // ECO
+        powerCurve: PowerPoint.smoothCurve(),
+        createdAt: DateTime.now(),
+        isStock: true,
+      );
+
+  // Factory Preset: Trail / Enduro
+  static TuningProfile trailEnduro() => TuningProfile(
+        name: 'Trail / Enduro',
+        description:
+            'Feinfühliges Ansprechverhalten für schweres Gelände (80 km/h, 140A)',
+        maxSpeedKph: 80.0,
+        maxLineCurrA: 140.0,
+        maxPhaseCurrA: 350.0,
+        regenStrength: 0.20,
         throttleResponse: 1, // Sport
         powerCurve: PowerPoint.defaultCurve(),
         createdAt: DateTime.now(),
         isStock: false,
       );
 
-  /// All factory presets shown in the tuning UI. User-created presets are the
-  /// same type but persisted via [StorageService] and shown alongside these.
-  static List<TuningProfile> factoryPresets() =>
-      [stockOffroad(), ecoRange(), custom()];
+  // Factory Preset: Extreme Sport
+  static TuningProfile extremeSport() => TuningProfile(
+        name: 'Extreme Sport',
+        description:
+            'Volle Leistung & Beschleunigung für abgesperrte Strecken (130 km/h, 220A)',
+        maxSpeedKph: 130.0,
+        maxLineCurrA: 220.0,
+        maxPhaseCurrA: 500.0,
+        regenStrength: 0.30,
+        throttleResponse: 0, // Line/Race
+        powerCurve: PowerPoint.aggressiveCurve(),
+        createdAt: DateTime.now(),
+        isStock: false,
+      );
+
+  // User Custom Starting Point
+  static TuningProfile custom() => TuningProfile(
+        name: 'Custom',
+        description: 'Individuell angepasstes Benutzerprofil',
+        maxSpeedKph: 65.0,
+        maxLineCurrA: 100.0,
+        maxPhaseCurrA: 280.0,
+        regenStrength: 0.25,
+        throttleResponse: 1, // Sport
+        powerCurve: PowerPoint.defaultCurve(),
+        createdAt: DateTime.now(),
+        isStock: false,
+      );
+
+  static List<TuningProfile> factoryPresets() => [
+        stockOffroad(),
+        streetLegal(),
+        ecoRange(),
+        trailEnduro(),
+        extremeSport(),
+        custom(),
+      ];
 
   TuningProfile copyWith({
     String? name,
@@ -140,6 +251,9 @@ class TuningProfile {
     double? fluxWeakeningCurrA,
     double? reverseSpeedPct,
     List<PowerPoint>? powerCurve,
+    List<int>? speedRatios,
+    List<int>? regenRatios,
+    Map<String, int>? pinMappings,
     DateTime? createdAt,
     bool? isStock,
   }) {
@@ -161,6 +275,9 @@ class TuningProfile {
       fluxWeakeningCurrA: fluxWeakeningCurrA ?? this.fluxWeakeningCurrA,
       reverseSpeedPct: reverseSpeedPct ?? this.reverseSpeedPct,
       powerCurve: powerCurve ?? this.powerCurve,
+      speedRatios: speedRatios ?? this.speedRatios,
+      regenRatios: regenRatios ?? this.regenRatios,
+      pinMappings: pinMappings ?? this.pinMappings,
       createdAt: createdAt ?? this.createdAt,
       isStock: isStock ?? this.isStock,
     );
@@ -184,6 +301,9 @@ class TuningProfile {
         'fluxWeakeningCurrA': fluxWeakeningCurrA,
         'reverseSpeedPct': reverseSpeedPct,
         'powerCurve': powerCurve.map((p) => p.toJson()).toList(),
+        'speedRatios': speedRatios,
+        'regenRatios': regenRatios,
+        'pinMappings': pinMappings,
         'createdAt': createdAt.toIso8601String(),
         'isStock': isStock,
       };
@@ -201,17 +321,72 @@ class TuningProfile {
         midSpeedLineCurrPct:
             (json['midSpeedLineCurrPct'] as num?)?.toDouble() ?? 70.0,
         boostTimeSeconds: (json['boostTimeSeconds'] as num?)?.toInt() ?? 10,
-        lowVoltCutoffV: (json['lowVoltCutoffV'] as num?)?.toDouble() ?? 62.0,
-        overVoltCutoffV: (json['overVoltCutoffV'] as num?)?.toDouble() ?? 90.0,
-        motorTempLimitC: (json['motorTempLimitC'] as num?)?.toDouble() ?? 120.0,
+        lowVoltCutoffV: (json['lowVoltCutoffV'] as num?)?.toDouble() ?? 60.0,
+        overVoltCutoffV: (json['overVoltCutoffV'] as num?)?.toDouble() ?? 90.7,
+        motorTempLimitC: (json['motorTempLimitC'] as num?)?.toDouble() ?? 130.0,
         controllerTempLimitC:
-            (json['controllerTempLimitC'] as num?)?.toDouble() ?? 90.0,
+            (json['controllerTempLimitC'] as num?)?.toDouble() ?? 100.0,
         fluxWeakeningCurrA:
             (json['fluxWeakeningCurrA'] as num?)?.toDouble() ?? 40.0,
         reverseSpeedPct: (json['reverseSpeedPct'] as num?)?.toDouble() ?? 20.0,
         powerCurve: (json['powerCurve'] as List)
             .map((p) => PowerPoint.fromJson(p as Map<String, dynamic>))
             .toList(),
+        speedRatios: (json['speedRatios'] as List?)?.cast<int>() ??
+            const [
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100,
+              100
+            ],
+        regenRatios: (json['regenRatios'] as List?)?.cast<int>() ??
+            const [
+              -13,
+              -16,
+              -19,
+              -22,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              -25,
+              0
+            ],
+        pinMappings: (json['pinMappings'] as Map<String, dynamic>?)?.map(
+              (k, v) => MapEntry(k, (v as num).toInt()),
+            ) ??
+            const {
+              'pausePin': 0,
+              'sideStandPin': 13,
+              'cruisePin': 13,
+              'boostPin': 13,
+              'lowSpeedPin': 1,
+              'highSpeedPin': 2,
+              'reversePin': 4,
+              'forwardPin': 13,
+            },
         createdAt: DateTime.parse(json['createdAt'] as String),
         isStock: json['isStock'] as bool? ?? false,
       );
@@ -222,12 +397,9 @@ class TuningProfile {
       TuningProfile.fromJson(jsonDecode(s) as Map<String, dynamic>);
 }
 
-/// A point on the 3-point power curve.
+/// A point on the 3-point power curve for simplified visualization.
 class PowerPoint {
-  /// RPM fraction 0.0–1.0 (low / mid / high).
   final double rpmFraction;
-
-  /// Torque fraction 0.0–1.0.
   final double torqueFraction;
 
   const PowerPoint({required this.rpmFraction, required this.torqueFraction});

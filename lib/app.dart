@@ -9,6 +9,7 @@ import 'package:arcdash/screens/debug_screen.dart';
 import 'package:arcdash/screens/dev_tools_screen.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/stats_provider.dart';
+import 'package:arcdash/services/street_legal_trigger_service.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 
 class ArcDashApp extends ConsumerWidget {
@@ -18,9 +19,10 @@ class ArcDashApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Keep telemetry and session recording active globally
+    // Keep telemetry, session recording, and MacroDroid background trigger active globally
     ref.watch(statsProvider);
     ref.watch(controllerProvider);
+    ref.watch(streetLegalTriggerServiceProvider);
     // Force dark status bar icons on light backgrounds (none here, but good practice)
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

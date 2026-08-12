@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class HebFile {
   static const blockAddresses = [
     0x00,
@@ -29,6 +31,7 @@ class HebFile {
   ];
   static const expectedLength = 696;
   static const blockLength = 12;
+  static const canConfigLength = 384; // 696 - (26 * 12) = 384
 
   final List<int> bytes;
   final Map<int, List<int>> blocks;
@@ -53,6 +56,26 @@ class HebFile {
     );
   }
 
+  factory HebFile.fromBlocks(Map<int, List<int>> blocksMap,
+      [List<int>? canConfig]) {
+    final buffer = List<int>.filled(expectedLength, 0);
+    for (var index = 0; index < blockAddresses.length; index++) {
+      final addr = blockAddresses[index];
+      final blockData = blocksMap[addr] ?? List<int>.filled(blockLength, 0);
+      final start = index * blockLength;
+      for (var b = 0; b < blockLength && b < blockData.length; b++) {
+        buffer[start + b] = blockData[b];
+      }
+    }
+    final canStart = blockAddresses.length * blockLength;
+    if (canConfig != null) {
+      for (var c = 0; c < canConfigLength && c < canConfig.length; c++) {
+        buffer[canStart + c] = canConfig[c];
+      }
+    }
+    return HebFile.parse(buffer);
+  }
+
   List<int> block(int address) {
     final value = blocks[address];
     if (value == null) throw ArgumentError.value(address, 'address');
@@ -61,4 +84,6 @@ class HebFile {
 
   List<int> get canConfiguration =>
       List.unmodifiable(bytes.sublist(blockAddresses.length * blockLength));
+
+  Uint8List toBytes() => Uint8List.fromList(bytes);
 }

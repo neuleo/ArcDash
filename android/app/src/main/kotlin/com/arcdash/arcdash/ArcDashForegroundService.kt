@@ -13,6 +13,8 @@ class ArcDashForegroundService : Service() {
         const val CHANNEL_ID = "arcdash_controller"
         const val NOTIFICATION_ID = 4101
         const val ACTION_STOP = "com.arcdash.arcdash.STOP_SERVICE"
+        const val ACTION_UPDATE_NOTIFICATION = "com.arcdash.arcdash.UPDATE_NOTIFICATION"
+        const val EXTRA_TEXT = "extra_text"
     }
 
     override fun onCreate() {
@@ -22,7 +24,14 @@ class ArcDashForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) stopSelf()
+        when (intent?.action) {
+            ACTION_STOP -> stopSelf()
+            ACTION_UPDATE_NOTIFICATION -> {
+                val text = intent.getStringExtra(EXTRA_TEXT) ?: "Controller-Verbindung aktiv"
+                val notificationManager = getSystemService(NotificationManager::class.java)
+                notificationManager?.notify(NOTIFICATION_ID, notification(text))
+            }
+        }
         // Process death must not silently resume a write or reconnect transaction.
         return START_NOT_STICKY
     }

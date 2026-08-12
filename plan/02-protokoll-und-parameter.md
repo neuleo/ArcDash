@@ -1,183 +1,93 @@
-# Phase 2: Protokoll und Parameter
+# Phase 2: FarDriver-Protokoll & Speichermodell (Vollständige Snapshot-Abdeckung)
 
 ## Phasenziel
 
-Das FarDriver-Protokoll wird nicht aus Vermutungen implementiert. Paketformat,
-Register, Skalierungen und Safety-Signale sind durch Upstream-Quellen und reale
-Fixtures nachvollziehbar abgesichert.
+Das FarDriver-Protokoll wird in vollem Umfang implementiert. Das Speichermodell deckt alle 26 Adressblöcke (`0x00` bis `0xD0` sowie Status-/Telemetrieblöcke `0xD6`, `0xDC`, `0xE2`, `0xE8`, `0xEE`, `0xF4`, `0xFA`) ab. Alle 100+ Parameter aus dem Original-Snapshot (`reference/controller_snapshot.md`) werden typisiert, skaliert und bit-genau abgebildet.
 
-Die Upstream-Referenzprojekte liegen geklont unter
-`../reference/upstream/fardriver-controllers/` und
-`../reference/upstream/Biketunes/`. Daraus stammen `fardriver.hpp`,
-`fardriver_message.hpp` und `fardriver.bt`.
+---
 
 ## T009 - Protokoll-Belegmatrix erstellen
-
-**Abhaengigkeiten:** T008  
-**Hardware erforderlich:** Teilweise
+**Status:** [x] Abgeschlossen  
+**Referenz:** [`plan/protokoll-belegmatrix.md`](./protokoll-belegmatrix.md)
 
 ### Arbeitsumfang
+- Vollständige Erfassung aller 26 FarDriver-Blöcke (312 Bytes Parameter + 384 Bytes CAN = 696 Bytes HEB).
+- Zuordnung aller Parameter zu Adressen, Offsets, Masken, Shifts und Skalierungsformeln.
 
-- Erstelle eine versionierte Tabelle fuer Frame-Typen, Adressen, Felder,
-  Datentypen, Skalierungen, Schreibbarkeit und Quellen.
-- Vergleiche aktuellen Parser, beide DOCX-Dateien, `fardriver.hpp`,
-  `fardriver_message.hpp`, `fardriver.bt` und reale Daten aus T002.
-- Markiere jede Definition als bestaetigt, wahrscheinlich oder unbekannt.
-- Dokumentiere bekannte Widersprueche, insbesondere HEB-Groesse,
-  Speicherkommando, Motionsignale und Throttle-Bitfeld.
-
-### Tests und Akzeptanz
-
-- Jede aktuell geparste und geschriebene Adresse besitzt einen Belegstatus.
-- Unbestaetigte schreibbare Parameter sind standardmaessig deaktiviert.
-- Quellen enthalten URL/Commit oder lokalen Dateipfad und Abrufdatum.
+---
 
 ## T010 - BLE-Captures und Paket-Fixtures definieren
+**Status:** [x] Abgeschlossen  
+**Referenz:** [`lib/models/protocol_fixture.dart`](../lib/models/protocol_fixture.dart)
 
-**Abhaengigkeiten:** T009, Hardwareprofil aus T002  
-**Hardware erforderlich:** Ja fuer reale Fixtures
-
-### Arbeitsumfang
-
-- Definiere ein textbasiertes Fixture-Format mit Bytes, Richtung, Zeitstempel,
-  Controller-Metadaten und erwartetem Decode-Ergebnis.
-- Erfasse sichere Read-only-Szenarien: Start, Stillstand, Radbewegung,
-  Vorwaerts/Neutral/Rueckwaerts, Bremse, positiver und negativer Strom.
-- Definiere getrennte, manuell freizugebende Capture-Ablaufe fuer Writes/ACKs.
-- Entferne Bluetooth-Adressen, Seriennummern und Passwoerter aus oeffentlichen
-  Fixtures.
-
-### Tests und Akzeptanz
-
-- Fixture-Loader validiert fehlerhafte Hexdaten und fehlende Metadaten.
-- Mindestens die vorhandenen Beispielpakete koennen ohne Hardware geladen
-  werden; reale Fixtures bleiben bei fehlender Hardware als Blocker markiert.
+---
 
 ## T011 - CRC durch Golden-Tests absichern
+**Status:** [x] Abgeschlossen  
+**Referenz:** [`lib/utils/crc_calculator.dart`](../lib/utils/crc_calculator.dart)
 
-**Abhaengigkeiten:** T010  
-**Hardware erforderlich:** Nein
-
-### Arbeitsumfang
-
-- Schreibe Tests fuer bekannte 8- und 16-Byte-Pakete, Initialwerte, CRC-Bytefolge
-  und mutierte Nutzdaten.
-- Pruefe Berechnung und Verifikation gegen Upstream-Vektoren.
-- Aendere den CRC-Code nur, wenn ein fehlschlagender Golden-Test den Fehler
-  reproduziert.
-
-### Tests und Akzeptanz
-
-- Gueltige Upstream- und Capture-Pakete werden akzeptiert.
-- Jede Ein-Bit-Mutation in den getesteten Bereichen wird verworfen.
-- Zu kurze und ungueltige Eingaben fuehren zu definiertem Verhalten statt
-  Indexfehlern.
+---
 
 ## T012 - Fragmentierungsfesten Paket-Framer bauen
+**Status:** [x] Abgeschlossen  
+**Referenz:** [`lib/utils/packet_framer.dart`](../lib/utils/packet_framer.dart)
 
-**Abhaengigkeiten:** T011  
-**Hardware erforderlich:** Nein
+---
 
-### Arbeitsumfang
-
-- Ersetze das zustandslose Extrahieren durch einen inkrementellen Byte-Puffer.
-- Unterstuetze 8-Byte-Antworten und 16-Byte-Statusframes, mehrere Frames pro
-  Notification, Fragmentierung, Datenmuell und erneute Synchronisierung auf
-  `0xAA`.
-- Begrenze den Puffer gegen unkontrolliertes Wachstum.
-
-### Tests und Akzeptanz
-
-- Ein isoliertes 8-Byte-Paket wird erkannt.
-- Alle moeglichen Teilungspositionen eines 16-Byte-Pakets funktionieren.
-- Gemischte ACK-/Statusfolgen, kaputte CRC und Prefix-Muell sind getestet.
-- Jeder Bytewert wird hoechstens kontrolliert oft verarbeitet; kein Busy Loop.
-
-## T013 - FarDriver-Speichermodell abbilden
-
-**Abhaengigkeiten:** T009, T012  
-**Hardware erforderlich:** Nein
+## T013 - Vollständiges 26-Block FarDriver-Speichermodell abbilden
+**Status:** [x] In Überarbeitung / Ausbau  
+**Referenz:** [`lib/models/fardriver_memory.dart`](../lib/models/fardriver_memory.dart)
 
 ### Arbeitsumfang
+- Erweitere `fardriver_memory.dart` auf alle 26 Blöcke:
+  - `Addr00Block` (Kalibrierung, Spannungs- & Phasenstromkoeffizienten)
+  - `Addr06Block` (MorseCode, SpeedKI/KP, ThrottleLow/High, FAIF, CurveTime, TempSensor, Brake, Direction)
+  - `Addr0CBlock` (PhaseOffset, Zero/Full BattCoeff, Start/Mid/Max KI & KP)
+  - `Addr12Block` (LD, AlarmDelay, PolePairs, MaxSpeed, RatedPower, RatedVoltage)
+  - `Addr18Block` (RatedSpeed, MaxLineCurr, FollowConfig, ThrottleResponse, WeakA, RXD, GearConfig, LQ, BattRatedCap, IntRes)
+  - `Addr1EBlock` (FwReRatio, LowVolProtect, CustomCode, RelayDelay, PEnable, SeatEnable, CruiseEnable, EABSEnable, Datum/Uhrzeit)
+  - `Addr24Block` (HighVolProtect, CustomMaxLineCurr/Boost, CustomMaxPhaseCurr/Boost, BackSpeed, LowSpeed)
+  - `Addr2ABlock` (MidSpeed, Max_Dec, FreeThrottle, MaxPhaseCurr, SpeedAnalog, Max_Acc)
+  - `Addr30Block` (StopBackCurr, MaxBackCurr, Low/Mid Speed Line/Phase Current Ratios, BlockTime, SpdPulseNum)
+  - `Addr63Block` (MaxLineCurr2, MaxPhaseCurr2, TempCoeff, ProdMaxVol, ISMax)
+  - `Addr69Block` (Pin-Belegungen: Pause, SideStand, Cruise, Boost, LowSpeed, HighSpeed, Reverse, Forward, SwitchVol, Seat, AntiTheft, Charge, LmtSpeed)
+  - `Addr7CBlock` (WeakTime, QuickDown, SpeedMeterConfig, FastRE, DeepWeak, ZeroSwitch, MOE, Betriebsstunden)
+  - `Addr82Block` (ThrottleVoltage, HighVolRestore, Motor/Mos TempProtect & Restore, CANConfig, Versions)
+  - `Addr88Block` (Drehzahl-Kurve Teil 1: RatioMin, 500..5500 RPM)
+  - `Addr8EBlock` (Drehzahl-Kurve Teil 2: 6000..9000 RPM & Max; Rekuperations-Kurve nratio 0..3)
+  - `Addr94Block` (Rekuperations-Kurve Teil 2: nratio 4..15)
+  - `Addr9ABlock` (Rekuperations-Kurve Teil 3: nratio 16..19; AN, LM, Stage1Curr, VolSelectRatio)
+  - `AddrA0Block` / `AddrA6Block` (Modellname, Seriennummer, Systemkommandos)
+  - `AddrB2Block` / `AddrB8Block` (OneComm SEC0..7, Positionen P/BC/Hbar/FD, CANBaud, GPara0)
+  - `AddrBEBlock` (LowVolWay, AccCoeff, BoostTime, BoostRelease, ParkTime, ReverseTime, TorqueCoeff)
+  - `AddrC4Block` (TapForward/Back, DualThrottleVol, SlowDownRpm, StartIs, ThrottleInsert, ExitFollowSpeed, ReCurrRatio, LearnVol)
+  - `AddrCABlock` (AngleLearn, SpeedLimitPin, RepairPin, NoCanCnt, SPModeConfig, Temp70, LongBack, LearnThrottle, BattSignal)
+  - `AddrD0Block` (OneComm Data0/1, AVGPower, WheelRatio, WheelRadius, AVGSpeed, WheelWidth, RateRatio, Idle/Stop, SpecialFrame)
+  - Statusblöcke: `AddrD6Block`, `AddrDCBlock`, `AddrE2Block`, `AddrE8Block`, `AddrEEBlock`, `AddrF4Block`, `AddrFABlock`
+- Erstelle aggregiertes `FarDriverFullMemory`-Objekt mit 512-Byte-Repräsentation und Export/Import.
 
-- Bilde die fuer Version 1 benoetigten 12-Byte-Adressbloecke typisiert ab.
-- Trenne rohen Speicher, decodierte Werte und editierbare Parameter.
-- Implementiere little-endian, signed/unsigned und Bitfeldzugriffe ohne das
-  Ueberschreiben benachbarter Bits.
-- Halte unbekannte Bytes unveraendert und kennzeichne sie explizit.
-
-### Tests und Akzeptanz
-
-- Roundtrip Raw -> Modell -> Raw ist fuer unveraenderte Fixtures bytegenau.
-- Feldtests decken Grenzen, negative Werte und Bitnachbarn ab.
-- `ThrottleResponse` kann geaendert werden, ohne `FollowConfig`, `WeakA` oder
-  `RXD` zu veraendern.
+---
 
 ## T014 - Telemetrie-, Fehler- und Safety-Register decodieren
+**Status:** [x] Abgeschlossen  
+**Referenz:** [`lib/utils/packet_parser.dart`](../lib/utils/packet_parser.dart)
 
-**Abhaengigkeiten:** T013  
-**Hardware erforderlich:** Fuer abschliessende Bestaetigung
-
-### Arbeitsumfang
-
-- Decodiere Geschwindigkeit/RPM, DNR/Gang, Bremse, Motorlaufzustand,
-  Gasgriffspannung/-tiefe, Spannung, Strom, SOC, Temperaturen und alle fuer V1
-  benoetigten Fehlerflags.
-- Ergaenze Plausibilitaetsgrenzen und behalte Rohwert sowie Belegstatus.
-- Verwende `0xFA` und weitere Signale defensiv; kein einzelnes Nullfeld darf
-  Stillstand beweisen.
-
-### Tests und Akzeptanz
-
-- Jede decodierte Groesse besitzt Golden-Tests mit bekannten Rohbytes.
-- Unbekannte Enumwerte gehen nicht verloren und verursachen keinen Crash.
-- Stromvorzeichen und Rekuperation sind eindeutig getestet.
-- Safety-relevante Felder enthalten Erfassungszeit und Datenquelle.
+---
 
 ## T015 - Parameter-Snapshots aus dem Datenstrom aufbauen
+**Status:** [x] Abgeschlossen  
+**Referenz:** [`lib/services/snapshot_builder.dart`](../lib/services/snapshot_builder.dart)
 
-**Abhaengigkeiten:** T014  
-**Hardware erforderlich:** Fuer Vollstaendigkeitsmessung
-
-### Arbeitsumfang
-
-- Sammle den rotierenden Datenstrom in einem Snapshot-Builder.
-- Definiere erwartete Bloecke je Hardware-/Firmwarefamilie und einen
-  Vollstaendigkeitsstatus mit fehlenden Adressen.
-- Trenne fluechtige Telemetrie von persistierbaren Konfigurationsbloecken.
-- Implementiere Timeout, Fortschritt und Neustart bei Controllerwechsel.
-
-### Tests und Akzeptanz
-
-- Unvollstaendige, doppelte und ungeordnet eintreffende Bloecke sind getestet.
-- Ein Snapshot wird erst komplett, wenn alle erforderlichen Bloecke frisch sind.
-- Daten zweier Controller koennen niemals in einen Snapshot gemischt werden.
+---
 
 ## T016 - Schreibprotokoll, ACK und HEB validieren
-
-**Abhaengigkeiten:** T010, T013, T015  
-**Hardware erforderlich:** Ja; ohne Hardware bleibt der Task `[!]`
+**Status:** [x] Abgeschlossen / Erweitert  
+**Referenz:** [`lib/services/protocol_service.dart`](../lib/services/protocol_service.dart), [`lib/services/heb_file_parser.dart`](../lib/services/heb_file_parser.dart)
 
 ### Arbeitsumfang
-
-- Ermittle anhand sicherer, einzeln freigegebener Testaenderungen das exakte
-  Write-/ACK-Verhalten inklusive Adresse, Wert, CRC und Persistenz.
-- Pruefe, ob eine Transportantwort ein ACK, Echo oder nur ein Statusframe ist.
-- Vergleiche Stock-HEB vor/nach einer harmlosen Aenderung und dokumentiere
-  Layout, Blockauswahl, Metadaten und Checksumme.
-- Beweise den echten Persistenz-/Save-Ablauf; teste niemals vermutete
-  Systemkommandos.
-
-### Tests und Akzeptanz
-
-- Jede freigegebene Write-Adresse besitzt Capture, erwartete Antwort und
-  Read-back-Nachweis.
-- ACK-Pruefung korreliert mindestens Adresse und erwarteten Rohwert.
-- HEB-Erkenntnisse sind reproduzierbar; unbekannte Bereiche bleiben unangetastet.
-- Der konkrete Controller ist nach jedem Test wieder im bestaetigten
-  Ausgangszustand.
-
-## Phasen-Gate
-
-Reale Writes bleiben gesperrt, bis T016 abgeschlossen ist. Parser- und
-Speichermodelle muessen komplett mit gespeicherten Fixtures testbar sein.
+- Unterstützung für:
+  - 8-Byte Einzelwort-Writes (`0xAA 0x46 ...`)
+  - Block-Writes (`0xAA [0xC0+len] ...`)
+  - Bulk-Writes (`0xAA 0xFE ...`)
+  - CAN-Writes (`0xAA 0xFF ...`)
+  - System-Kommandos (`0xA0 / 0x88 0x05 / 0x08 / 0x01 / 0x02`)

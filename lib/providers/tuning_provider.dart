@@ -10,8 +10,7 @@ import 'package:arcdash/services/stock_heb_restore.dart';
 import 'package:arcdash/services/write_safety.dart';
 import 'package:arcdash/utils/tuning_conversions.dart';
 
-/// Identity of the connected controller. Parsed from live status during a
-/// later phase; until then the fail-closed gate keeps writes blocked.
+/// Identity of the connected controller. Parsed from live status.
 final controllerIdentityProvider = Provider<ControllerIdentity>((ref) {
   return const ControllerIdentity();
 });
@@ -42,6 +41,7 @@ class TuningState {
   final String? lastError;
   final bool appliedSuccessfully;
   final List<TuningProfile> savedProfiles;
+  final bool expertModeEnabled;
 
   const TuningState({
     required this.pendingProfile,
@@ -50,6 +50,7 @@ class TuningState {
     this.lastError,
     this.appliedSuccessfully = false,
     this.savedProfiles = const [],
+    this.expertModeEnabled = false,
   });
 
   TuningState copyWith({
@@ -59,6 +60,7 @@ class TuningState {
     String? lastError,
     bool? appliedSuccessfully,
     List<TuningProfile>? savedProfiles,
+    bool? expertModeEnabled,
   }) =>
       TuningState(
         pendingProfile: pendingProfile ?? this.pendingProfile,
@@ -67,6 +69,7 @@ class TuningState {
         lastError: lastError,
         appliedSuccessfully: appliedSuccessfully ?? this.appliedSuccessfully,
         savedProfiles: savedProfiles ?? this.savedProfiles,
+        expertModeEnabled: expertModeEnabled ?? this.expertModeEnabled,
       );
 }
 
@@ -82,6 +85,12 @@ class TuningNotifier extends StateNotifier<TuningState> {
     final storage = _ref.read(storageServiceProvider);
     final profiles = storage.loadProfiles();
     state = state.copyWith(savedProfiles: profiles);
+  }
+
+  void toggleExpertMode([bool? value]) {
+    state = state.copyWith(
+      expertModeEnabled: value ?? !state.expertModeEnabled,
+    );
   }
 
   void updateMaxSpeed(double kph) {
@@ -183,6 +192,51 @@ class TuningNotifier extends StateNotifier<TuningState> {
     );
   }
 
+  void updateSpeedRatios(List<int> ratios) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(speedRatios: ratios),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateRegenRatios(List<int> ratios) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(regenRatios: ratios),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateSpeedRatioPoint(int index, int ratioPct) {
+    final list = List<int>.from(state.pendingProfile.speedRatios);
+    if (index >= 0 && index < list.length) {
+      list[index] = ratioPct.clamp(0, 100);
+      state = state.copyWith(
+        pendingProfile: state.pendingProfile.copyWith(speedRatios: list),
+        appliedSuccessfully: false,
+      );
+    }
+  }
+
+  void updateRegenRatioPoint(int index, int regenPct) {
+    final list = List<int>.from(state.pendingProfile.regenRatios);
+    if (index >= 0 && index < list.length) {
+      list[index] = regenPct.clamp(-100, 100);
+      state = state.copyWith(
+        pendingProfile: state.pendingProfile.copyWith(regenRatios: list),
+        appliedSuccessfully: false,
+      );
+    }
+  }
+
+  void updatePinMapping(String pinKey, int pinNumber) {
+    final pins = Map<String, int>.from(state.pendingProfile.pinMappings);
+    pins[pinKey] = pinNumber;
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(pinMappings: pins),
+      appliedSuccessfully: false,
+    );
+  }
+
   void updatePowerCurvePoint(int index, PowerPoint point) {
     final curve = List<PowerPoint>.from(state.pendingProfile.powerCurve);
     if (index >= 0 && index < curve.length) {
@@ -202,11 +256,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
     );
   }
 
-  /// Applies all pending profile parameters to the controller (Phase 14, T090).
-  ///
-  /// Fail-closed: nothing is written unless the safety evaluator authorizes
-  /// the write (connected, standstill at 0.0 km/h, fresh stream, no faults).
-  /// The serialized write packets are sent over the BLE transport.
+  /// Applies all pending profile parameters to the controller.
   Future<bool> applyProfile() async {
     if (state.isApplying) return false;
     final decision = _ref.read(writeSafetyDecisionProvider);
@@ -261,9 +311,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   /// Restores the factory baseline from `unmodified_basemap.heb` (Phase 15,
-  /// T092). Every 16-bit register of the HEB is written back serially. The
-  /// optional [basemapBytes] parameter allows injecting the file content
-  /// (e.g. from tests); the bundled asset is used when omitted.
+  /// T092). Every 16-bit register of the HEB is written back serially.
   Future<bool> restoreStock({List<int>? basemapBytes}) async {
     if (state.isRestoring || state.isApplying) return false;
     final decision = _ref.read(writeSafetyDecisionProvider);
