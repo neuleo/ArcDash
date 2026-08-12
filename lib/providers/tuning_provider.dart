@@ -119,6 +119,70 @@ class TuningNotifier extends StateNotifier<TuningState> {
     );
   }
 
+  void updateLowSpeedLineCurr(double pct) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(lowSpeedLineCurrPct: pct),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateMidSpeedLineCurr(double pct) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(midSpeedLineCurrPct: pct),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateBoostTime(int seconds) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(boostTimeSeconds: seconds),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateLowVoltCutoff(double volts) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(lowVoltCutoffV: volts),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateOverVoltCutoff(double volts) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(overVoltCutoffV: volts),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateMotorTempLimit(double tempC) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(motorTempLimitC: tempC),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateControllerTempLimit(double tempC) {
+    state = state.copyWith(
+      pendingProfile:
+          state.pendingProfile.copyWith(controllerTempLimitC: tempC),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateFluxWeakeningCurr(double amps) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(fluxWeakeningCurrA: amps),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateReverseSpeed(double pct) {
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(reverseSpeedPct: pct),
+      appliedSuccessfully: false,
+    );
+  }
+
   void updatePowerCurvePoint(int index, PowerPoint point) {
     final curve = List<PowerPoint>.from(state.pendingProfile.powerCurve);
     if (index >= 0 && index < curve.length) {
@@ -175,14 +239,13 @@ class TuningNotifier extends StateNotifier<TuningState> {
 
     final transport = _ref.read(bluetoothServiceProvider);
     for (final (address, value) in writes) {
-      final written =
-          await transport.write(ProtocolService.buildWritePacket(address, value));
+      final written = await transport
+          .write(ProtocolService.buildWritePacket(address, value));
       if (!written) {
         state = state.copyWith(
           isApplying: false,
           appliedSuccessfully: false,
-          lastError:
-              'Write to 0x${address.toRadixString(16).padLeft(2, '0')} '
+          lastError: 'Write to 0x${address.toRadixString(16).padLeft(2, '0')} '
               'was not acknowledged.',
         );
         return false;
@@ -229,8 +292,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
           state = state.copyWith(
             isRestoring: false,
             appliedSuccessfully: false,
-            lastError:
-                'Restore aborted: write to $write failed.',
+            lastError: 'Restore aborted: write to $write failed.',
           );
           return false;
         }

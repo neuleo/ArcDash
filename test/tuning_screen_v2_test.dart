@@ -24,7 +24,8 @@ List<int> _statusPacket(int id, List<int> rawData) {
   return packet;
 }
 
-Future<void> _settleConnect(WidgetTester tester, t2.FakeDongleService dongle) async {
+Future<void> _settleConnect(
+    WidgetTester tester, t2.FakeDongleService dongle) async {
   await tester.pump(const Duration(milliseconds: 600));
   // A telemetry frame fills the sample buffer so the stream-init retry timer
   // cancels itself and no timer leaks into a later assertion.
@@ -60,9 +61,11 @@ void main() {
     testWidgets('lists factory presets plus saved custom presets',
         (tester) async {
       final storage = t2.MemoryStorage();
-      await storage.saveProfile(TuningProfile.custom().copyWith(name: 'My Trail'));
+      await storage
+          .saveProfile(TuningProfile.custom().copyWith(name: 'My Trail'));
       final dongle = t2.FakeDongleService();
-      final (container, widget) = _buildSession(dongle: dongle, storage: storage);
+      final (container, widget) =
+          _buildSession(dongle: dongle, storage: storage);
       addTearDown(container.dispose);
 
       await tester.pumpWidget(widget);
@@ -81,7 +84,8 @@ void main() {
         (tester) async {
       final storage = t2.MemoryStorage();
       final dongle = t2.FakeDongleService();
-      final (container, widget) = _buildSession(dongle: dongle, storage: storage);
+      final (container, widget) =
+          _buildSession(dongle: dongle, storage: storage);
       addTearDown(container.dispose);
 
       await tester.pumpWidget(widget);
@@ -109,9 +113,11 @@ void main() {
     testWidgets('deleting a custom preset removes the chip after confirmation',
         (tester) async {
       final storage = t2.MemoryStorage();
-      await storage.saveProfile(TuningProfile.custom().copyWith(name: 'My Trail'));
+      await storage
+          .saveProfile(TuningProfile.custom().copyWith(name: 'My Trail'));
       final dongle = t2.FakeDongleService();
-      final (container, widget) = _buildSession(dongle: dongle, storage: storage);
+      final (container, widget) =
+          _buildSession(dongle: dongle, storage: storage);
       addTearDown(container.dispose);
 
       await tester.pumpWidget(widget);
@@ -149,7 +155,8 @@ void main() {
       await tester.pumpWidget(widget);
       await _settleConnect(tester, dongle);
 
-      await tester.ensureVisible(find.text('WERKSEINSTELLUNGEN WIEDERHERSTELLEN'));
+      await tester
+          .ensureVisible(find.text('WERKSEINSTELLUNGEN WIEDERHERSTELLEN'));
       await tester.pump();
       await tester.tap(find.text('WERKSEINSTELLUNGEN WIEDERHERSTELLEN'));
       await tester.pump();

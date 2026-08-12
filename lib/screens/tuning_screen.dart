@@ -34,9 +34,8 @@ class TuningScreen extends ConsumerWidget {
         TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph);
     final expectedLineCurrRaw =
         TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA);
-    final readBackVerified =
-        controllerState.maxSpeedRaw == expectedSpeedRaw &&
-            controllerState.maxLineCurrRaw == expectedLineCurrRaw;
+    final readBackVerified = controllerState.maxSpeedRaw == expectedSpeedRaw &&
+        controllerState.maxLineCurrRaw == expectedLineCurrRaw;
     final applied = tuningState.appliedSuccessfully;
 
     return Scaffold(
@@ -137,7 +136,8 @@ class TuningScreen extends ConsumerWidget {
                     ? (kph) => notifier.updateMaxSpeed(kph)
                     : null,
                 accentColor: const Color(0xFF00E5FF),
-                verified: applied && controllerState.maxSpeedRaw == expectedSpeedRaw,
+                verified:
+                    applied && controllerState.maxSpeedRaw == expectedSpeedRaw,
               ),
               const SizedBox(height: 14),
 
@@ -189,6 +189,145 @@ class TuningScreen extends ConsumerWidget {
                 value: profile.throttleResponse,
                 onChanged:
                     editorEnabled ? notifier.updateThrottleResponse : null,
+              ),
+              const SizedBox(height: 24),
+
+              // 4 Power Modes & Speed Levels
+              _SectionHeader(
+                  title: 'FAHRSTUFEN & 4 POWERMODI (DL / DM / DH / BST)'),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Low Speed (DL) Line Current',
+                icon: Icons.eco_outlined,
+                value: profile.lowSpeedLineCurrPct,
+                min: 10,
+                max: 100,
+                unit: '%',
+                displayValue: profile.lowSpeedLineCurrPct.toStringAsFixed(0),
+                onChanged:
+                    editorEnabled ? notifier.updateLowSpeedLineCurr : null,
+                accentColor: const Color(0xFF54E39E),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Mid Speed (DM) Line Current',
+                icon: Icons.alt_route,
+                value: profile.midSpeedLineCurrPct,
+                min: 10,
+                max: 100,
+                unit: '%',
+                displayValue: profile.midSpeedLineCurrPct.toStringAsFixed(0),
+                onChanged:
+                    editorEnabled ? notifier.updateMidSpeedLineCurr : null,
+                accentColor: const Color(0xFF00E5FF),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Boost Mode (Bst) Timer',
+                icon: Icons.bolt,
+                value: profile.boostTimeSeconds.toDouble(),
+                min: 0,
+                max: 30,
+                unit: 's',
+                displayValue: '${profile.boostTimeSeconds} s',
+                onChanged: editorEnabled
+                    ? (s) => notifier.updateBoostTime(s.toInt())
+                    : null,
+                accentColor: const Color(0xFFFF5470),
+              ),
+              const SizedBox(height: 24),
+
+              // Battery & Temperature Protection
+              _SectionHeader(title: 'SPANNUNGS- & TEMPERATURSCHUTZ'),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Unterspannungsschutz (Min Volt)',
+                icon: Icons.battery_alert_outlined,
+                value: profile.lowVoltCutoffV,
+                min: 50.0,
+                max: 80.0,
+                unit: 'V',
+                displayValue: '${profile.lowVoltCutoffV.toStringAsFixed(1)} V',
+                onChanged: editorEnabled ? notifier.updateLowVoltCutoff : null,
+                accentColor: const Color(0xFFFF9800),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Überspannungsschutz (Max Volt)',
+                icon: Icons.battery_charging_full_outlined,
+                value: profile.overVoltCutoffV,
+                min: 80.0,
+                max: 100.0,
+                unit: 'V',
+                displayValue: '${profile.overVoltCutoffV.toStringAsFixed(1)} V',
+                onChanged: editorEnabled ? notifier.updateOverVoltCutoff : null,
+                accentColor: const Color(0xFF54E39E),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Motor OverTemp Schutz',
+                icon: Icons.thermostat_outlined,
+                value: profile.motorTempLimitC,
+                min: 80,
+                max: 150,
+                unit: '°C',
+                displayValue:
+                    '${profile.motorTempLimitC.toStringAsFixed(0)} °C',
+                onChanged: editorEnabled ? notifier.updateMotorTempLimit : null,
+                accentColor: const Color(0xFFFF5470),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Controller OverTemp Schutz',
+                icon: Icons.device_thermostat,
+                value: profile.controllerTempLimitC,
+                min: 60,
+                max: 110,
+                unit: '°C',
+                displayValue:
+                    '${profile.controllerTempLimitC.toStringAsFixed(0)} °C',
+                onChanged:
+                    editorEnabled ? notifier.updateControllerTempLimit : null,
+                accentColor: const Color(0xFFFF9800),
+              ),
+              const SizedBox(height: 24),
+
+              // Flux Weakening & Reverse
+              _SectionHeader(title: 'FELDSCHWÄCHUNG & RÜCKWÄRTSGANG'),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Feldschwächungsstrom (Flux Weakening)',
+                icon: Icons.auto_mode_outlined,
+                value: profile.fluxWeakeningCurrA,
+                min: 0,
+                max: 150,
+                unit: 'A',
+                displayValue:
+                    '${profile.fluxWeakeningCurrA.toStringAsFixed(0)} A',
+                onChanged:
+                    editorEnabled ? notifier.updateFluxWeakeningCurr : null,
+                accentColor: const Color(0xFF00E5FF),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Rückwärtsgang Speed Limit',
+                icon: Icons.replay_outlined,
+                value: profile.reverseSpeedPct,
+                min: 10,
+                max: 100,
+                unit: '%',
+                displayValue: '${profile.reverseSpeedPct.toStringAsFixed(0)} %',
+                onChanged: editorEnabled ? notifier.updateReverseSpeed : null,
+                accentColor: const Color(0xFF8B949E),
               ),
               const SizedBox(height: 28),
 
@@ -518,7 +657,8 @@ class TuningScreen extends ConsumerWidget {
     await ref.read(tuningProvider.notifier).restoreStock();
   }
 
-  Future<void> _showSavePresetDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showSavePresetDialog(
+      BuildContext context, WidgetRef ref) async {
     final existing = ref
         .read(tuningProvider)
         .savedProfiles
@@ -631,7 +771,9 @@ class _WarningBanner extends StatelessWidget {
                     ? 'VEHICLE MOVING — Tuning locked until stationary'
                     : 'TUNING LOCKED — ${describeSafety(decision)}',
                 style: TextStyle(
-                  color: moving ? const Color(0xFFFF1744) : const Color(0xFFFF9800),
+                  color: moving
+                      ? const Color(0xFFFF1744)
+                      : const Color(0xFFFF9800),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   height: 1.5,
@@ -874,16 +1016,20 @@ class _TuningSlider extends StatelessWidget {
                 ),
                 child: Icon(icon, color: color, size: 17),
               ),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 '$displayValue',
                 style: TextStyle(
@@ -1044,8 +1190,7 @@ class _ReadBackBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        verified ? const Color(0xFF39FF14) : const Color(0xFFFF9800);
+    final color = verified ? const Color(0xFF39FF14) : const Color(0xFFFF9800);
     final icon = verified ? Icons.verified : Icons.pending_outlined;
     final title = verified ? 'VERIFIZIERT' : 'READ-BACK AUSSTEHEND';
     final subtitle = verified

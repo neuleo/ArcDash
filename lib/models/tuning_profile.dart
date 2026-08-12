@@ -20,6 +20,33 @@ class TuningProfile {
   /// ThrottleResponse: 0=Line/Race, 1=Sport, 2=ECO.
   final int throttleResponse;
 
+  /// Low speed (DL) line current scaling (10..100%).
+  final double lowSpeedLineCurrPct;
+
+  /// Medium speed (DM) line current scaling (10..100%).
+  final double midSpeedLineCurrPct;
+
+  /// Boost mode duration in seconds (0..30s).
+  final int boostTimeSeconds;
+
+  /// Low voltage protection cutoff (50..80V).
+  final double lowVoltCutoffV;
+
+  /// Over voltage protection cutoff (80..100V).
+  final double overVoltCutoffV;
+
+  /// Motor temp protection threshold (80..150 °C).
+  final double motorTempLimitC;
+
+  /// Controller/MOSFET temp protection threshold (60..110 °C).
+  final double controllerTempLimitC;
+
+  /// Flux weakening current (0..150 A).
+  final double fluxWeakeningCurrA;
+
+  /// Reverse speed limit percentage (10..100%).
+  final double reverseSpeedPct;
+
   /// 3-point power curve: [(rpm%, torque%), ...] for low/mid/high.
   final List<PowerPoint> powerCurve;
 
@@ -34,6 +61,15 @@ class TuningProfile {
     required this.maxPhaseCurrA,
     required this.regenStrength,
     required this.throttleResponse,
+    this.lowSpeedLineCurrPct = 40.0,
+    this.midSpeedLineCurrPct = 70.0,
+    this.boostTimeSeconds = 10,
+    this.lowVoltCutoffV = 62.0,
+    this.overVoltCutoffV = 90.0,
+    this.motorTempLimitC = 120.0,
+    this.controllerTempLimitC = 90.0,
+    this.fluxWeakeningCurrA = 40.0,
+    this.reverseSpeedPct = 20.0,
     required this.powerCurve,
     required this.createdAt,
     this.isStock = false,
@@ -94,6 +130,15 @@ class TuningProfile {
     double? maxPhaseCurrA,
     double? regenStrength,
     int? throttleResponse,
+    double? lowSpeedLineCurrPct,
+    double? midSpeedLineCurrPct,
+    int? boostTimeSeconds,
+    double? lowVoltCutoffV,
+    double? overVoltCutoffV,
+    double? motorTempLimitC,
+    double? controllerTempLimitC,
+    double? fluxWeakeningCurrA,
+    double? reverseSpeedPct,
     List<PowerPoint>? powerCurve,
     DateTime? createdAt,
     bool? isStock,
@@ -106,6 +151,15 @@ class TuningProfile {
       maxPhaseCurrA: maxPhaseCurrA ?? this.maxPhaseCurrA,
       regenStrength: regenStrength ?? this.regenStrength,
       throttleResponse: throttleResponse ?? this.throttleResponse,
+      lowSpeedLineCurrPct: lowSpeedLineCurrPct ?? this.lowSpeedLineCurrPct,
+      midSpeedLineCurrPct: midSpeedLineCurrPct ?? this.midSpeedLineCurrPct,
+      boostTimeSeconds: boostTimeSeconds ?? this.boostTimeSeconds,
+      lowVoltCutoffV: lowVoltCutoffV ?? this.lowVoltCutoffV,
+      overVoltCutoffV: overVoltCutoffV ?? this.overVoltCutoffV,
+      motorTempLimitC: motorTempLimitC ?? this.motorTempLimitC,
+      controllerTempLimitC: controllerTempLimitC ?? this.controllerTempLimitC,
+      fluxWeakeningCurrA: fluxWeakeningCurrA ?? this.fluxWeakeningCurrA,
+      reverseSpeedPct: reverseSpeedPct ?? this.reverseSpeedPct,
       powerCurve: powerCurve ?? this.powerCurve,
       createdAt: createdAt ?? this.createdAt,
       isStock: isStock ?? this.isStock,
@@ -120,6 +174,15 @@ class TuningProfile {
         'maxPhaseCurrA': maxPhaseCurrA,
         'regenStrength': regenStrength,
         'throttleResponse': throttleResponse,
+        'lowSpeedLineCurrPct': lowSpeedLineCurrPct,
+        'midSpeedLineCurrPct': midSpeedLineCurrPct,
+        'boostTimeSeconds': boostTimeSeconds,
+        'lowVoltCutoffV': lowVoltCutoffV,
+        'overVoltCutoffV': overVoltCutoffV,
+        'motorTempLimitC': motorTempLimitC,
+        'controllerTempLimitC': controllerTempLimitC,
+        'fluxWeakeningCurrA': fluxWeakeningCurrA,
+        'reverseSpeedPct': reverseSpeedPct,
         'powerCurve': powerCurve.map((p) => p.toJson()).toList(),
         'createdAt': createdAt.toIso8601String(),
         'isStock': isStock,
@@ -133,6 +196,19 @@ class TuningProfile {
         maxPhaseCurrA: (json['maxPhaseCurrA'] as num).toDouble(),
         regenStrength: (json['regenStrength'] as num).toDouble(),
         throttleResponse: json['throttleResponse'] as int,
+        lowSpeedLineCurrPct:
+            (json['lowSpeedLineCurrPct'] as num?)?.toDouble() ?? 40.0,
+        midSpeedLineCurrPct:
+            (json['midSpeedLineCurrPct'] as num?)?.toDouble() ?? 70.0,
+        boostTimeSeconds: (json['boostTimeSeconds'] as num?)?.toInt() ?? 10,
+        lowVoltCutoffV: (json['lowVoltCutoffV'] as num?)?.toDouble() ?? 62.0,
+        overVoltCutoffV: (json['overVoltCutoffV'] as num?)?.toDouble() ?? 90.0,
+        motorTempLimitC: (json['motorTempLimitC'] as num?)?.toDouble() ?? 120.0,
+        controllerTempLimitC:
+            (json['controllerTempLimitC'] as num?)?.toDouble() ?? 90.0,
+        fluxWeakeningCurrA:
+            (json['fluxWeakeningCurrA'] as num?)?.toDouble() ?? 40.0,
+        reverseSpeedPct: (json['reverseSpeedPct'] as num?)?.toDouble() ?? 20.0,
         powerCurve: (json['powerCurve'] as List)
             .map((p) => PowerPoint.fromJson(p as Map<String, dynamic>))
             .toList(),

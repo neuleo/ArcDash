@@ -14,7 +14,8 @@ ParameterDefinition? _definitionFor(String name) => switch (name) {
       'lowVoltCutoff' => ParameterCatalog.definitions['lowVoltCutoff'],
       'overVoltCutoff' => ParameterCatalog.definitions['overVoltCutoff'],
       'motorTempLimit' => ParameterCatalog.definitions['motorTempLimit'],
-      'controllerTempLimit' => ParameterCatalog.definitions['controllerTempLimit'],
+      'controllerTempLimit' =>
+        ParameterCatalog.definitions['controllerTempLimit'],
       'fluxWeakeningCurr' => ParameterCatalog.definitions['fluxWeakeningCurr'],
       _ => null,
     };

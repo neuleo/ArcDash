@@ -15,8 +15,7 @@ class HebRestoreWrite {
   List<int> toPacket() => ProtocolService.buildWritePacket(address, value);
 
   @override
-  String toString() =>
-      '0x${address.toRadixString(16).padLeft(2, '0')} '
+  String toString() => '0x${address.toRadixString(16).padLeft(2, '0')} '
       '= 0x${value.toRadixString(16).padLeft(4, '0')}';
 }
 

@@ -108,7 +108,8 @@ void main() {
   group('T090/T091 - factory presets', () {
     test('factory presets match the T091 specification', () {
       final presets = TuningProfile.factoryPresets();
-      expect(presets.map((p) => p.name), ['Stock Offroad', 'Eco Range', 'Custom']);
+      expect(
+          presets.map((p) => p.name), ['Stock Offroad', 'Eco Range', 'Custom']);
 
       final stock = TuningProfile.stockOffroad();
       expect(stock.maxSpeedKph, 125);
@@ -174,7 +175,8 @@ void main() {
       expect(container.read(tuningProvider).savedProfiles, hasLength(1));
     });
 
-    test('deleteProfile removes a custom preset and reselects Custom when it '
+    test(
+        'deleteProfile removes a custom preset and reselects Custom when it '
         'was active', () async {
       final storage = MemoryStorage();
       final container = _container(storage: storage);
@@ -255,7 +257,8 @@ void main() {
 
       final ok = await notifier.applyProfile();
       expect(ok, isFalse);
-      expect(container.read(tuningProvider).lastError, contains('not acknowledged'));
+      expect(container.read(tuningProvider).lastError,
+          contains('not acknowledged'));
     });
   });
 
@@ -331,7 +334,8 @@ void main() {
 
       final ok = await notifier.restoreStock(basemapBytes: List.filled(10, 0));
       expect(ok, isFalse);
-      expect(container.read(tuningProvider).lastError, contains('Restore failed'));
+      expect(
+          container.read(tuningProvider).lastError, contains('Restore failed'));
     });
   });
 }
