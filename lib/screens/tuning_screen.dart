@@ -130,7 +130,7 @@ class TuningScreen extends ConsumerWidget {
                 icon: Icons.speed,
                 value: profile.maxSpeedKph,
                 min: 10,
-                max: 100,
+                max: 130,
                 unit: 'km/h',
                 displayValue: profile.maxSpeedKph.toStringAsFixed(0),
                 onChanged: editorEnabled
@@ -141,42 +141,42 @@ class TuningScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 14),
 
-              // Peak Torque — maps to phase current (20–400 A → 0–100%)
+              // Peak Torque — maps to phase current (20–500 A → 0–100%)
               _TuningSlider(
                 label: 'Peak Torque',
                 icon: Icons.rotate_right,
-                value: (profile.maxPhaseCurrA / 400.0 * 100).clamp(0, 100),
+                value: (profile.maxPhaseCurrA / 500.0 * 100).clamp(0, 100),
                 min: 5,
                 max: 100,
                 unit: '%',
-                displayValue: (profile.maxPhaseCurrA / 400.0 * 100)
+                displayValue: (profile.maxPhaseCurrA / 500.0 * 100)
                     .clamp(0, 100)
                     .toStringAsFixed(0),
                 onChanged: editorEnabled
                     ? (pct) => notifier.updateMaxPhaseCurr(
-                        (pct / 100.0 * 400.0).clamp(20, 400))
+                        (pct / 100.0 * 500.0).clamp(20, 500))
                     : null,
                 accentColor: const Color(0xFF39FF14),
-                warningThreshold: 80,
+                warningThreshold: 90,
               ),
               const SizedBox(height: 14),
 
-              // Peak Power — maps to line current (10–200 A × 72 V = 0.7–14.4 kW)
+              // Peak Power — maps to line current (10–300 A × 80 V = 0.8–24.0 kW)
               _TuningSlider(
                 label: 'Peak Power',
                 icon: Icons.electric_bolt,
-                value: (profile.maxLineCurrA * 72.0 / 1000.0).clamp(0.7, 14.4),
-                min: 0.7,
-                max: 14.4,
+                value: (profile.maxLineCurrA * 80.0 / 1000.0).clamp(0.8, 25.0),
+                min: 0.8,
+                max: 25.0,
                 unit: 'kW',
                 displayValue:
-                    (profile.maxLineCurrA * 72.0 / 1000.0).toStringAsFixed(1),
+                    (profile.maxLineCurrA * 80.0 / 1000.0).toStringAsFixed(1),
                 onChanged: editorEnabled
                     ? (kw) => notifier
-                        .updateMaxLineCurr((kw * 1000.0 / 72.0).clamp(10, 200))
+                        .updateMaxLineCurr((kw * 1000.0 / 80.0).clamp(10, 300))
                     : null,
                 accentColor: const Color(0xFFFF9800),
-                warningThreshold: 11.0,
+                warningThreshold: 24.0,
                 verified: applied &&
                     controllerState.maxLineCurrRaw == expectedLineCurrRaw,
               ),

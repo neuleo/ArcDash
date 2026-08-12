@@ -6,7 +6,16 @@ import 'package:arcdash/services/write_safety.dart';
 ParameterDefinition? _definitionFor(String name) => switch (name) {
       'maxSpeedKph' => ParameterCatalog.definitions['maxSpeed'],
       'maxLineCurrA' => ParameterCatalog.definitions['maxLineCurrent'],
+      'maxPhaseCurrA' => ParameterCatalog.definitions['maxPhaseCurrent'],
       'throttleResponse' => ParameterCatalog.definitions['throttleResponse'],
+      'lowSpeedLineCurr' => ParameterCatalog.definitions['lowSpeedLineCurr'],
+      'midSpeedLineCurr' => ParameterCatalog.definitions['midSpeedLineCurr'],
+      'boostTime' => ParameterCatalog.definitions['boostTime'],
+      'lowVoltCutoff' => ParameterCatalog.definitions['lowVoltCutoff'],
+      'overVoltCutoff' => ParameterCatalog.definitions['overVoltCutoff'],
+      'motorTempLimit' => ParameterCatalog.definitions['motorTempLimit'],
+      'controllerTempLimit' => ParameterCatalog.definitions['controllerTempLimit'],
+      'fluxWeakeningCurr' => ParameterCatalog.definitions['fluxWeakeningCurr'],
       _ => null,
     };
 
