@@ -27,9 +27,9 @@ void main() {
     final speed = catalog['maxSpeed'];
     expect(speed.writable, isTrue);
     expect(speed.minRaw, 10 * 72);
-    expect(speed.maxRaw, 130 * 72);
+    expect(speed.maxRaw, 160 * 72);
     expect(speed.inPhysicalRange(10), isTrue);
-    expect(speed.inPhysicalRange(130), isTrue);
+    expect(speed.inPhysicalRange(160), isTrue);
     expect(speed.inPhysicalRange(5), isFalse);
     expect(speed.inPhysicalRange(200), isFalse);
 

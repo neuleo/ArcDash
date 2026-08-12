@@ -64,12 +64,12 @@ class ParameterCatalog {
       name: 'maxSpeed',
       address: 0x15,
       minRaw: (10 * 72), // 10 km/h
-      maxRaw: (130 * 72), // 130 km/h
+      maxRaw: (160 * 72), // 160 km/h
       risk: ParameterRisk.safetyCritical,
       readable: true,
       hardwareBoundsConfirmed: true,
       minPhysical: 10,
-      maxPhysical: 130,
+      maxPhysical: 160,
     ),
     'maxLineCurrent': ParameterDefinition(
       name: 'maxLineCurrent',

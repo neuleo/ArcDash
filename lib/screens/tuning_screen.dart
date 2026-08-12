@@ -120,7 +120,8 @@ class TuningScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // Controls
-              _SectionHeader(title: 'CONTROLS'),
+              _SectionHeader(
+                  title: 'HAUPTLEISTUNG & MODI 3 / 4 (HIGH / BOOST)'),
               const SizedBox(height: 14),
 
               // Max Speed
@@ -129,7 +130,7 @@ class TuningScreen extends ConsumerWidget {
                 icon: Icons.speed,
                 value: profile.maxSpeedKph,
                 min: 10,
-                max: 130,
+                max: 160,
                 unit: 'km/h',
                 displayValue: profile.maxSpeedKph.toStringAsFixed(0),
                 onChanged: editorEnabled
@@ -180,49 +181,6 @@ class TuningScreen extends ConsumerWidget {
                 verified: applied &&
                     controllerState.maxLineCurrRaw == expectedLineCurrRaw,
               ),
-              const SizedBox(height: 24),
-
-              // Throttle response
-              _SectionHeader(title: 'THROTTLE RESPONSE'),
-              const SizedBox(height: 10),
-              _ThrottleResponseSelector(
-                value: profile.throttleResponse,
-                onChanged:
-                    editorEnabled ? notifier.updateThrottleResponse : null,
-              ),
-              const SizedBox(height: 24),
-
-              // 4 Power Modes & Speed Levels
-              _SectionHeader(
-                  title: 'FAHRSTUFEN & 4 POWERMODI (DL / DM / DH / BST)'),
-              const SizedBox(height: 14),
-
-              _TuningSlider(
-                label: 'Low Speed (DL) Line Current',
-                icon: Icons.eco_outlined,
-                value: profile.lowSpeedLineCurrPct,
-                min: 10,
-                max: 100,
-                unit: '%',
-                displayValue: profile.lowSpeedLineCurrPct.toStringAsFixed(0),
-                onChanged:
-                    editorEnabled ? notifier.updateLowSpeedLineCurr : null,
-                accentColor: const Color(0xFF54E39E),
-              ),
-              const SizedBox(height: 14),
-
-              _TuningSlider(
-                label: 'Mid Speed (DM) Line Current',
-                icon: Icons.alt_route,
-                value: profile.midSpeedLineCurrPct,
-                min: 10,
-                max: 100,
-                unit: '%',
-                displayValue: profile.midSpeedLineCurrPct.toStringAsFixed(0),
-                onChanged:
-                    editorEnabled ? notifier.updateMidSpeedLineCurr : null,
-                accentColor: const Color(0xFF00E5FF),
-              ),
               const SizedBox(height: 14),
 
               _TuningSlider(
@@ -240,94 +198,154 @@ class TuningScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Battery & Temperature Protection
-              _SectionHeader(title: 'SPANNUNGS- & TEMPERATURSCHUTZ'),
-              const SizedBox(height: 14),
-
-              _TuningSlider(
-                label: 'Unterspannungsschutz (Min Volt)',
-                icon: Icons.battery_alert_outlined,
-                value: profile.lowVoltCutoffV,
-                min: 50.0,
-                max: 80.0,
-                unit: 'V',
-                displayValue: '${profile.lowVoltCutoffV.toStringAsFixed(1)} V',
-                onChanged: editorEnabled ? notifier.updateLowVoltCutoff : null,
-                accentColor: const Color(0xFFFF9800),
+              // Throttle response
+              _SectionHeader(title: 'THROTTLE RESPONSE'),
+              const SizedBox(height: 10),
+              _ThrottleResponseSelector(
+                value: profile.throttleResponse,
+                onChanged:
+                    editorEnabled ? notifier.updateThrottleResponse : null,
               ),
+              const SizedBox(height: 24),
+
+              // Mode 1 (LOW) & Mode 2 (MEDIUM)
+              _SectionHeader(
+                  title: 'MODUS 1 (LOW / DL) & MODUS 2 (MEDIUM / DM)'),
               const SizedBox(height: 14),
 
               _TuningSlider(
-                label: 'Überspannungsschutz (Max Volt)',
-                icon: Icons.battery_charging_full_outlined,
-                value: profile.overVoltCutoffV,
-                min: 80.0,
-                max: 100.0,
-                unit: 'V',
-                displayValue: '${profile.overVoltCutoffV.toStringAsFixed(1)} V',
-                onChanged: editorEnabled ? notifier.updateOverVoltCutoff : null,
+                label: 'Modus 1 (LOW / DL) Strom',
+                icon: Icons.eco_outlined,
+                value: profile.lowSpeedLineCurrPct,
+                min: 10,
+                max: 100,
+                unit: '%',
+                displayValue: profile.lowSpeedLineCurrPct.toStringAsFixed(0),
+                onChanged:
+                    editorEnabled ? notifier.updateLowSpeedLineCurr : null,
                 accentColor: const Color(0xFF54E39E),
               ),
               const SizedBox(height: 14),
 
               _TuningSlider(
-                label: 'Motor OverTemp Schutz',
-                icon: Icons.thermostat_outlined,
-                value: profile.motorTempLimitC,
-                min: 80,
-                max: 150,
-                unit: '°C',
-                displayValue:
-                    '${profile.motorTempLimitC.toStringAsFixed(0)} °C',
-                onChanged: editorEnabled ? notifier.updateMotorTempLimit : null,
-                accentColor: const Color(0xFFFF5470),
-              ),
-              const SizedBox(height: 14),
-
-              _TuningSlider(
-                label: 'Controller OverTemp Schutz',
-                icon: Icons.device_thermostat,
-                value: profile.controllerTempLimitC,
-                min: 60,
-                max: 110,
-                unit: '°C',
-                displayValue:
-                    '${profile.controllerTempLimitC.toStringAsFixed(0)} °C',
-                onChanged:
-                    editorEnabled ? notifier.updateControllerTempLimit : null,
-                accentColor: const Color(0xFFFF9800),
-              ),
-              const SizedBox(height: 24),
-
-              // Flux Weakening & Reverse
-              _SectionHeader(title: 'FELDSCHWÄCHUNG & RÜCKWÄRTSGANG'),
-              const SizedBox(height: 14),
-
-              _TuningSlider(
-                label: 'Feldschwächungsstrom (Flux Weakening)',
-                icon: Icons.auto_mode_outlined,
-                value: profile.fluxWeakeningCurrA,
-                min: 0,
-                max: 150,
-                unit: 'A',
-                displayValue:
-                    '${profile.fluxWeakeningCurrA.toStringAsFixed(0)} A',
-                onChanged:
-                    editorEnabled ? notifier.updateFluxWeakeningCurr : null,
-                accentColor: const Color(0xFF00E5FF),
-              ),
-              const SizedBox(height: 14),
-
-              _TuningSlider(
-                label: 'Rückwärtsgang Speed Limit',
-                icon: Icons.replay_outlined,
-                value: profile.reverseSpeedPct,
+                label: 'Modus 2 (MEDIUM / DM) Strom',
+                icon: Icons.alt_route,
+                value: profile.midSpeedLineCurrPct,
                 min: 10,
                 max: 100,
                 unit: '%',
-                displayValue: '${profile.reverseSpeedPct.toStringAsFixed(0)} %',
-                onChanged: editorEnabled ? notifier.updateReverseSpeed : null,
-                accentColor: const Color(0xFF8B949E),
+                displayValue: profile.midSpeedLineCurrPct.toStringAsFixed(0),
+                onChanged:
+                    editorEnabled ? notifier.updateMidSpeedLineCurr : null,
+                accentColor: const Color(0xFF00E5FF),
+              ),
+              const SizedBox(height: 24),
+
+              // Accordion: Advanced Settings (Spannung, Temps, Flux, Reverse)
+              Theme(
+                data: Theme.of(context)
+                    .copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: const Text(
+                    'ERWEITERT (SPANNUNG, TEMPS & FLUX)',
+                    style: TextStyle(
+                      color: Color(0xFF00E5FF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  children: [
+                    const SizedBox(height: 10),
+                    _TuningSlider(
+                      label: 'Unterspannungsschutz (Min Volt)',
+                      icon: Icons.battery_alert_outlined,
+                      value: profile.lowVoltCutoffV,
+                      min: 50.0,
+                      max: 80.0,
+                      unit: 'V',
+                      displayValue:
+                          '${profile.lowVoltCutoffV.toStringAsFixed(1)} V',
+                      onChanged:
+                          editorEnabled ? notifier.updateLowVoltCutoff : null,
+                      accentColor: const Color(0xFFFF9800),
+                    ),
+                    const SizedBox(height: 14),
+                    _TuningSlider(
+                      label: 'Überspannungsschutz (Max Volt)',
+                      icon: Icons.battery_charging_full_outlined,
+                      value: profile.overVoltCutoffV,
+                      min: 80.0,
+                      max: 100.0,
+                      unit: 'V',
+                      displayValue:
+                          '${profile.overVoltCutoffV.toStringAsFixed(1)} V',
+                      onChanged:
+                          editorEnabled ? notifier.updateOverVoltCutoff : null,
+                      accentColor: const Color(0xFF54E39E),
+                    ),
+                    const SizedBox(height: 14),
+                    _TuningSlider(
+                      label: 'Motor OverTemp Schutz',
+                      icon: Icons.thermostat_outlined,
+                      value: profile.motorTempLimitC,
+                      min: 80,
+                      max: 150,
+                      unit: '°C',
+                      displayValue:
+                          '${profile.motorTempLimitC.toStringAsFixed(0)} °C',
+                      onChanged:
+                          editorEnabled ? notifier.updateMotorTempLimit : null,
+                      accentColor: const Color(0xFFFF5470),
+                    ),
+                    const SizedBox(height: 14),
+                    _TuningSlider(
+                      label: 'Controller OverTemp Schutz',
+                      icon: Icons.device_thermostat,
+                      value: profile.controllerTempLimitC,
+                      min: 60,
+                      max: 110,
+                      unit: '°C',
+                      displayValue:
+                          '${profile.controllerTempLimitC.toStringAsFixed(0)} °C',
+                      onChanged: editorEnabled
+                          ? notifier.updateControllerTempLimit
+                          : null,
+                      accentColor: const Color(0xFFFF9800),
+                    ),
+                    const SizedBox(height: 14),
+                    _TuningSlider(
+                      label: 'Feldschwächung (Flux Weakening)',
+                      icon: Icons.auto_mode_outlined,
+                      value: profile.fluxWeakeningCurrA,
+                      min: 0,
+                      max: 150,
+                      unit: 'A',
+                      displayValue:
+                          '${profile.fluxWeakeningCurrA.toStringAsFixed(0)} A',
+                      onChanged: editorEnabled
+                          ? notifier.updateFluxWeakeningCurr
+                          : null,
+                      accentColor: const Color(0xFF00E5FF),
+                    ),
+                    const SizedBox(height: 14),
+                    _TuningSlider(
+                      label: 'Rückwärtsgang Speed Limit',
+                      icon: Icons.replay_outlined,
+                      value: profile.reverseSpeedPct,
+                      min: 10,
+                      max: 100,
+                      unit: '%',
+                      displayValue:
+                          '${profile.reverseSpeedPct.toStringAsFixed(0)} %',
+                      onChanged:
+                          editorEnabled ? notifier.updateReverseSpeed : null,
+                      accentColor: const Color(0xFF8B949E),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                ),
               ),
               const SizedBox(height: 28),
 
