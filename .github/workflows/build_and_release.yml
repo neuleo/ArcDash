@@ -46,11 +46,12 @@ jobs:
           FULL_BUILD_VERSION="${BASE_VERSION}.${BUILD_NUM}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "BUILD_NUM=$BUILD_NUM" >> $GITHUB_ENV
           echo "FULL_BUILD_VERSION=$FULL_BUILD_VERSION" >> $GITHUB_ENV
           echo "Calculated version: $VERSION (Build: $BUILD_NUM)"
 
       - name: Build Android APK (Debug)
-        run: flutter build apk --debug --no-tree-shake-icons --no-pub --android-skip-build-dependency-validation
+        run: flutter build apk --debug --build-number=${{ env.BUILD_NUM }} --no-tree-shake-icons --no-pub --android-skip-build-dependency-validation
 
       - name: Prepare APK File
         run: |
