@@ -8,6 +8,8 @@ import 'package:arcdash/screens/app_shell.dart';
 import 'package:arcdash/screens/debug_screen.dart';
 import 'package:arcdash/screens/dev_tools_screen.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/ant_bms_provider.dart';
+import 'package:arcdash/providers/dual_ble_auto_connect_provider.dart';
 import 'package:arcdash/providers/stats_provider.dart';
 import 'package:arcdash/services/street_legal_trigger_service.dart';
 import 'package:arcdash/l10n/app_strings.dart';
@@ -23,6 +25,9 @@ class ArcDashApp extends ConsumerWidget {
     ref.watch(statsProvider);
     ref.watch(controllerProvider);
     ref.watch(streetLegalTriggerServiceProvider);
+    // Dual-BLE Auto-Remember: reconnects controller + ANT BMS at app start
+    ref.watch(dualBleAutoConnectProvider);
+    ref.watch(antBmsStateProvider);
     // Force dark status bar icons on light backgrounds (none here, but good practice)
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

@@ -14,6 +14,8 @@ const _prefKeyStockBackup = 'stock_backup_json';
 const _prefKeyProfiles = 'tuning_profiles';
 const _prefKeyRideSessions = 'ride_sessions';
 const _prefKeyFirstConnect = 'first_connect_done';
+const _prefKeyLastControllerId = 'last_controller_id';
+const _prefKeyLastBmsId = 'last_bms_id';
 
 class StorageService {
   late SharedPreferences _prefs;
@@ -115,6 +117,23 @@ class StorageService {
 
   bool get firstConnectDone =>
       _initialized && (_prefs.getBool(_prefKeyFirstConnect) ?? false);
+
+  // --- Dual-BLE auto-remember ---
+  Future<void> saveLastControllerId(String remoteId) async {
+    if (!_initialized || remoteId.isEmpty) return;
+    await _prefs.setString(_prefKeyLastControllerId, remoteId);
+  }
+
+  String? loadLastControllerId() =>
+      _initialized ? _prefs.getString(_prefKeyLastControllerId) : null;
+
+  Future<void> saveLastBmsId(String remoteId) async {
+    if (!_initialized || remoteId.isEmpty) return;
+    await _prefs.setString(_prefKeyLastBmsId, remoteId);
+  }
+
+  String? loadLastBmsId() =>
+      _initialized ? _prefs.getString(_prefKeyLastBmsId) : null;
 
   // --- Tuning profiles ---
   Future<void> saveProfile(TuningProfile profile) async {

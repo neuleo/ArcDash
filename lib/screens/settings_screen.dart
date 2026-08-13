@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/ant_bms_provider.dart';
+import 'package:arcdash/widgets/bms_cell_monitor.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 import 'package:arcdash/services/diagnostic_log_exporter.dart';
 import 'package:arcdash/services/profile_exporter.dart';
@@ -18,6 +20,9 @@ class SettingsScreen extends ConsumerWidget {
     final calibration = ref.watch(rangePredictionStateProvider);
     final maxVoltage = calibration?.maxVoltageV;
     final minVoltage = calibration?.minVoltageV;
+    final bmsConnected = ref.watch(isBmsConnectedProvider);
+    final bmsName = ref.watch(antBmsDeviceNameProvider);
+    final bmsState = ref.watch(antBmsStateProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(strings.text(AppText.settings).toUpperCase())),
@@ -65,6 +70,38 @@ class SettingsScreen extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).pushNamed('/devtools'),
             ),
+            const SizedBox(height: 20),
+            _SectionTitle('BMS & Zellen'),
+            ListTile(
+              leading: Icon(Icons.battery_charging_full_outlined,
+                  color: bmsConnected
+                      ? const Color(0xFF54E39E)
+                      : const Color(0xFFFFB45C)),
+              title: Text(bmsConnected
+                  ? 'ANT BMS verbunden'
+                  : 'Kein ANT BMS verbunden'),
+              subtitle: Text(bmsConnected
+                  ? (bmsName ?? 'ANT BMS')
+                  : 'ANT@BLE-Modul über die Gerätesuche verbinden'),
+              trailing: bmsConnected
+                  ? IconButton(
+                      icon: const Icon(Icons.link_off),
+                      tooltip: 'BMS trennen',
+                      onPressed: () =>
+                          ref.read(antBmsServiceProvider).disconnect(),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: bmsConnected
+                  ? null
+                  : () => Navigator.of(context).pushNamed('/'),
+            ),
+            if (bmsConnected) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: BmsCellMonitor(state: bmsState),
+              ),
+            ],
             const SizedBox(height: 20),
             _SectionTitle(strings.text(AppText.dataManagement)),
             ListTile(

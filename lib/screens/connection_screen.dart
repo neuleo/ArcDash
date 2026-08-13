@@ -3,6 +3,10 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart'
     show FlutterBluePlus, BluetoothAdapterState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
+import 'package:arcdash/providers/ant_bms_provider.dart';
+import 'package:arcdash/providers/controller_provider.dart'
+    show storageServiceProvider;
+import 'package:arcdash/services/ant_bms_service.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/widgets/connection_status_bar.dart';
 import 'package:arcdash/l10n/app_strings.dart';
@@ -62,12 +66,37 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 
   Future<void> _connect(DiscoveredDongle dongle) async {
     setState(() => _connectingId = dongle.device.remoteId.str);
-    final service = ref.read(bluetoothServiceProvider);
-    final success = await service.connect(dongle);
+    final storage = ref.read(storageServiceProvider);
+    final isBms = isAntBmsName(dongle.name);
+    var success = false;
+
+    if (isBms) {
+      // Parallel ANT BMS session (runs alongside the FarDriver controller).
+      await ref.read(antBmsStateProvider.notifier).connect(dongle);
+      success = ref.read(isBmsConnectedProvider);
+      if (success) {
+        await storage.saveLastBmsId(dongle.device.remoteId.str);
+      }
+    } else {
+      final service = ref.read(bluetoothServiceProvider);
+      success = await service.connect(dongle);
+      if (success) {
+        await storage.saveLastControllerId(dongle.device.remoteId.str);
+      }
+    }
+
     if (mounted) {
       setState(() => _connectingId = null);
       if (success) {
-        Navigator.of(context).pushReplacementNamed('/dashboard');
+        if (isBms) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('ANT BMS verbunden (parallel zum Controller)'),
+            backgroundColor: Color(0xFF123328),
+            behavior: SnackBarBehavior.floating,
+          ));
+        } else {
+          Navigator.of(context).pushReplacementNamed('/dashboard');
+        }
       } else {
         _showError(AppStrings.of(context).text(AppText.connectionFailed));
       }
@@ -89,6 +118,9 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     final connectionState = ref.watch(connectionStateProvider).valueOrNull ??
         DongleConnectionState.idle;
     final scanResults = ref.watch(scanResultsProvider).valueOrNull ?? [];
+    final bmsState = ref.watch(antBmsConnectionStateProvider).valueOrNull ??
+        DongleConnectionState.idle;
+    final bmsName = ref.watch(antBmsDeviceNameProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF080B0E),
@@ -148,6 +180,11 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
               ConnectionStatusBar(
                 state: connectionState,
                 deviceName: null,
+              ),
+              const SizedBox(height: 10),
+              ConnectionStatusBar(
+                state: bmsState,
+                deviceName: bmsName,
               ),
               const SizedBox(height: 32),
               // Scan controls

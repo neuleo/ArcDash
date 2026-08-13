@@ -5,9 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/models/dashboard_layout.dart';
+import 'package:arcdash/models/ant_bms_state.dart';
 import 'package:arcdash/models/telemetry_quality.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/ant_bms_provider.dart';
+import 'package:arcdash/widgets/bms_cell_monitor.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 import 'package:arcdash/services/storage_service.dart';
 
@@ -278,6 +281,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final strings = AppStrings.of(context);
     final state = ref.watch(controllerProvider);
     final connected = ref.watch(isConnectedProvider);
+    final bmsConnected = ref.watch(isBmsConnectedProvider);
+    final bmsState = ref.watch(antBmsStateProvider);
     final orientation = _activeOrientation;
     final layout = _dashboard.layoutFor(orientation);
 
@@ -298,6 +303,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             connected: connected,
             onTap: () => Navigator.of(context).pushNamed('/'),
           ),
+          if (bmsConnected)
+            IconButton(
+              tooltip: 'BMS-Zellen anzeigen',
+              onPressed: () => _showBmsMonitor(bmsState),
+              icon: const Icon(Icons.battery_charging_full),
+            ),
           IconButton(
             tooltip: strings
                 .text(_editing ? AppText.saveDashboard : AppText.editDashboard),
@@ -334,6 +345,50 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showBmsMonitor(AntBmsState? bmsState) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0D1117),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.85,
+          maxChildSize: 0.95,
+          minChildSize: 0.4,
+          builder: (context, controller) => ListView(
+            controller: controller,
+            padding: const EdgeInsets.all(16),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A3548),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('BMS-ZELLMONITOR',
+                  style: const TextStyle(
+                      color: Color(0xFF00E5FF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2)),
+              const SizedBox(height: 12),
+              BmsCellMonitor(state: bmsState),
+            ],
+          ),
         ),
       ),
     );
