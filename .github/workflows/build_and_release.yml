@@ -50,7 +50,7 @@ jobs:
           echo "Calculated version: $VERSION (Build: $BUILD_NUM)"
 
       - name: Build Android APK (Debug)
-        run: flutter build apk --debug --no-tree-shake-icons
+        run: flutter build apk --debug --no-tree-shake-icons --no-pub
 
       - name: Prepare APK File
         run: |
