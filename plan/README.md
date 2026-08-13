@@ -105,4 +105,10 @@ flowchart TD
 - [x] **T076** Kernmodule auf hohe Testabdeckung bringen
 - [x] **T077** Widget-, Golden- und Unit-Tests erweitern
 - [x] **T094** Umfassende Testsuite für alle 26 Blöcke, 100+ Parameter, HEB-Codec und Kurven-Editoren erweitern
-- [ ] **T095** Release v2.0.0 via GitHub Actions erstellen und APK verifizieren
+- [x] **T095** Release v2.3.0 via GitHub Actions erstellen und APK verifizieren
+
+## Phase 10: ANT-BMS Bluetooth-Integration & Dual-BLE Auto-Remember
+- [ ] **T102** ANT-BMS Protokoll-Decoder & Data Model bauen (Frames `0x7E 0xA1`, CRC16 Modbus) ([Details](./14-ant-bms-integration.md#t102---ant-bms-protokoll-decoder--data-model-bauen))
+- [ ] **T103** Dual-BLE Transport & ANT-BMS Service bauen (Parallele Bluetooth-Sessions für Controller + BMS) ([Details](./14-ant-bms-integration.md#t103---dual-ble-transport--ant-bms-service-bauen))
+- [ ] **T104** Dual-BLE Auto-Remember (Automatische Wiederverbindung zu beiden Geräten beim App-Start) ([Details](./14-ant-bms-integration.md#t104---dual-ble-auto-remember-dauerhafte-auto-verbindung))
+- [ ] **T105** Zellspannungs- & BMS-Monitor Widget bauen (Balkendiagramm Cell 1..20, Min/Max, Delta mV) ([Details](./14-ant-bms-integration.md#t105---zellspannungs--bms-monitor-widget-bauen))
