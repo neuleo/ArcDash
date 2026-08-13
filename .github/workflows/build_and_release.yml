@@ -50,7 +50,7 @@ jobs:
           echo "Calculated version: $VERSION (Build: $BUILD_NUM)"
 
       - name: Build Android APK (Debug)
-        run: flutter build apk --debug --build-name=${{ env.VERSION }} --build-number=${{ github.run_number }}
+        run: flutter build apk --debug
 
       - name: Prepare APK File
         run: |
