@@ -218,17 +218,17 @@ class AntBmsService implements BleTransport {
   }
 
   Future<bool> _setupBmsService(List<Object> services) async {
+    // 1. Known service/characteristic lookup (FFE0 / FFE1)
     for (final svc in services) {
       final svcUuid = (svc as dynamic).uuid.toString().toLowerCase();
-      if (!svcUuid.startsWith(_bmsServiceUuid.toLowerCase())) continue;
+      if (!svcUuid.contains('ffe0')) continue;
       final chars = List<BluetoothCharacteristic>.from(
           (svc as dynamic).characteristics as List);
       for (final c in chars) {
         final cUuid = c.uuid.toString().toLowerCase();
-        if (!cUuid.startsWith(_bmsCharUuid.toLowerCase())) continue;
+        if (!cUuid.contains('ffe1') && !cUuid.contains('ffe2')) continue;
         final props = c.properties;
         final canWrite = props.write || props.writeWithoutResponse;
-        if (!canWrite && !(props.notify || props.indicate)) continue;
 
         _writeChar = c;
         _writeWithoutResponse = props.writeWithoutResponse;
@@ -248,6 +248,38 @@ class AntBmsService implements BleTransport {
           }
         });
         return true;
+      }
+    }
+
+    // 2. Generic GATT fallback for any service/characteristic supporting notify + write
+    for (final svc in services) {
+      final chars = List<BluetoothCharacteristic>.from(
+          (svc as dynamic).characteristics as List);
+      for (final c in chars) {
+        final props = c.properties;
+        final supportsNotify = props.notify || props.indicate;
+        final supportsWrite = props.write || props.writeWithoutResponse;
+
+        if (supportsNotify && supportsWrite) {
+          _writeChar = c;
+          _writeWithoutResponse = props.writeWithoutResponse;
+
+          try {
+            await c.setNotifyValue(true);
+          } catch (e) {
+            diagnostics?.add(DiagnosticEventType.connect, details: {
+              'status': 'bms_notify_setup_exception_fallback',
+              'uuid': c.uuid.toString(),
+              'error': e.toString(),
+            });
+          }
+          _notifySubscription = c.onValueReceived.listen((data) {
+            if (data.isNotEmpty) {
+              _rawDataController.add(List<int>.from(data));
+            }
+          });
+          return true;
+        }
       }
     }
     return false;
