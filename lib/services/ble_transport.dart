@@ -7,7 +7,7 @@ abstract interface class BleTransport {
   DongleConnectionState get state;
 
   Future<bool> isBluetoothOn();
-  Future<void> startScan({Duration timeout});
+  Future<void> startScan({Duration timeout, bool showAllDevices = false});
   Future<void> stopScan();
   Future<bool> connect(DiscoveredDongle dongle);
   Future<bool> write(List<int> data);

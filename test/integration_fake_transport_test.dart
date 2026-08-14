@@ -33,7 +33,8 @@ class FakeBleTransport implements BleTransport {
 
   @override
   Future<void> startScan(
-      {Duration timeout = const Duration(seconds: 10)}) async {
+      {Duration timeout = const Duration(seconds: 10),
+      bool showAllDevices = false}) async {
     state = DongleConnectionState.scanning;
     _stateController.add(state);
   }

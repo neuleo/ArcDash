@@ -72,7 +72,8 @@ class AntBmsService implements BleTransport {
 
   @override
   Future<void> startScan(
-      {Duration timeout = const Duration(seconds: 10)}) async {
+      {Duration timeout = const Duration(seconds: 10),
+      bool showAllDevices = false}) async {
     _setState(DongleConnectionState.scanning);
     final results = <String, DiscoveredDongle>{};
     try {
@@ -86,6 +87,7 @@ class AntBmsService implements BleTransport {
               : (advName.isNotEmpty
                   ? advName
                   : 'Unbenanntes BLE Gerät ($remoteId)');
+          if (!showAllDevices && !isBikeHardwareName(displayName)) continue;
           results[remoteId] = DiscoveredDongle(
             device: r.device,
             name: displayName,

@@ -15,6 +15,35 @@ const _altServiceUuid = '49535343-fe7d-4ae5-8fa9-9fafd205e455';
 const _altCharWriteUuid = '49535343-8841-43f4-a8d4-ecbe34729bb3';
 const _altCharNotifyUuid = '49535343-1e4d-4bd9-ba61-23c647249616';
 
+/// Name keywords used to recognise supported bike hardware during filtered scans.
+///
+/// Covers FarDriver tuner dongles (CONTROL, DMC, CONTROLDMC, FarDriver, YuanQ,
+/// FOC, BT, JDY, HM-10) and ANT BMS modules (ANT, BMS).
+const List<String> bikeHardwareKeywords = [
+  'CONTROL',
+  'DMC',
+  'CONTROLDMC',
+  'FARDRIVER',
+  'YUANQ',
+  'FOC',
+  'BT',
+  'JDY',
+  'HM-10',
+  'HM10',
+  'ANT',
+  'BMS',
+];
+
+/// Whether [displayName] looks like supported bike hardware (FarDriver tuner
+/// dongle or ANT BMS) based on its advertised name.
+bool isBikeHardwareName(String displayName) {
+  final clean = displayName.toUpperCase();
+  for (final keyword in bikeHardwareKeywords) {
+    if (clean.contains(keyword)) return true;
+  }
+  return false;
+}
+
 enum DongleConnectionState {
   idle,
   scanning,
@@ -78,16 +107,20 @@ class DongleService implements BleTransport {
     return adapterState == BluetoothAdapterState.on;
   }
 
-  /// Starts scanning for FarDriver tuner dongles only.
+  /// Starts scanning for FarDriver tuner dongles and ANT BMS modules.
   ///
-  /// Scans without an advertisement UUID restriction because some target
-  /// dongles expose their UART only after service discovery.
+  /// By default only bike hardware matching [isBikeHardwareName] is reported.
+  /// Pass [showAllDevices] = true to list every discovered Bluetooth device
+  /// (manual search). Scans without an advertisement UUID restriction because
+  /// some target dongles expose their UART only after service discovery.
   Future<void> startScan(
-      {Duration timeout = const Duration(seconds: 10)}) async {
+      {Duration timeout = const Duration(seconds: 10),
+      bool showAllDevices = false}) async {
     _setState(DongleConnectionState.scanning);
     diagnostics?.add(DiagnosticEventType.scan, details: {
       'status': 'started',
       'timeoutSeconds': timeout.inSeconds,
+      'showAllDevices': showAllDevices,
     });
     final results = <String, DiscoveredDongle>{};
 
@@ -98,12 +131,14 @@ class DongleService implements BleTransport {
           final advName = r.advertisementData.advName;
           final remoteId = r.device.remoteId.str;
 
-          // SHOW ALL DISCOVERED BLUETOOTH DEVICES WITHOUT ANY FILTER!
           final displayName = name.isNotEmpty
               ? name
               : (advName.isNotEmpty
                   ? advName
                   : 'Unbenanntes BLE Gerät ($remoteId)');
+
+          // Filtered mode only surfaces devices that look like bike hardware.
+          if (!showAllDevices && !isBikeHardwareName(displayName)) continue;
 
           final isNew = !results.containsKey(remoteId);
           results[remoteId] = DiscoveredDongle(

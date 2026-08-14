@@ -133,7 +133,8 @@ class _FakeBleTransport implements BleTransport {
 
   @override
   Future<void> startScan(
-      {Duration timeout = const Duration(seconds: 10)}) async {}
+      {Duration timeout = const Duration(seconds: 10),
+      bool showAllDevices = false}) async {}
 
   @override
   Future<void> stopScan() async {}

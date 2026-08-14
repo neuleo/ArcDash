@@ -22,7 +22,8 @@ class _FakeDongleService extends DongleService {
   Future<bool> isBluetoothOn() async => false;
   @override
   Future<void> startScan(
-      {Duration timeout = const Duration(seconds: 10)}) async {}
+      {Duration timeout = const Duration(seconds: 10),
+      bool showAllDevices = false}) async {}
   @override
   Future<void> stopScan() async {}
   @override

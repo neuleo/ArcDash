@@ -23,6 +23,7 @@ class ConnectionScreen extends ConsumerStatefulWidget {
 class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   bool _isScanning = false;
   String? _connectingId;
+  bool _showAllDevices = false;
 
   @override
   void initState() {
@@ -60,8 +61,16 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
       return;
     }
     final service = ref.read(bluetoothServiceProvider);
-    await service.startScan(timeout: const Duration(seconds: 10));
+    await service.startScan(
+      timeout: const Duration(seconds: 10),
+      showAllDevices: _showAllDevices,
+    );
     if (mounted) setState(() => _isScanning = false);
+  }
+
+  void _toggleShowAllDevices(bool value) {
+    setState(() => _showAllDevices = value);
+    _startScan();
   }
 
   Future<void> _connect(DiscoveredDongle dongle,
@@ -228,6 +237,46 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                 ],
               ),
               const SizedBox(height: 12),
+              // Filter toggle
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111518),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2A3548)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showAllDevices ? Icons.devices : Icons.bike_scooter,
+                      color: const Color(0xFF00E5FF),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _showAllDevices
+                            ? 'Alle Geräte anzeigen'
+                            : 'Nur Bike-Hardware anzeigen',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: _showAllDevices,
+                      onChanged: _toggleShowAllDevices,
+                      activeColor: const Color(0xFF00E5FF),
+                      activeTrackColor:
+                          const Color(0xFF00E5FF).withOpacity(0.3),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               // Device list
               Expanded(
                 child: scanResults.isEmpty
@@ -269,7 +318,9 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Der Scan zeigt JETZT ALLE Bluetooth-Geräte in deiner Umgebung an (ohne Filter).',
+                        _showAllDevices
+                            ? 'Zeigt alle Bluetooth-Geräte in deiner Umgebung an (manuelle Suche).'
+                            : 'Zeigt nur Bike-Hardware an: FarDriver-Tuner-Dongles und ANT-BMS.',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.4),
                           fontSize: 12,
@@ -472,37 +523,39 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.bluetooth_searching,
-            size: 56,
-            color: const Color(0xFF2A3548),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            AppStrings.of(context).text(
-                isScanning ? AppText.searchingDongles : AppText.noDongles),
-            style: const TextStyle(
-              color: Color(0xFF4A5568),
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.bluetooth_searching,
+              size: 56,
+              color: const Color(0xFF2A3548),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isScanning
-                ? 'Make sure your bike is on and\nthe dongle is connected'
-                : AppStrings.of(context).text(AppText.searchAgain),
-            style: const TextStyle(
-              color: Color(0xFF2A3548),
-              fontSize: 13,
-              height: 1.5,
+            const SizedBox(height: 16),
+            Text(
+              AppStrings.of(context).text(
+                  isScanning ? AppText.searchingDongles : AppText.noDongles),
+              style: const TextStyle(
+                color: Color(0xFF4A5568),
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              isScanning
+                  ? 'Make sure your bike is on and\nthe dongle is connected'
+                  : AppStrings.of(context).text(AppText.searchAgain),
+              style: const TextStyle(
+                color: Color(0xFF2A3548),
+                fontSize: 13,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
