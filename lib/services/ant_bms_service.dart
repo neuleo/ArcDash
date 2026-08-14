@@ -13,9 +13,12 @@ const _bmsCharUuid = '0000ffe1-0000-1000-8000-00805f9b34fb';
 /// Advertised name prefix used by ANT BMS modules.
 const antBmsNamePrefix = 'ANT';
 
-/// Whether [name] looks like an ANT BMS device.
-bool isAntBmsName(String name) =>
-    name.trimLeft().toUpperCase().startsWith(antBmsNamePrefix);
+/// Whether [name] or [remoteId] looks like an ANT BMS device.
+bool isAntBmsName(String name, [String? remoteId]) {
+  final cleanName = name.trimLeft().toUpperCase();
+  if (cleanName.startsWith('ANT') || cleanName.contains('BMS')) return true;
+  return false;
+}
 
 /// Transport for a parallel BLE session with an ANT BMS.
 ///

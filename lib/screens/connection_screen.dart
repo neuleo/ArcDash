@@ -64,10 +64,12 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     if (mounted) setState(() => _isScanning = false);
   }
 
-  Future<void> _connect(DiscoveredDongle dongle) async {
+  Future<void> _connect(DiscoveredDongle dongle,
+      {bool forceBms = false}) async {
     setState(() => _connectingId = dongle.device.remoteId.str);
     final storage = ref.read(storageServiceProvider);
-    final isBms = isAntBmsName(dongle.name);
+    final isBms =
+        forceBms || isAntBmsName(dongle.name, dongle.device.remoteId.str);
     var success = false;
 
     if (isBms) {
@@ -240,7 +242,9 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                           return _DongleCard(
                             dongle: dongle,
                             isConnecting: isConnecting,
-                            onTap: () => _connect(dongle),
+                            onConnectAsController: () => _connect(dongle),
+                            onConnectAsBms: () =>
+                                _connect(dongle, forceBms: true),
                           );
                         },
                       ),
@@ -308,24 +312,59 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
 class _DongleCard extends StatelessWidget {
   final DiscoveredDongle dongle;
   final bool isConnecting;
-  final VoidCallback onTap;
+  final VoidCallback onConnectAsController;
+  final VoidCallback onConnectAsBms;
 
   const _DongleCard({
     required this.dongle,
     required this.isConnecting,
-    required this.onTap,
+    required this.onConnectAsController,
+    required this.onConnectAsBms,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isConnecting ? null : onTap,
+    final isBmsHint = isAntBmsName(dongle.name, dongle.device.remoteId.str);
+    return PopupMenuButton<String>(
+      onSelected: (choice) {
+        if (choice == 'controller') {
+          onConnectAsController();
+        } else if (choice == 'bms') {
+          onConnectAsBms();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'controller',
+          child: Row(
+            children: const [
+              Icon(Icons.speed, color: Color(0xFF00E5FF), size: 18),
+              SizedBox(width: 10),
+              Text('Als FarDriver Controller verbinden'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'bms',
+          child: Row(
+            children: const [
+              Icon(Icons.battery_charging_full,
+                  color: Color(0xFF54E39E), size: 18),
+              SizedBox(width: 10),
+              Text('Als ANT BMS verbinden'),
+            ],
+          ),
+        ),
+      ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: const Color(0xFF111518),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF2A3548)),
+          border: Border.all(
+              color: isBmsHint
+                  ? const Color(0xFF54E39E).withOpacity(0.4)
+                  : const Color(0xFF2A3548)),
         ),
         child: Row(
           children: [
@@ -333,12 +372,17 @@ class _DongleCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFF00E5FF).withOpacity(0.08),
+                color: (isBmsHint
+                        ? const Color(0xFF54E39E)
+                        : const Color(0xFF00E5FF))
+                    .withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.bluetooth,
-                color: Color(0xFF00E5FF),
+              child: Icon(
+                isBmsHint ? Icons.battery_charging_full : Icons.bluetooth,
+                color: isBmsHint
+                    ? const Color(0xFF54E39E)
+                    : const Color(0xFF00E5FF),
                 size: 20,
               ),
             ),
@@ -347,13 +391,36 @@ class _DongleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    dongle.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          dongle.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isBmsHint) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF54E39E).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('BMS',
+                              style: TextStyle(
+                                  color: Color(0xFF54E39E),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
                     dongle.device.remoteId.str,
@@ -388,7 +455,6 @@ class _DongleCard extends StatelessWidget {
                     : const Icon(
                         Icons.chevron_right,
                         color: Color(0xFF4A5568),
-                        size: 20,
                       ),
               ],
             ),
