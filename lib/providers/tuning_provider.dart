@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_identity.dart';
+import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
@@ -75,10 +76,52 @@ class TuningState {
 
 class TuningNotifier extends StateNotifier<TuningState> {
   final Ref _ref;
+  bool _hasUserModified = false;
 
   TuningNotifier(this._ref)
       : super(TuningState(pendingProfile: TuningProfile.custom())) {
     _loadProfiles();
+    final initialController = _ref.read(controllerProvider);
+    syncFromController(initialController);
+  }
+
+  /// Synchronizes the pending profile values from live [controllerState] if the
+  /// user has not manually modified the sliders, or if [force] is true.
+  void syncFromController(ControllerState controllerState,
+      {bool force = false}) {
+    if (!force && _hasUserModified) return;
+    if (controllerState.maxSpeedRaw <= 0 &&
+        controllerState.maxLineCurrRaw <= 0) {
+      return;
+    }
+
+    final kph = TuningConversions.maxSpeedRawToKph(controllerState.maxSpeedRaw);
+    final lineAmps = controllerState.maxLineCurrA;
+    final throttleMode = controllerState.rideMode.throttleResponseValue;
+
+    var currentProfile = state.pendingProfile;
+    var changed = false;
+
+    if (kph > 0 && (currentProfile.maxSpeedKph - kph).abs() > 0.5) {
+      currentProfile = currentProfile.copyWith(maxSpeedKph: kph);
+      changed = true;
+    }
+    if (lineAmps > 0 && (currentProfile.maxLineCurrA - lineAmps).abs() > 0.5) {
+      currentProfile = currentProfile.copyWith(maxLineCurrA: lineAmps);
+      changed = true;
+    }
+    if (currentProfile.throttleResponse != throttleMode) {
+      currentProfile = currentProfile.copyWith(throttleResponse: throttleMode);
+      changed = true;
+    }
+
+    if (changed || force) {
+      if (force) _hasUserModified = false;
+      state = state.copyWith(
+        pendingProfile: currentProfile,
+        appliedSuccessfully: false,
+      );
+    }
   }
 
   void _loadProfiles() {
@@ -94,6 +137,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateMaxSpeed(double kph) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(maxSpeedKph: kph),
       appliedSuccessfully: false,
@@ -101,6 +145,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateMaxLineCurr(double amps) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(maxLineCurrA: amps),
       appliedSuccessfully: false,
@@ -108,6 +153,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateMaxPhaseCurr(double amps) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(maxPhaseCurrA: amps),
       appliedSuccessfully: false,
@@ -115,6 +161,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateRegen(double strength) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(regenStrength: strength),
       appliedSuccessfully: false,
@@ -122,6 +169,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateThrottleResponse(int val) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(throttleResponse: val),
       appliedSuccessfully: false,
@@ -129,6 +177,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateLowSpeedLineCurr(double pct) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(lowSpeedLineCurrPct: pct),
       appliedSuccessfully: false,
@@ -136,6 +185,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateMidSpeedLineCurr(double pct) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(midSpeedLineCurrPct: pct),
       appliedSuccessfully: false,
@@ -143,6 +193,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateBoostTime(int seconds) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(boostTimeSeconds: seconds),
       appliedSuccessfully: false,
@@ -150,6 +201,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateLowVoltCutoff(double volts) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(lowVoltCutoffV: volts),
       appliedSuccessfully: false,
@@ -157,6 +209,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateOverVoltCutoff(double volts) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(overVoltCutoffV: volts),
       appliedSuccessfully: false,
@@ -164,6 +217,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateMotorTempLimit(double tempC) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(motorTempLimitC: tempC),
       appliedSuccessfully: false,
@@ -171,6 +225,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateControllerTempLimit(double tempC) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile:
           state.pendingProfile.copyWith(controllerTempLimitC: tempC),
@@ -179,6 +234,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateFluxWeakeningCurr(double amps) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(fluxWeakeningCurrA: amps),
       appliedSuccessfully: false,
@@ -186,6 +242,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void updateReverseSpeed(double pct) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(reverseSpeedPct: pct),
       appliedSuccessfully: false,
@@ -249,6 +306,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   void loadPreset(TuningProfile preset) {
+    _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: preset,
       appliedSuccessfully: false,
@@ -302,6 +360,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
       }
     }
 
+    _hasUserModified = false;
     state = state.copyWith(
       isApplying: false,
       appliedSuccessfully: true,
@@ -389,5 +448,9 @@ class TuningNotifier extends StateNotifier<TuningState> {
 
 final tuningProvider =
     StateNotifierProvider<TuningNotifier, TuningState>((ref) {
-  return TuningNotifier(ref);
+  final notifier = TuningNotifier(ref);
+  ref.listen<ControllerState>(controllerProvider, (previous, next) {
+    notifier.syncFromController(next);
+  });
+  return notifier;
 });

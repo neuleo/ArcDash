@@ -116,28 +116,65 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                 onDelete: (name) => _confirmDeletePreset(context, ref, name),
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _showSavePresetDialog(context, ref),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text(
-                    '+ NEUES PRESET SPEICHERN',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      fontSize: 12,
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        notifier.syncFromController(controllerState,
+                            force: true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Aktuelle Werte vom Controller eingelesen!'),
+                            backgroundColor: Color(0xFF123328),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.download_for_offline_outlined,
+                          size: 16),
+                      label: const Text(
+                        'VOM CONTROLLER LESEN',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          fontSize: 11,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF54E39E),
+                        side: const BorderSide(color: Color(0xFF123328)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF00E5FF),
-                    side: const BorderSide(color: Color(0xFF2A3548)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showSavePresetDialog(context, ref),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text(
+                        '+ PRESET SPEICHERN',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          fontSize: 11,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF00E5FF),
+                        side: const BorderSide(color: Color(0xFF2A3548)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 24),
 

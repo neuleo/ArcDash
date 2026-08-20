@@ -72,7 +72,7 @@ void main() {
       expect(find.text('Eco Range'), findsOneWidget);
       expect(find.text('Custom'), findsOneWidget);
       expect(find.text('My Trail'), findsOneWidget);
-      expect(find.text('+ NEUES PRESET SPEICHERN'), findsOneWidget);
+      expect(find.text('+ PRESET SPEICHERN'), findsOneWidget);
       expect(find.text('WERKSEINSTELLUNGEN WIEDERHERSTELLEN (.HEB BASEMAP)'),
           findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -88,7 +88,7 @@ void main() {
       await tester.pumpWidget(widget);
       await _settleConnect(tester, dongle);
 
-      await tester.tap(find.text('+ NEUES PRESET SPEICHERN'));
+      await tester.tap(find.text('+ PRESET SPEICHERN'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('PRESET SPEICHERN'), findsOneWidget);
