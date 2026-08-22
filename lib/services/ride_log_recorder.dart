@@ -7,8 +7,13 @@ import 'package:arcdash/models/ride_log.dart';
 import 'package:arcdash/providers/ant_bms_provider.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/services/gps_service.dart';
 
 /// Records one [RideLogSample] per second while the controller is connected.
+///
+/// GPS fixes (position + altitude) are captured in parallel and stamped onto
+/// each sample when fresh. Without GPS permission the log simply records null
+/// GPS channels — recording never blocks on location.
 ///
 /// The finished log persists under the key `ride_log_<id>` as JSON. Logs are
 /// kept in memory for the session list and re-loaded lazily from storage.
@@ -28,6 +33,8 @@ class RideLogRecorder extends StateNotifier<RideLog?> {
   final Ref _ref;
   Timer? _tick;
   ProviderSubscription<bool>? _connSub;
+  StreamSubscription<GpsFix>? _gpsSub;
+  GpsFix? _lastGpsFix;
   bool _recording = false;
   DateTime? _startedAt;
 
@@ -41,6 +48,19 @@ class RideLogRecorder extends StateNotifier<RideLog?> {
       samples: [],
     );
     _recording = true;
+    _startGps();
+  }
+
+  /// Fire-and-forget GPS startup; failures never block ride logging.
+  Future<void> _startGps() async {
+    try {
+      final gps = _ref.read(gpsServiceProvider);
+      if (!await gps.start()) return;
+      _lastGpsFix = await gps.lastKnown();
+      await for (final fix in gps.stream) {
+        _lastGpsFix = fix;
+      }
+    } catch (_) {/* GPS optional */}
   }
 
   /// Stops recording and persists the log to storage. Returns the id.
@@ -61,6 +81,7 @@ class RideLogRecorder extends StateNotifier<RideLog?> {
     if (!_recording) return;
     final controller = _ref.read(controllerProvider);
     final bms = _ref.read(antBmsStateProvider);
+    final gps = _lastGpsFix;
     final t = DateTime.now().difference(_startedAt!).inSeconds;
 
     var next = List<RideLogSample>.from(state!.samples);
@@ -84,6 +105,11 @@ class RideLogRecorder extends StateNotifier<RideLog?> {
       bmsCurrentA: bms?.currentA,
       bmsTempC: _avgBmsTemp(bms),
       cellDeltaMv: bms != null && bms.cellCount > 0 ? bms.cellDeltaMv : null,
+      gpsLatitude: gps?.latitude,
+      gpsLongitude: gps?.longitude,
+      gpsAltitudeM: gps?.altitudeMeters,
+      gpsSpeedKph: gps?.speedKph,
+      gpsAccuracyM: gps?.accuracyMeters,
     ));
 
     // Hard cap: keep the most recent window.
@@ -126,6 +152,7 @@ class RideLogRecorder extends StateNotifier<RideLog?> {
   void dispose() {
     _tick?.cancel();
     _connSub?.close();
+    _gpsSub?.cancel();
     super.dispose();
   }
 }

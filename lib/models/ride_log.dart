@@ -20,6 +20,13 @@ class RideLogSample {
   final double? bmsTempC;
   final int? cellDeltaMv;
 
+  // GPS channel (null without permission/fix)
+  final double? gpsLatitude;
+  final double? gpsLongitude;
+  final double? gpsAltitudeM;
+  final double? gpsSpeedKph;
+  final double? gpsAccuracyM;
+
   const RideLogSample({
     required this.t,
     this.speedKph,
@@ -33,6 +40,11 @@ class RideLogSample {
     this.bmsCurrentA,
     this.bmsTempC,
     this.cellDeltaMv,
+    this.gpsLatitude,
+    this.gpsLongitude,
+    this.gpsAltitudeM,
+    this.gpsSpeedKph,
+    this.gpsAccuracyM,
   });
 
   Map<String, dynamic> toJson() => {
@@ -48,6 +60,11 @@ class RideLogSample {
         if (bmsCurrentA != null) 'bi': bmsCurrentA,
         if (bmsTempC != null) 'bt': bmsTempC,
         if (cellDeltaMv != null) 'd': cellDeltaMv,
+        if (gpsLatitude != null) 'gla': gpsLatitude,
+        if (gpsLongitude != null) 'glo': gpsLongitude,
+        if (gpsAltitudeM != null) 'gal': gpsAltitudeM,
+        if (gpsSpeedKph != null) 'gsp': gpsSpeedKph,
+        if (gpsAccuracyM != null) 'gac': gpsAccuracyM,
       };
 
   factory RideLogSample.fromJson(Map<String, dynamic> j) => RideLogSample(
@@ -63,6 +80,11 @@ class RideLogSample {
         bmsCurrentA: (j['bi'] as num?)?.toDouble(),
         bmsTempC: (j['bt'] as num?)?.toDouble(),
         cellDeltaMv: (j['d'] as num?)?.toInt(),
+        gpsLatitude: (j['gla'] as num?)?.toDouble(),
+        gpsLongitude: (j['glo'] as num?)?.toDouble(),
+        gpsAltitudeM: (j['gal'] as num?)?.toDouble(),
+        gpsSpeedKph: (j['gsp'] as num?)?.toDouble(),
+        gpsAccuracyM: (j['gac'] as num?)?.toDouble(),
       );
 }
 
@@ -78,7 +100,9 @@ enum RideChannel {
   packVoltage('Packspannung (BMS)', 'V'),
   bmsCurrent('BMS-Strom', 'A'),
   bmsTemp('Akku-Temp (NTC)', '°C'),
-  cellDelta('Zell-Delta', 'mV');
+  cellDelta('Zell-Delta', 'mV'),
+  gpsSpeed('GPS-Geschwindigkeit', 'km/h'),
+  gpsAltitude('GPS-Höhe', 'm');
 
   final String label;
   final String unit;
@@ -152,6 +176,8 @@ class RideLog {
         RideChannel.bmsCurrent => s.bmsCurrentA,
         RideChannel.bmsTemp => s.bmsTempC,
         RideChannel.cellDelta => s.cellDeltaMv?.toDouble(),
+        RideChannel.gpsSpeed => s.gpsSpeedKph,
+        RideChannel.gpsAltitude => s.gpsAltitudeM,
       };
 
   /// Min/Max/Average of [channel] across all non-null samples.
@@ -173,4 +199,40 @@ class RideLog {
       count: count,
     );
   }
+
+  /// Cumulative elevation gain in meters (only climbs > 1 m count to filter
+  /// GPS jitter). Null without GPS altitude data.
+  double? get elevationGainM {
+    final alts =
+        samples.map((s) => s.gpsAltitudeM).whereType<double>().toList();
+    if (alts.length < 2) return null;
+    var gain = 0.0;
+    for (var i = 1; i < alts.length; i++) {
+      final delta = alts[i] - alts[i - 1];
+      if (delta > 1.0) gain += delta; // ignore <= 1 m noise
+    }
+    return gain;
+  }
+
+  /// Cumulative elevation loss in meters (descents), same jitter filter.
+  double? get elevationLossM {
+    final alts =
+        samples.map((s) => s.gpsAltitudeM).whereType<double>().toList();
+    if (alts.length < 2) return null;
+    var loss = 0.0;
+    for (var i = 1; i < alts.length; i++) {
+      final delta = alts[i - 1] - alts[i];
+      if (delta > 1.0) loss += delta;
+    }
+    return loss;
+  }
+
+  /// GPS track as (lat, lon) pairs — only fixes with position AND accuracy.
+  List<(double, double)> get gpsTrack => samples
+      .where((s) =>
+          s.gpsLatitude != null &&
+          s.gpsLongitude != null &&
+          (s.gpsAccuracyM == null || s.gpsAccuracyM! <= 30))
+      .map((s) => (s.gpsLatitude!, s.gpsLongitude!))
+      .toList();
 }

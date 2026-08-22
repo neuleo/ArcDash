@@ -1,7 +1,7 @@
 name: arcdash
 description: ArcDash — FarDriver controller tuning app for electric dirt bikes
 publish_to: 'none'
-version: 2.5.0+1
+version: 2.5.1+1
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -27,6 +27,9 @@ dependencies:
 
   # Permissions
   permission_handler: ^11.3.1
+
+  # GPS / Location
+  geolocator: ^13.0.1
 
   # Data export
   csv: ^6.0.0
