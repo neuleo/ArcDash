@@ -10,7 +10,9 @@ import 'package:arcdash/models/telemetry_quality.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/ant_bms_provider.dart';
+import 'package:arcdash/providers/temp_warning_provider.dart';
 import 'package:arcdash/widgets/bms_cell_monitor.dart';
+import 'package:arcdash/widgets/temp_warning_overlay.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 import 'package:arcdash/services/storage_service.dart';
 
@@ -283,6 +285,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final connected = ref.watch(isConnectedProvider);
     final bmsConnected = ref.watch(isBmsConnectedProvider);
     final bmsState = ref.watch(antBmsStateProvider);
+    // Battery temperature for the dedicated tile: BMS NTC average.
+    final double? effectiveBatteryTempC =
+        bmsConnected ? _avgBmsTemp(bmsState) : null;
     final orientation = _activeOrientation;
     final layout = _dashboard.layoutFor(orientation);
 
@@ -318,36 +323,51 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            if (_editing)
-              _EditorBar(
-                orientation: _editingOrientation,
-                onOrientationChanged: (value) =>
-                    setState(() => _editingOrientation = value),
-                onAdd: () => _showMetricPicker(),
-                onCopy: _copyOrientation,
-                onReset: _resetCurrent,
-                onDiscard: _discardEditor,
-              ),
-            Expanded(
-              child: DashboardRenderer(
-                layout: layout,
-                state: state,
-                connected: connected,
-                now: _now,
-                editing: _editing,
-                onRemove: _removeTile,
-                onMove: _moveTile,
-                onResize: _resizeTile,
-                onKindChanged: _setTileKind,
-                onUnitChanged: _setTileUnit,
-              ),
+            Column(
+              children: [
+                if (_editing)
+                  _EditorBar(
+                    orientation: _editingOrientation,
+                    onOrientationChanged: (value) =>
+                        setState(() => _editingOrientation = value),
+                    onAdd: () => _showMetricPicker(),
+                    onCopy: _copyOrientation,
+                    onReset: _resetCurrent,
+                    onDiscard: _discardEditor,
+                  ),
+                Expanded(
+                  child: DashboardRenderer(
+                    layout: layout,
+                    state: state,
+                    connected: connected,
+                    now: _now,
+                    editing: _editing,
+                    batteryTemperatureC: effectiveBatteryTempC,
+                    onRemove: _removeTile,
+                    onMove: _moveTile,
+                    onResize: _resizeTile,
+                    onKindChanged: _setTileKind,
+                    onUnitChanged: _setTileUnit,
+                  ),
+                ),
+              ],
             ),
+            // Full-screen temperature warning above every dashboard element.
+            const TempWarningOverlay(),
           ],
         ),
       ),
     );
+  }
+
+  /// Average of valid BMS NTC temperatures, or null when unavailable.
+  double? _avgBmsTemp(AntBmsState? bms) {
+    if (bms == null || bms.temperaturesC.isEmpty) return null;
+    final valid = bms.temperaturesC.where((t) => t > -60 && t < 120).toList();
+    if (valid.isEmpty) return null;
+    return valid.reduce((a, b) => a + b) / valid.length;
   }
 
   Future<void> _showBmsMonitor(AntBmsState? bmsState) async {
@@ -492,6 +512,9 @@ class DashboardRenderer extends StatelessWidget {
   final bool connected;
   final DateTime now;
   final bool editing;
+
+  /// Live battery temperature from the BMS (NTC average), null without BMS.
+  final double? batteryTemperatureC;
   final ValueChanged<DashboardTile>? onRemove;
   final void Function(DashboardTile, int, int)? onMove;
   final void Function(DashboardTile, int, int)? onResize;
@@ -505,6 +528,7 @@ class DashboardRenderer extends StatelessWidget {
     required this.connected,
     required this.now,
     this.editing = false,
+    this.batteryTemperatureC,
     this.onRemove,
     this.onMove,
     this.onResize,
@@ -553,6 +577,7 @@ class DashboardRenderer extends StatelessWidget {
                       state: state,
                       connected: connected,
                       now: now,
+                      batteryTemperatureC: batteryTemperatureC,
                     ),
                   ),
                 ),
@@ -768,11 +793,16 @@ class _MetricView extends StatelessWidget {
   final bool connected;
   final DateTime now;
 
+  /// Live battery temperature from the BMS overlay state, or null when no
+  /// BMS is attached. Injected by the dashboard screen.
+  final double? batteryTemperatureC;
+
   const _MetricView({
     required this.tile,
     required this.state,
     required this.connected,
     required this.now,
+    this.batteryTemperatureC,
   });
 
   @override
@@ -800,7 +830,9 @@ class _MetricView extends StatelessWidget {
                 : const Color(0xFF54E39E)
             : tile.metric == DashboardMetric.regeneration
                 ? const Color(0xFF54E39E)
-                : Colors.white;
+                : tile.metric == DashboardMetric.batteryTemperature
+                    ? _batteryTempColor(batteryTemperatureC)
+                    : Colors.white;
     return LayoutBuilder(builder: (context, constraints) {
       final compact = constraints.maxHeight < 90 ||
           MediaQuery.textScalerOf(context).scale(1) > 1.3;
@@ -861,6 +893,11 @@ class _MetricView extends StatelessWidget {
           ? TelemetryFreshness.fresh
           : TelemetryFreshness.disconnected;
     }
+    if (metric == DashboardMetric.batteryTemperature) {
+      return batteryTemperatureC == null
+          ? (connected ? null : TelemetryFreshness.disconnected)
+          : TelemetryFreshness.fresh;
+    }
     final field = switch (metric) {
       DashboardMetric.speed => ControllerTelemetry.speed,
       DashboardMetric.power ||
@@ -875,6 +912,7 @@ class _MetricView extends StatelessWidget {
       DashboardMetric.motorTemperature => ControllerTelemetry.motorTemperature,
       DashboardMetric.controllerTemperature =>
         ControllerTelemetry.controllerTemperature,
+      DashboardMetric.batteryTemperature => null, // supplied via BMS overlay
       DashboardMetric.errors => ControllerTelemetry.errors,
       DashboardMetric.connection => null,
       DashboardMetric.trip => ControllerTelemetry.trip,
@@ -937,6 +975,9 @@ class _MetricView extends StatelessWidget {
         '${state.motorTempC.toStringAsFixed(0)} °C',
       DashboardMetric.controllerTemperature =>
         '${state.controllerTempC.toStringAsFixed(0)} °C',
+      DashboardMetric.batteryTemperature => batteryTemperatureC == null
+          ? AppStrings.of(context).text(AppText.missing)
+          : '${batteryTemperatureC!.toStringAsFixed(0)} °C',
       DashboardMetric.errors => state.hasAnyFault
           ? AppStrings.of(context).text(AppText.error)
           : AppStrings.of(context).text(AppText.noErrors),
@@ -947,6 +988,16 @@ class _MetricView extends StatelessWidget {
           ? '0.0 km'
           : '${state.tripDistanceKm!.toStringAsFixed(1)} km',
     };
+  }
+
+  /// Battery temperature tile color coding:
+  /// blue < 5 °C (cold), green < 40 °C, amber 40–55 °C, red > 55 °C.
+  static Color _batteryTempColor(double? tempC) {
+    if (tempC == null || tempC.isNaN) return Colors.white;
+    if (tempC < 5) return const Color(0xFF38BDF8); // cold blue
+    if (tempC < 40) return const Color(0xFF54E39E); // ok green
+    if (tempC <= 55) return const Color(0xFFFFB45C); // warm amber
+    return const Color(0xFFFF5470); // hot red
   }
 }
 

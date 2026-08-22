@@ -14,6 +14,7 @@ enum DashboardMetric {
   gear,
   motorTemperature,
   controllerTemperature,
+  batteryTemperature,
   errors,
   connection,
   trip,
@@ -192,6 +193,18 @@ const dashboardMeasurementCatalog =
     maxAge: Duration(seconds: 10),
     minimum: -50,
     maximum: 250,
+  ),
+  DashboardMetric.batteryTemperature: DashboardMeasurementDefinition(
+    defaultKind: DashboardTileKind.value,
+    allowedKinds: {
+      DashboardTileKind.compact,
+      DashboardTileKind.arc,
+      DashboardTileKind.bar,
+      DashboardTileKind.circle,
+    },
+    maxAge: Duration(seconds: 10),
+    minimum: -50,
+    maximum: 120,
   ),
   DashboardMetric.errors: DashboardMeasurementDefinition(
     defaultKind: DashboardTileKind.status,
@@ -456,7 +469,7 @@ class DashboardLayout {
         ),
         landscape: DashboardOrientationLayout(
           columns: 12,
-          rows: 6,
+          rows: 7,
           tiles: const [
             DashboardTile(
               id: 'power',
@@ -531,11 +544,20 @@ class DashboardLayout {
               height: 1,
             ),
             DashboardTile(
+              id: 'batteryTemperature',
+              metric: DashboardMetric.batteryTemperature,
+              kind: DashboardTileKind.value,
+              column: 9,
+              row: 4,
+              width: 3,
+              height: 1,
+            ),
+            DashboardTile(
               id: 'errors',
               metric: DashboardMetric.errors,
               kind: DashboardTileKind.status,
               column: 9,
-              row: 4,
+              row: 5,
               width: 3,
               height: 1,
             ),
@@ -544,7 +566,7 @@ class DashboardLayout {
               metric: DashboardMetric.connection,
               kind: DashboardTileKind.status,
               column: 9,
-              row: 5,
+              row: 6,
               width: 3,
               height: 1,
             ),

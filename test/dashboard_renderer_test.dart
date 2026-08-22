@@ -244,6 +244,7 @@ ControllerState _stateFor(DashboardMetric metric, DateTime now) {
     DashboardMetric.motorTemperature => ControllerTelemetry.motorTemperature,
     DashboardMetric.controllerTemperature =>
       ControllerTelemetry.controllerTemperature,
+    DashboardMetric.batteryTemperature => null,
     DashboardMetric.errors => ControllerTelemetry.errors,
     DashboardMetric.connection || DashboardMetric.trip => null,
   };
@@ -259,6 +260,7 @@ ControllerState _stateFor(DashboardMetric metric, DateTime now) {
     DashboardMetric.gear => 2,
     DashboardMetric.motorTemperature => 61,
     DashboardMetric.controllerTemperature => 54,
+    DashboardMetric.batteryTemperature => 28,
     DashboardMetric.errors => 1,
     DashboardMetric.connection || DashboardMetric.trip => 1,
   };

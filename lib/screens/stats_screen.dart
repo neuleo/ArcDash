@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:arcdash/providers/stats_provider.dart';
 import 'package:arcdash/l10n/app_strings.dart';
+import 'package:arcdash/models/ride_log.dart';
 import 'package:arcdash/models/ride_stats.dart';
+import 'package:arcdash/screens/ride_analysis_screen.dart';
+import 'package:arcdash/services/ride_log_recorder.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -373,8 +376,26 @@ class _PastSessionCard extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () => _showSessionDetailsDialog(
-          context, dateStr, distKm, avgSpd, maxSpd, durSec, wh, json),
+      onTap: () {
+        // Deep-dive: open the second-by-second ride log when available.
+        final id = json['id'] as String?;
+        RideLog? rideLog;
+        if (id != null) {
+          try {
+            final container = ProviderScope.containerOf(context);
+            rideLog =
+                container.read(rideLogRecorderProvider.notifier).loadById(id);
+          } catch (_) {}
+        }
+        if (rideLog != null && context.mounted) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => RideAnalysisScreen(log: rideLog!),
+          ));
+        } else {
+          _showSessionDetailsDialog(
+              context, dateStr, distKm, avgSpd, maxSpd, durSec, wh, json);
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),

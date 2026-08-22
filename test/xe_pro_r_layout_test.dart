@@ -9,7 +9,7 @@ void main() {
     final landscape = layout.landscape;
 
     expect(landscape.columns, 12);
-    expect(landscape.rows, 6);
+    expect(landscape.rows, 7);
     expect(landscape.validate, returnsNormally);
 
     final metricsInLandscape = landscape.tiles.map((t) => t.metric).toSet();
@@ -20,6 +20,7 @@ void main() {
       DashboardMetric.range,
       DashboardMetric.motorTemperature,
       DashboardMetric.controllerTemperature,
+      DashboardMetric.batteryTemperature,
       DashboardMetric.trip,
       DashboardMetric.profile,
     };
