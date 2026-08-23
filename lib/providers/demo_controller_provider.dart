@@ -21,8 +21,12 @@ class _DemoControllerTicker extends StateNotifier<ControllerState?> {
         state = null;
       } else if (_engine == null || prev?.scenario != next.scenario) {
         _engine = DemoTelemetryEngine(scenario: next.scenario);
+        _tick(); // publish first sample immediately
       }
     }, fireImmediately: true);
+    // If demo was already enabled before this provider was constructed
+    // (e.g. user toggled in Dev Tools, then opened the cockpit), the
+    // fireImmediately callback above already started the engine.
   }
 
   final Ref _ref;
@@ -33,7 +37,11 @@ class _DemoControllerTicker extends StateNotifier<ControllerState?> {
   void _tick() {
     final engine = _engine;
     if (engine == null || !_ref.read(demoModeProvider).active) return;
-    state = demoControllerSnapshot(engine);
+    try {
+      state = demoControllerSnapshot(engine);
+    } catch (_) {
+      // Never let a bad sample kill the ticker; retry next second.
+    }
   }
 
   @override
