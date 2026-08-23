@@ -6,6 +6,7 @@ enum AppText {
   rides,
   tuning,
   settings,
+  navigationTab,
   connect,
   live,
   rideComputer,
@@ -122,6 +123,12 @@ class AppStrings {
     return Localizations.of<AppStrings>(context, AppStrings)!;
   }
 
+  /// Nullable variant for widgets that may live outside Localizations scope
+  /// (e.g. direct widget previews/tests).
+  static AppStrings? maybeOf(BuildContext context) {
+    return Localizations.of<AppStrings>(context, AppStrings);
+  }
+
   bool get _english => locale.languageCode == 'en';
 
   String text(AppText key) => (_english ? _englishText : _germanText)[key]!;
@@ -137,6 +144,7 @@ const _germanText = {
   AppText.rides: 'Fahrten',
   AppText.tuning: 'Tuning',
   AppText.settings: 'Einstellungen',
+  AppText.navigationTab: 'Navigation',
   AppText.connect: 'VERBINDEN',
   AppText.live: 'LIVE',
   AppText.rideComputer: 'FAHR-COMPUTER',
@@ -254,6 +262,7 @@ const _englishText = {
   AppText.rides: 'Rides',
   AppText.tuning: 'Tuning',
   AppText.settings: 'Settings',
+  AppText.navigationTab: 'Navigation',
   AppText.connect: 'CONNECT',
   AppText.live: 'LIVE',
   AppText.rideComputer: 'RIDE COMPUTER',

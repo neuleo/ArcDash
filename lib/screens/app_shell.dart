@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
+import 'package:arcdash/screens/map_screen.dart';
 import 'package:arcdash/screens/settings_screen.dart';
 import 'package:arcdash/screens/stats_screen.dart';
 import 'package:arcdash/screens/tuning_screen.dart';
@@ -19,6 +20,7 @@ class _AppShellState extends State<AppShell> {
     DashboardScreen(),
     TuningScreen(),
     StatsScreen(),
+    MapScreen(),
     SettingsScreen(),
   ];
 
@@ -36,6 +38,9 @@ class _AppShellState extends State<AppShell> {
             NavigationDestination(
                 icon: const Icon(Icons.route_outlined),
                 label: strings.text(AppText.rides)),
+            NavigationDestination(
+                icon: const Icon(Icons.map_outlined),
+                label: strings.text(AppText.navigationTab)),
             NavigationDestination(
                 icon: const Icon(Icons.settings_outlined),
                 label: strings.text(AppText.settings)),

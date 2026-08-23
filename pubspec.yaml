@@ -1,7 +1,7 @@
 name: arcdash
 description: ArcDash — FarDriver controller tuning app for electric dirt bikes
 publish_to: 'none'
-version: 2.6.3+1
+version: 2.7.0+1
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -30,6 +30,11 @@ dependencies:
 
   # GPS / Location
   geolocator: ^13.0.1
+
+  # Maps & Navigation (kostenlose OSM-Stack, siehe plan/16-map-navigation.md)
+  flutter_map: ^8.1.0
+  latlong2: ^0.10.1
+  http: ^1.2.0
 
   # Data export
   csv: ^6.0.0

@@ -1,0 +1,95 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
+import 'package:arcdash/services/routing/multi_routing_service.dart';
+
+/// State of the map screen: origin, destination, alternatives, selection.
+class MapState {
+  final GeoLatLng? origin;
+  final String? originLabel;
+  final GeoLatLng? destination;
+  final String? destinationLabel;
+  final List<RouteAlternative> alternatives;
+  final RouteAlternative? selected;
+
+  const MapState({
+    this.origin,
+    this.originLabel,
+    this.destination,
+    this.destinationLabel,
+    this.alternatives = const [],
+    this.selected,
+  });
+
+  MapState copyWith({
+    GeoLatLng? origin,
+    String? originLabel,
+    bool clearOrigin = false,
+    GeoLatLng? destination,
+    String? destinationLabel,
+    List<RouteAlternative>? alternatives,
+    RouteAlternative? selected,
+    bool clearSelected = false,
+  }) =>
+      MapState(
+        origin: clearOrigin ? null : (origin ?? this.origin),
+        originLabel: clearOrigin ? null : (originLabel ?? this.originLabel),
+        destination: destination ?? this.destination,
+        destinationLabel: destinationLabel ?? this.destinationLabel,
+        alternatives: alternatives ?? this.alternatives,
+        selected: clearSelected ? null : (selected ?? this.selected),
+      );
+}
+
+class MapController extends StateNotifier<MapState> {
+  MapController() : super(const MapState());
+
+  void setDestination(GeoLatLng point, {String? label}) {
+    state = state.copyWith(
+      destination: point,
+      destinationLabel: label ?? 'Gewählter Punkt',
+      clearSelected: true,
+      alternatives: const [],
+    );
+  }
+
+  void setDestinationFromTap(double lat, double lon) {
+    setDestination(GeoLatLng(latitude: lat, longitude: lon),
+        label: 'Karten-Punkt');
+  }
+
+  Future<void> useCurrentLocationAsOrigin() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.unableToDetermine) {
+        return; // stay silent — map still works without origin
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.medium),
+      ).timeout(const Duration(seconds: 8));
+      state = state.copyWith(
+        origin: GeoLatLng(latitude: pos.latitude, longitude: pos.longitude),
+        originLabel: 'Mein Standort',
+      );
+    } catch (_) {
+      // GPS unavailable — ignore.
+    }
+  }
+
+  void setAlternatives(List<RouteAlternative> alts) {
+    state = state.copyWith(alternatives: alts);
+  }
+
+  void selectAlternative(RouteAlternative a) {
+    state = state.copyWith(selected: a);
+  }
+
+  void clearRoute() {
+    state = MapState(origin: state.origin, originLabel: state.originLabel);
+  }
+}
+
+final mapControllerProvider =
+    StateNotifierProvider<MapController, MapState>((ref) => MapController());

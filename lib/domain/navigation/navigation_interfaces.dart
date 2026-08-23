@@ -48,15 +48,65 @@ enum RoutingPreference {
   trailPreferred,
 }
 
+/// Concrete routing backends mapped from [RoutingPreference] by
+/// RoutingProviderFactory. Each maps to a free, key-less community service
+/// (see plan/16-map-navigation.md).
+enum RoutingProfile {
+  /// OSRM routed-car — fastest road route.
+  fastestCar,
+
+  /// BRouter mtb — prefers forest tracks / unpaved paths.
+  trailForest,
+
+  /// BRouter trekking — scenic, balanced surface mix.
+  scenicTrekking,
+
+  /// Valhalla bicycle+Mountain — elevation-aware costing.
+  ebikeOptimized,
+}
+
+extension RoutingProfileX on RoutingProfile {
+  String get label => switch (this) {
+        RoutingProfile.fastestCar => 'Schnellste',
+        RoutingProfile.trailForest => 'Wald & Trail',
+        RoutingProfile.scenicTrekking => 'Scenic',
+        RoutingProfile.ebikeOptimized => 'E-Bike optimiert',
+      };
+
+  String get providerName => switch (this) {
+        RoutingProfile.fastestCar => 'OSRM',
+        RoutingProfile.trailForest ||
+        RoutingProfile.scenicTrekking =>
+          'BRouter',
+        RoutingProfile.ebikeOptimized => 'Valhalla',
+      };
+}
+
 class NavigationRoute {
   final List<RouteSegment> segments;
   final double totalDistanceMeters;
   final RoutingPreference preference;
 
+  /// Full polyline geometry (route shape) for map rendering.
+  final List<GeoLatLng> geometry;
+
+  /// Total estimated travel time in seconds.
+  final double durationSeconds;
+
+  /// Cumulative ascent in meters (when provider reports it).
+  final double elevationGainMetersTotal;
+
+  /// Which free service computed this route ('OSRM' | 'BRouter' | 'Valhalla').
+  final String providerName;
+
   const NavigationRoute({
     required this.segments,
     required this.totalDistanceMeters,
     required this.preference,
+    this.geometry = const [],
+    this.durationSeconds = 0,
+    this.elevationGainMetersTotal = 0,
+    this.providerName = '',
   });
 }
 
