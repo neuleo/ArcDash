@@ -10,6 +10,8 @@ import 'package:arcdash/models/telemetry_quality.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/ant_bms_provider.dart';
+import 'package:arcdash/providers/demo_mode_provider.dart';
+import 'package:arcdash/providers/demo_controller_provider.dart';
 import 'package:arcdash/providers/temp_warning_provider.dart';
 import 'package:arcdash/widgets/bms_cell_monitor.dart';
 import 'package:arcdash/widgets/temp_warning_overlay.dart';
@@ -281,13 +283,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    final state = ref.watch(controllerProvider);
-    final connected = ref.watch(isConnectedProvider);
-    final bmsConnected = ref.watch(isBmsConnectedProvider);
-    final bmsState = ref.watch(antBmsStateProvider);
+    final demoActive = ref.watch(demoModeProvider).active;
+    final state = ref.watch(effectiveControllerProvider);
+    final connected = ref.watch(isConnectedProvider) || demoActive;
+    // In demo mode the cockpit animates fake data; connection pill shows DEMO.
+    final bmsConnected = ref.watch(isBmsConnectedProvider) || demoActive;
+    final bmsState = ref.watch(effectiveBmsProvider);
     // Battery temperature for the dedicated tile: BMS NTC average.
     final double? effectiveBatteryTempC =
-        bmsConnected ? _avgBmsTemp(bmsState) : null;
+        (bmsConnected || bmsState != null) ? _avgBmsTemp(bmsState) : null;
     final orientation = _activeOrientation;
     final layout = _dashboard.layoutFor(orientation);
 
@@ -304,6 +308,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
         actions: [
+          if (demoActive)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A1A08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFFB45C)),
+                  ),
+                  child: const Text('DEMO',
+                      style: TextStyle(
+                          color: Color(0xFFFFB45C),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5)),
+                ),
+              ),
+            ),
           _ConnectionPill(
             connected: connected,
             onTap: () => Navigator.of(context).pushNamed('/'),
