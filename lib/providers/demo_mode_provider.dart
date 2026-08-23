@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/ant_bms_state.dart';
 import 'package:arcdash/models/controller_state.dart';
+import 'package:arcdash/models/telemetry_quality.dart';
 import 'package:arcdash/providers/ant_bms_provider.dart';
 import 'package:arcdash/providers/temp_warning_provider.dart';
 import 'package:arcdash/services/demo_telemetry_engine.dart';
@@ -142,16 +143,45 @@ final effectiveTempWarningProvider = Provider<TempWarningState>((ref) {
 
 /// A synthetic ControllerState snapshot for demo rides (dashboard tiles that
 /// read ControllerState directly can consume this when demo is active).
-ControllerState demoControllerSnapshot(DemoTelemetryEngine e) =>
-    ControllerState(
-      speedKph: e.speedKph(),
-      powerKw: e.powerKw().abs(),
-      voltageV: e.voltageV(),
-      currentA: e.currentA().abs(),
-      motorTempC: e.motorTempC(),
-      controllerTempC: e.controllerTempC(),
-      battCapPercent: e.socPercent(),
-      isForward: e.powerKw() >= -1,
-      isBraking: e.powerKw() < -2,
-      lastUpdate: DateTime.now(),
-    );
+///
+/// Populates [ControllerState.telemetrySamples] as well — the dashboard
+/// renderer validates freshness through those samples and would otherwise
+/// show "Fehlt" despite valid values.
+ControllerState demoControllerSnapshot(DemoTelemetryEngine e) {
+  final now = DateTime.now();
+  final speed = e.speedKph();
+  final power = e.powerKw().abs();
+  final voltage = e.voltageV();
+  final current = e.currentA().abs();
+  final motorTemp = e.motorTempC();
+  final controllerTemp = e.controllerTempC();
+  final soc = e.socPercent();
+
+  TelemetrySample sample(double value) => TelemetrySample(
+        value: value,
+        source: TelemetrySource.controller,
+        capturedAt: now,
+      );
+
+  return ControllerState(
+    speedKph: speed,
+    powerKw: power,
+    voltageV: voltage,
+    currentA: current,
+    motorTempC: motorTemp,
+    controllerTempC: controllerTemp,
+    battCapPercent: soc,
+    isForward: e.powerKw() >= -1,
+    isBraking: e.powerKw() < -2,
+    lastUpdate: now,
+    telemetrySamples: {
+      ControllerTelemetry.speed: sample(speed),
+      ControllerTelemetry.power: sample(power),
+      ControllerTelemetry.voltage: sample(voltage),
+      ControllerTelemetry.current: sample(current),
+      ControllerTelemetry.motorTemperature: sample(motorTemp),
+      ControllerTelemetry.controllerTemperature: sample(controllerTemp),
+      ControllerTelemetry.soc: sample(soc.toDouble()),
+    },
+  );
+}
