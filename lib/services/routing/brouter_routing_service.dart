@@ -66,11 +66,11 @@ class BRouterRoutingService implements RoutingService {
 
     final trackLengthM =
         double.tryParse('${props['track-length'] ?? 0}') ?? 0.0;
-    // total-time is in minutes per BRouter docs; fall back to length-based est.
-    final totalTimeMin = double.tryParse('${props['total-time'] ?? 0}') ?? 0.0;
-    final durationS = totalTimeMin > 0
-        ? totalTimeMin * 60
-        : trackLengthM / 4.5; // ~16 km/h average offroad
+    // BRouter 'total-time' is SECONDS despite sounding like minutes.
+    final totalTimeSec = double.tryParse('${props['total-time'] ?? 0}') ?? 0.0;
+    final durationS = totalTimeSec > 0
+        ? totalTimeSec
+        : trackLengthM / 4.5; // ~16 km/h average offroad fallback
 
     return NavigationRoute(
       segments: [

@@ -61,6 +61,9 @@ void main() {
       expect(route.totalDistanceMeters, greaterThan(500));
       expect(route.geometry.length, greaterThan(10));
       expect(route.segments.first.surfaceType, 'unpaved');
+      // Fixture: total-time 210 s for 1274 m → ~3.5 min, plausible.
+      expect(route.durationSeconds, closeTo(210, 1));
+      expect(route.durationSeconds, lessThan(3600)); // never hours for 1 km
     });
 
     test('trekking profile maps to mixed surface', () async {
