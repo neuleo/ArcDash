@@ -5,6 +5,10 @@ services:
       dockerfile: Dockerfile
     image: arcdash-flutter:latest
     working_dir: /app
+    # LXC host cannot expose apparmor profiles to the daemon; unconfined is
+    # required since the Proxmox container rework.
+    security_opt:
+      - apparmor=unconfined
     environment:
       # Non-interactive / CI-style execution for watch-mode tools.
       CI: "true"

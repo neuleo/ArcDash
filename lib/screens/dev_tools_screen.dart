@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/range_prediction_state.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/demo_mode_provider.dart';
 import 'package:arcdash/providers/stats_provider.dart';
+import 'package:arcdash/services/demo_telemetry_engine.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/services/range_prediction_repository.dart';
 import 'package:arcdash/services/diagnostic_log_exporter.dart';
@@ -84,6 +86,10 @@ class DevToolsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // ---- Demo Mode Section ----
+              _DemoModeSection(),
               const SizedBox(height: 20),
 
               // Action Buttons
@@ -306,6 +312,90 @@ class _DevStatusCard extends StatelessWidget {
                   fontWeight: FontWeight.w600),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Demo mode control: scenario picker + on/off. Fake telemetry feeds the
+/// whole UI without BLE — used for emulator testing and feature demos.
+class _DemoModeSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(demoModeProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: demo.active ? const Color(0xFF2A1A08) : const Color(0xFF111518),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              demo.active ? const Color(0xFFFFB45C) : const Color(0xFF1A2030),
+          width: demo.active ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.science_outlined,
+                  color: demo.active
+                      ? const Color(0xFFFFB45C)
+                      : const Color(0xFF00E5FF),
+                  size: 22),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Demo-Modus (Fake-Telemetrie)',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14),
+                ),
+              ),
+              Switch(
+                value: demo.active,
+                activeColor: const Color(0xFFFFB45C),
+                onChanged: (on) => ref
+                    .read(demoModeProvider.notifier)
+                    .enable(on ? DemoScenario.city : DemoScenario.none),
+              ),
+            ],
+          ),
+          if (demo.active) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final s in DemoScenario.values)
+                  if (s != DemoScenario.none)
+                    ChoiceChip(
+                      label:
+                          Text(s.label, style: const TextStyle(fontSize: 11)),
+                      selected: demo.scenario == s,
+                      onSelected: (_) =>
+                          ref.read(demoModeProvider.notifier).setScenario(s),
+                      selectedColor: const Color(0xFFFFB45C),
+                      backgroundColor: const Color(0xFF1A2030),
+                      labelStyle: TextStyle(
+                        color:
+                            demo.scenario == s ? Colors.black : Colors.white70,
+                      ),
+                    ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Achtung: Es werden KEINE echten Daten angezeigt. Der Modus '
+              'endet automatisch beim App-Neustart.',
+              style:
+                  TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+            ),
+          ],
         ],
       ),
     );
