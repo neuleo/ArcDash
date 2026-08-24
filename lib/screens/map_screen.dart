@@ -552,35 +552,38 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 maxNativeZoom: 19,
               ),
 
-              // 3-Zone Dynamic Range Heatmap Circles
+              // 3-Zone Dynamic Range Heatmap Circles (High contrast on both light vector and dark satellite maps)
               if (mapState.origin != null && normalRangeKm > 1.0)
                 CircleLayer(circles: [
+                  // Eco Zone (Max Reach) - Green
                   CircleMarker(
                     point: ll.LatLng(
                         mapState.origin!.latitude, mapState.origin!.longitude),
                     radius: ecoRangeKm * 1000,
                     useRadiusInMeter: true,
-                    color: const Color(0xFF54E39E).withOpacity(0.04),
-                    borderColor: const Color(0xFF54E39E).withOpacity(0.35),
-                    borderStrokeWidth: 1.2,
+                    color: const Color(0xFF00C853).withOpacity(0.12),
+                    borderColor: const Color(0xFF00C853),
+                    borderStrokeWidth: 2.5,
                   ),
+                  // Normal Zone - Vibrant Cyan/Blue
                   CircleMarker(
                     point: ll.LatLng(
                         mapState.origin!.latitude, mapState.origin!.longitude),
                     radius: normalRangeKm * 1000,
                     useRadiusInMeter: true,
-                    color: const Color(0xFF00E5FF).withOpacity(0.06),
-                    borderColor: const Color(0xFF00E5FF).withOpacity(0.5),
-                    borderStrokeWidth: 1.5,
+                    color: const Color(0xFF0091EA).withOpacity(0.15),
+                    borderColor: const Color(0xFF0091EA),
+                    borderStrokeWidth: 3.0,
                   ),
+                  // Sport / Heavy Terrain Zone - Orange/Red
                   CircleMarker(
                     point: ll.LatLng(
                         mapState.origin!.latitude, mapState.origin!.longitude),
                     radius: sportRangeKm * 1000,
                     useRadiusInMeter: true,
-                    color: Colors.orangeAccent.withOpacity(0.06),
-                    borderColor: Colors.orangeAccent.withOpacity(0.4),
-                    borderStrokeWidth: 1.2,
+                    color: const Color(0xFFFF6D00).withOpacity(0.15),
+                    borderColor: const Color(0xFFFF6D00),
+                    borderStrokeWidth: 2.5,
                   ),
                 ]),
 
@@ -1035,68 +1038,105 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
 
                 // Favorites Quick Filter Chips (Home, Work, Recents)
-                if (_results.isEmpty &&
-                    (mapState.favorites.isNotEmpty ||
-                        mapState.recents.isNotEmpty))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (final fav in mapState.favorites)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ActionChip(
-                                backgroundColor: const Color(0xE6111518),
-                                avatar: Icon(
-                                  fav.type == FavoriteType.home
-                                      ? Icons.home
-                                      : (fav.type == FavoriteType.work
-                                          ? Icons.work
-                                          : Icons.star),
-                                  color: const Color(0xFF00E5FF),
-                                  size: 16,
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        // Quick Action Buttons
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ActionChip(
+                            backgroundColor: const Color(0xF00D1117),
+                            avatar: const Icon(Icons.add_location_alt_outlined,
+                                color: Color(0xFF00E5FF), size: 16),
+                            label: const Text('+ Wegpunkt',
+                                style: TextStyle(
+                                    color: Color(0xFF00E5FF),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold)),
+                            onPressed: () => setState(() =>
+                                _showWaypointsPanel = !_showWaypointsPanel),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ActionChip(
+                            backgroundColor: const Color(0xF00D1117),
+                            avatar: const Icon(Icons.star_border,
+                                color: Color(0xFFFFB300), size: 16),
+                            label: const Text('+ Favorit',
+                                style: TextStyle(
+                                    color: Color(0xFFFFB300),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold)),
+                            onPressed: () {
+                              final currentCenter =
+                                  _mapController.camera.center;
+                              _showAddFavoriteDialog(
+                                GeoLatLng(
+                                  latitude: currentCenter.latitude,
+                                  longitude: currentCenter.longitude,
                                 ),
-                                label: Text(fav.title,
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 12)),
-                                onPressed: () {
-                                  ref
-                                      .read(mapControllerProvider.notifier)
-                                      .setDestination(
-                                        fav.location,
-                                        label: fav.title,
-                                      );
-                                  _route();
-                                },
+                                'Mein Ort',
+                              );
+                            },
+                          ),
+                        ),
+                        for (final fav in mapState.favorites)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              backgroundColor: const Color(0xE6111518),
+                              avatar: Icon(
+                                fav.type == FavoriteType.home
+                                    ? Icons.home
+                                    : (fav.type == FavoriteType.work
+                                        ? Icons.work
+                                        : Icons.star),
+                                color: const Color(0xFF00E5FF),
+                                size: 16,
                               ),
+                              label: Text(fav.title,
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 12)),
+                              onPressed: () {
+                                ref
+                                    .read(mapControllerProvider.notifier)
+                                    .setDestination(
+                                      fav.location,
+                                      label: fav.title,
+                                    );
+                                _route();
+                              },
                             ),
-                          for (final rec in mapState.recents.take(3))
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ActionChip(
-                                backgroundColor: const Color(0xCC111518),
-                                avatar: const Icon(Icons.history,
-                                    color: Colors.white38, size: 16),
-                                label: Text(rec.title,
-                                    style: const TextStyle(
-                                        color: Colors.white70, fontSize: 12)),
-                                onPressed: () {
-                                  ref
-                                      .read(mapControllerProvider.notifier)
-                                      .setDestination(
-                                        rec.location,
-                                        label: rec.title,
-                                      );
-                                  _route();
-                                },
-                              ),
+                          ),
+                        for (final rec in mapState.recents.take(3))
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              backgroundColor: const Color(0xCC111518),
+                              avatar: const Icon(Icons.history,
+                                  color: Colors.white38, size: 16),
+                              label: Text(rec.title,
+                                  style: const TextStyle(
+                                      color: Colors.white70, fontSize: 12)),
+                              onPressed: () {
+                                ref
+                                    .read(mapControllerProvider.notifier)
+                                    .setDestination(
+                                      rec.location,
+                                      label: rec.title,
+                                    );
+                                _route();
+                              },
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
+                ),
 
                 if (_results.isNotEmpty) ...[
                   const SizedBox(height: 6),

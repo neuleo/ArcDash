@@ -71,7 +71,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.byIcon(Icons.add_location_alt_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.add_location_alt_outlined), findsWidgets);
     });
   });
 }

@@ -28,23 +28,26 @@ class ChargingStationService {
 
   final http.Client _client;
   static const _overpassUrl = 'https://overpass-api.de/api/interpreter';
+  static const _kDefaultUserAgent = 'ArcDash/3.4 (E-Moto Companion App)';
 
   Future<List<ChargingStationPoi>> findNearbyCharging({
     required GeoLatLng center,
-    double radiusMeters = 8000,
+    double radiusMeters = 25000,
   }) async {
     final query = '''
 [out:json][timeout:15];
 (
   node["amenity"="charging_station"](around:$radiusMeters,${center.latitude},${center.longitude});
+  way["amenity"="charging_station"](around:$radiusMeters,${center.latitude},${center.longitude});
   node["socket:schuko"="yes"](around:$radiusMeters,${center.latitude},${center.longitude});
 );
-out body 15;
+out center 40;
 ''';
 
     try {
       final response = await _client.post(
         Uri.parse(_overpassUrl),
+        headers: {'User-Agent': _kDefaultUserAgent},
         body: {'data': query},
       ).timeout(const Duration(seconds: 15));
 
@@ -53,30 +56,38 @@ out body 15;
       final elements =
           (data['elements'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
-      return elements.map((e) {
-        final tags = (e['tags'] ?? {}) as Map<String, dynamic>;
-        final lat = (e['lat'] as num).toDouble();
-        final lon = (e['lon'] as num).toDouble();
-        final name = (tags['name'] as String?) ??
-            (tags['operator'] as String?) ??
-            'Ladesäule / Steckdose';
-        final hasSchuko = tags['socket:schuko'] == 'yes' ||
-            tags['socket:type2_combo'] != null;
+      return elements
+          .map((e) {
+            final tags = (e['tags'] ?? {}) as Map<String, dynamic>;
+            final lat = (e['lat'] as num?)?.toDouble() ??
+                (e['center']?['lat'] as num?)?.toDouble() ??
+                0.0;
+            final lon = (e['lon'] as num?)?.toDouble() ??
+                (e['center']?['lon'] as num?)?.toDouble() ??
+                0.0;
+            if (lat == 0.0 && lon == 0.0) return null;
+            final name = (tags['name'] as String?) ??
+                (tags['operator'] as String?) ??
+                'Ladesäule / Steckdose';
+            final hasSchuko = tags['socket:schuko'] == 'yes' ||
+                tags['socket:type2_combo'] != null;
 
-        final sockets = <String>[];
-        if (tags['socket:schuko'] == 'yes') sockets.add('Schuko (230V)');
-        if (tags['socket:type2'] == 'yes') sockets.add('Typ 2');
-        if (tags['socket:type2_combo'] == 'yes') sockets.add('CCS');
+            final sockets = <String>[];
+            if (tags['socket:schuko'] == 'yes') sockets.add('Schuko (230V)');
+            if (tags['socket:type2'] == 'yes') sockets.add('Typ 2');
+            if (tags['socket:type2_combo'] == 'yes') sockets.add('CCS');
 
-        return ChargingStationPoi(
-          id: '${e['id']}',
-          name: name,
-          operatorName: (tags['operator'] as String?) ?? '',
-          location: GeoLatLng(latitude: lat, longitude: lon),
-          hasSchuko: hasSchuko,
-          socketInfo: sockets.isNotEmpty ? sockets.join(', ') : 'Ladesäule',
-        );
-      }).toList(growable: false);
+            return ChargingStationPoi(
+              id: '${e['id']}',
+              name: name,
+              operatorName: (tags['operator'] as String?) ?? '',
+              location: GeoLatLng(latitude: lat, longitude: lon),
+              hasSchuko: hasSchuko,
+              socketInfo: sockets.isNotEmpty ? sockets.join(', ') : 'Ladesäule',
+            );
+          })
+          .whereType<ChargingStationPoi>()
+          .toList(growable: false);
     } catch (_) {
       return [];
     }
