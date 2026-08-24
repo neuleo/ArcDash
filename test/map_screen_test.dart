@@ -14,9 +14,9 @@ Widget _wrap(Widget child) => UncontrolledProviderScope(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('MapController', () {
+  group('MapStateNotifier', () {
     test('setDestination stores point and clears previous selection', () {
-      final c = MapController();
+      final c = MapStateNotifier();
       c.selectAlternative(RouteAlternative(
         profile: RoutingProfile.fastestCar,
         route: const NavigationRoute(
@@ -36,7 +36,7 @@ void main() {
     });
 
     test('selectAlternative keeps destination', () {
-      final c = MapController();
+      final c = MapStateNotifier();
       c.setDestination(const GeoLatLng(latitude: 52.9, longitude: 13.87));
       final alt = RouteAlternative(
         profile: RoutingProfile.trailForest,
@@ -53,7 +53,7 @@ void main() {
     });
 
     test('clearRoute keeps origin only', () {
-      final c = MapController();
+      final c = MapStateNotifier();
       c.setDestination(const GeoLatLng(latitude: 1, longitude: 2));
       c.clearRoute();
       expect(c.state.destination, isNull);
@@ -85,7 +85,9 @@ void main() {
       expect(find.text('Ziel suchen…'), findsOneWidget);
     });
 
-    testWidgets('tap on map sets a destination marker', (tester) async {
+    testWidgets(
+        'tap on map does not set destination, long press sets a destination marker',
+        (tester) async {
       await tester.pumpWidget(_wrap(const MapScreen()));
       await tester.pump(const Duration(seconds: 1));
 

@@ -41,8 +41,8 @@ class MapState {
       );
 }
 
-class MapController extends StateNotifier<MapState> {
-  MapController() : super(const MapState());
+class MapStateNotifier extends StateNotifier<MapState> {
+  MapStateNotifier() : super(const MapState());
 
   void setDestination(GeoLatLng point, {String? label}) {
     state = state.copyWith(
@@ -60,10 +60,13 @@ class MapController extends StateNotifier<MapState> {
 
   Future<void> useCurrentLocationAsOrigin() async {
     try {
-      final permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
       if (permission == LocationPermission.denied ||
-          permission == LocationPermission.unableToDetermine) {
-        return; // stay silent — map still works without origin
+          permission == LocationPermission.deniedForever) {
+        return;
       }
       final pos = await Geolocator.getCurrentPosition(
         locationSettings:
@@ -91,5 +94,5 @@ class MapController extends StateNotifier<MapState> {
   }
 }
 
-final mapControllerProvider =
-    StateNotifierProvider<MapController, MapState>((ref) => MapController());
+final mapControllerProvider = StateNotifierProvider<MapStateNotifier, MapState>(
+    (ref) => MapStateNotifier());

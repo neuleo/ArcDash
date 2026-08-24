@@ -135,7 +135,7 @@ void main() {
   });
 
   group('MultiRoutingService', () {
-    test('returns only successful providers (degradation)', () async {
+    test('valhalla failure falls back to OSRM for ebike profile', () async {
       final svc = MultiRoutingService(
         osrm: OsrmRoutingService(
             client: MockClient((_) async => _ok(fixture('osrm_route.json')))),
@@ -149,10 +149,30 @@ void main() {
       final alts =
           await svc.fetchAlternatives(origin: origin, destination: dest);
 
-      // Valhalla failed → only OSRM + 2×BRouter survive
-      expect(alts.length, 3);
+      // Valhalla fails → OSRM fallback keeps the ebike option alive: 4 total.
+      expect(alts.length, 4);
       expect(alts.map((a) => a.provider), containsAll(['OSRM', 'BRouter']));
-      expect(alts.map((a) => a.provider), isNot(contains('Valhalla')));
+      expect(
+          alts.map((a) => a.profile), contains(RoutingProfile.ebikeOptimized));
+    });
+
+    test('total outage of valhalla+brouter still yields OSRM options',
+        () async {
+      final svc = MultiRoutingService(
+        osrm: OsrmRoutingService(
+            client: MockClient((_) async => _ok(fixture('osrm_route.json')))),
+        brouter: BRouterRoutingService(
+            client: MockClient((_) async => http.Response('err', 500))),
+        valhalla: ValhallaRoutingService(
+            client: MockClient((_) async => http.Response('err', 500))),
+      );
+
+      final alts =
+          await svc.fetchAlternatives(origin: origin, destination: dest);
+
+      // OSRM survives for fastestCar AND as ebike fallback.
+      expect(alts.length, 2);
+      expect(alts.every((a) => a.provider == 'OSRM'), isTrue);
     });
 
     test('RouteAlternative formatting', () {

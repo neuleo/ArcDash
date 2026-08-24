@@ -47,6 +47,10 @@ class MultiRoutingService {
   final ValhallaRoutingService _valhalla;
 
   /// All four profiles in parallel; returns whatever succeeded (≥1).
+  ///
+  /// Valhalla is the slowest/flakiest community endpoint — we give it a head
+  /// start via its own shorter window and fall back to an OSRM-based
+  /// "ebike" alternative so the sheet still shows 4 options.
   Future<List<RouteAlternative>> fetchAlternatives({
     required GeoLatLng origin,
     required GeoLatLng destination,
@@ -72,23 +76,35 @@ class MultiRoutingService {
         return RouteAlternative(
             profile: RoutingProfile.scenicTrekking, route: r);
       }),
-      _safe(() async {
-        final r = await _valhalla.calculateRoute(
-            origin: origin,
-            destination: destination,
-            preference: RoutingPreference.avoidHighways);
-        return RouteAlternative(
-            profile: RoutingProfile.ebikeOptimized, route: r);
-      }),
+      _safe(() => _ebikeRoute(origin, destination),
+          timeout: const Duration(seconds: 12)),
     ]);
 
     return results.whereType<RouteAlternative>().toList(growable: false);
   }
 
-  Future<RouteAlternative?> _safe(
-      Future<RouteAlternative> Function() fn) async {
+  /// E-bike profile: Valhalla first (elevation-aware), OSRM fallback.
+  Future<RouteAlternative> _ebikeRoute(
+      GeoLatLng origin, GeoLatLng destination) async {
     try {
-      return await fn.call();
+      final r = await _valhalla.calculateRoute(
+          origin: origin,
+          destination: destination,
+          preference: RoutingPreference.avoidHighways);
+      return RouteAlternative(profile: RoutingProfile.ebikeOptimized, route: r);
+    } catch (_) {
+      final r =
+          await _osrm.calculateRoute(origin: origin, destination: destination);
+      return RouteAlternative(profile: RoutingProfile.ebikeOptimized, route: r);
+    }
+  }
+
+  Future<RouteAlternative?> _safe(
+    Future<RouteAlternative> Function() fn, {
+    Duration timeout = const Duration(seconds: 25),
+  }) async {
+    try {
+      return await fn().timeout(timeout);
     } catch (_) {
       return null; // provider down / no coverage — skip silently
     }

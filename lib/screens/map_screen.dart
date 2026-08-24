@@ -20,11 +20,13 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
+  final MapController _mapController = MapController();
   final TextEditingController _searchCtrl = TextEditingController();
   Timer? _debounce;
   List<GeoSearchResult> _results = [];
   bool _searching = false;
   bool _routing = false;
+  bool _isSatellite = false;
 
   @override
   void dispose() {
@@ -170,21 +172,37 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         backgroundColor: const Color(0xFF0D1117),
         foregroundColor: Colors.white,
         title: const Text('Navigation',
-            style: const TextStyle(fontSize: 16, letterSpacing: 1)),
+            style: TextStyle(fontSize: 16, letterSpacing: 1)),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _isSatellite ? Icons.map_outlined : Icons.satellite_alt_outlined,
+              color: Colors.white70,
+            ),
+            tooltip: _isSatellite ? 'Standardkarte' : 'Satellitenansicht',
+            onPressed: () => setState(() => _isSatellite = !_isSatellite),
+          ),
+        ],
       ),
       body: Stack(children: [
         FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
             initialCenter: center,
             initialZoom:
                 selected != null || mapState.destination != null ? 13.5 : 11,
-            onTap: (_, pos) => ref
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            ),
+            onLongPress: (_, pos) => ref
                 .read(mapControllerProvider.notifier)
                 .setDestinationFromTap(pos.latitude, pos.longitude),
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate: _isSatellite
+                  ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'de.neuleo.arcdash',
               maxNativeZoom: 19,
             ),
@@ -294,6 +312,31 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ],
           ]),
+        ),
+
+        // My Location Button (Bottom-Left above possible route card)
+        Positioned(
+          left: 16,
+          bottom: selected != null ? 90 : 20,
+          child: FloatingActionButton.small(
+            heroTag: 'my_location_btn',
+            backgroundColor: const Color(0xF2111518),
+            foregroundColor: const Color(0xFF54E39E),
+            tooltip: 'Zu meinem Standort',
+            onPressed: () async {
+              await ref
+                  .read(mapControllerProvider.notifier)
+                  .useCurrentLocationAsOrigin();
+              final pos = ref.read(mapControllerProvider).origin;
+              if (pos != null) {
+                _mapController.move(
+                  ll.LatLng(pos.latitude, pos.longitude),
+                  15.0,
+                );
+              }
+            },
+            child: const Icon(Icons.my_location),
+          ),
         ),
 
         // Route summary card when a route is selected
