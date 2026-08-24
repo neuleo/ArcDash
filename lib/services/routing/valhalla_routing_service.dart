@@ -17,17 +17,22 @@ class ValhallaRoutingService implements RoutingService {
   Future<NavigationRoute> calculateRoute({
     required GeoLatLng origin,
     required GeoLatLng destination,
+    List<GeoLatLng> waypoints = const [],
     RoutingPreference preference = RoutingPreference.avoidHighways,
   }) async {
+    final allLocations = [
+      {'lat': origin.latitude, 'lon': origin.longitude, 'type': 'break'},
+      for (final wp in waypoints)
+        {'lat': wp.latitude, 'lon': wp.longitude, 'type': 'break'},
+      {
+        'lat': destination.latitude,
+        'lon': destination.longitude,
+        'type': 'break'
+      },
+    ];
+
     final body = jsonEncode({
-      'locations': [
-        {'lat': origin.latitude, 'lon': origin.longitude, 'type': 'break'},
-        {
-          'lat': destination.latitude,
-          'lon': destination.longitude,
-          'type': 'break'
-        },
-      ],
+      'locations': allLocations,
       'costing': 'bicycle',
       'costing_options': {
         'bicycle': {'bicycle_type': 'Mountain', 'use_roads': 0.33},

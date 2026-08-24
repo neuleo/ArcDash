@@ -92,6 +92,11 @@ void main() {
 
   group('MapScreen widget', () {
     testWidgets('renders map scaffold with search field', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(_wrap(const MapScreen()));
       await tester.pump(const Duration(seconds: 1));
 

@@ -20,6 +20,7 @@ class MapState {
   final String? originLabel;
   final GeoLatLng? destination;
   final String? destinationLabel;
+  final List<GeoLatLng> waypoints;
   final List<RouteAlternative> alternatives;
   final RouteAlternative? selected;
   final bool isNavigating;
@@ -32,12 +33,14 @@ class MapState {
   final List<MapFavorite> favorites;
   final List<MapFavorite> recents;
   final double currentHeadingDeg;
+  final bool isRoundTrip;
 
   const MapState({
     this.origin,
     this.originLabel,
     this.destination,
     this.destinationLabel,
+    this.waypoints = const [],
     this.alternatives = const [],
     this.selected,
     this.isNavigating = false,
@@ -50,6 +53,7 @@ class MapState {
     this.favorites = const [],
     this.recents = const [],
     this.currentHeadingDeg = 0.0,
+    this.isRoundTrip = false,
   });
 
   MapState copyWith({
@@ -58,6 +62,7 @@ class MapState {
     bool clearOrigin = false,
     GeoLatLng? destination,
     String? destinationLabel,
+    List<GeoLatLng>? waypoints,
     List<RouteAlternative>? alternatives,
     RouteAlternative? selected,
     bool clearSelected = false,
@@ -72,12 +77,14 @@ class MapState {
     List<MapFavorite>? favorites,
     List<MapFavorite>? recents,
     double? currentHeadingDeg,
+    bool? isRoundTrip,
   }) =>
       MapState(
         origin: clearOrigin ? null : (origin ?? this.origin),
         originLabel: clearOrigin ? null : (originLabel ?? this.originLabel),
         destination: destination ?? this.destination,
         destinationLabel: destinationLabel ?? this.destinationLabel,
+        waypoints: waypoints ?? this.waypoints,
         alternatives: alternatives ?? this.alternatives,
         selected: clearSelected ? null : (selected ?? this.selected),
         isNavigating: isNavigating ?? this.isNavigating,
@@ -92,6 +99,7 @@ class MapState {
         favorites: favorites ?? this.favorites,
         recents: recents ?? this.recents,
         currentHeadingDeg: currentHeadingDeg ?? this.currentHeadingDeg,
+        isRoundTrip: isRoundTrip ?? this.isRoundTrip,
       );
 }
 
@@ -327,6 +335,35 @@ class MapStateNotifier extends StateNotifier<MapState> {
     }
   }
 
+  void addWaypoint(GeoLatLng point) {
+    final wps = List<GeoLatLng>.from(state.waypoints)..add(point);
+    state = state.copyWith(
+      waypoints: wps,
+      clearSelected: true,
+      alternatives: const [],
+    );
+  }
+
+  void removeWaypoint(int index) {
+    if (index >= 0 && index < state.waypoints.length) {
+      final wps = List<GeoLatLng>.from(state.waypoints)..removeAt(index);
+      state = state.copyWith(
+        waypoints: wps,
+        clearSelected: true,
+        alternatives: const [],
+      );
+    }
+  }
+
+  void toggleRoundTrip() {
+    final next = !state.isRoundTrip;
+    state = state.copyWith(
+      isRoundTrip: next,
+      clearSelected: true,
+      alternatives: const [],
+    );
+  }
+
   void clearRoute() {
     state = MapState(
       origin: state.origin,
@@ -334,6 +371,8 @@ class MapStateNotifier extends StateNotifier<MapState> {
       estimatedRangeKm: state.estimatedRangeKm,
       favorites: state.favorites,
       recents: state.recents,
+      waypoints: const [],
+      isRoundTrip: false,
     );
   }
 }

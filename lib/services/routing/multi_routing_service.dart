@@ -62,6 +62,7 @@ class MultiRoutingService {
   Future<List<RouteAlternative>> fetchAlternatives({
     required GeoLatLng origin,
     required GeoLatLng destination,
+    List<GeoLatLng> waypoints = const [],
     double? batteryCapacityWh,
     double? socPercent,
     double? avgWhPerKm,
@@ -101,24 +102,31 @@ class MultiRoutingService {
     final results = await Future.wait([
       _safe(() async {
         final r = await _osrm.calculateRoute(
-            origin: origin, destination: destination);
+          origin: origin,
+          destination: destination,
+          waypoints: waypoints,
+        );
         return wrap(RoutingProfile.fastestCar, r);
       }),
       _safe(() async {
         final r = await _brouter.calculateRoute(
-            origin: origin,
-            destination: destination,
-            preference: RoutingPreference.trailPreferred);
+          origin: origin,
+          destination: destination,
+          waypoints: waypoints,
+          preference: RoutingPreference.trailPreferred,
+        );
         return wrap(RoutingProfile.trailForest, r);
       }),
       _safe(() async {
         final r = await _brouter.calculateRoute(
-            origin: origin,
-            destination: destination,
-            preference: RoutingPreference.avoidHighways);
+          origin: origin,
+          destination: destination,
+          waypoints: waypoints,
+          preference: RoutingPreference.avoidHighways,
+        );
         return wrap(RoutingProfile.scenicTrekking, r);
       }),
-      _safe(() => _ebikeRoute(origin, destination, wrap),
+      _safe(() => _ebikeRoute(origin, destination, waypoints, wrap),
           timeout: const Duration(seconds: 12)),
     ]);
 
@@ -129,17 +137,23 @@ class MultiRoutingService {
   Future<RouteAlternative> _ebikeRoute(
     GeoLatLng origin,
     GeoLatLng destination,
+    List<GeoLatLng> waypoints,
     RouteAlternative Function(RoutingProfile, NavigationRoute) wrap,
   ) async {
     try {
       final r = await _valhalla.calculateRoute(
-          origin: origin,
-          destination: destination,
-          preference: RoutingPreference.avoidHighways);
+        origin: origin,
+        destination: destination,
+        waypoints: waypoints,
+        preference: RoutingPreference.avoidHighways,
+      );
       return wrap(RoutingProfile.ebikeOptimized, r);
     } catch (_) {
-      final r =
-          await _osrm.calculateRoute(origin: origin, destination: destination);
+      final r = await _osrm.calculateRoute(
+        origin: origin,
+        destination: destination,
+        waypoints: waypoints,
+      );
       return wrap(RoutingProfile.ebikeOptimized, r);
     }
   }

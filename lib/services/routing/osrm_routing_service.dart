@@ -19,11 +19,15 @@ class OsrmRoutingService implements RoutingService {
   Future<NavigationRoute> calculateRoute({
     required GeoLatLng origin,
     required GeoLatLng destination,
+    List<GeoLatLng> waypoints = const [],
     RoutingPreference preference = RoutingPreference.fastest,
   }) async {
+    final allPoints = [origin, ...waypoints, destination];
+    final coordsString =
+        allPoints.map((p) => '${p.longitude},${p.latitude}').join(';');
+
     final url = '$_baseUrl/'
-        '${origin.longitude},${origin.latitude};'
-        '${destination.longitude},${destination.latitude}'
+        '$coordsString'
         '?overview=full&geometries=geojson&alternatives=false&steps=true';
 
     final response = await _client.get(Uri.parse(url)).timeout(

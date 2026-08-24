@@ -187,6 +187,7 @@ abstract class RoutingService {
   Future<NavigationRoute> calculateRoute({
     required GeoLatLng origin,
     required GeoLatLng destination,
+    List<GeoLatLng> waypoints = const [],
     RoutingPreference preference = RoutingPreference.fastest,
   });
 }
@@ -200,6 +201,7 @@ class FakeRoutingService implements RoutingService {
   Future<NavigationRoute> calculateRoute({
     required GeoLatLng origin,
     required GeoLatLng destination,
+    List<GeoLatLng> waypoints = const [],
     RoutingPreference preference = RoutingPreference.fastest,
   }) async {
     final segment = RouteSegment(

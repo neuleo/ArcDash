@@ -17,14 +17,18 @@ class BRouterRoutingService implements RoutingService {
   Future<NavigationRoute> calculateRoute({
     required GeoLatLng origin,
     required GeoLatLng destination,
+    List<GeoLatLng> waypoints = const [],
     RoutingPreference preference = RoutingPreference.trailPreferred,
   }) async {
     final brouterProfile =
         preference == RoutingPreference.trailPreferred ? 'mtb' : 'trekking';
 
+    final allPoints = [origin, ...waypoints, destination];
+    final lonlatsString =
+        allPoints.map((p) => '${p.longitude},${p.latitude}').join('|');
+
     final url = '$_baseUrl'
-        '?lonlats=${origin.longitude},${origin.latitude}'
-        '|${destination.longitude},${destination.latitude}'
+        '?lonlats=$lonlatsString'
         '&profile=$brouterProfile&alternativeidx=0&format=geojson';
 
     final response = await _client.get(Uri.parse(url)).timeout(
