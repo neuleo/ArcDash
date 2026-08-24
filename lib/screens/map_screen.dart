@@ -381,21 +381,23 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final controllerState = ref.watch(effectiveControllerProvider);
     final bmsState = ref.watch(effectiveBmsProvider);
     final learnedModel = ref.watch(learnedEnergyModelProvider);
-
+    // Live Telemetry for HUD & Range
     final double currentSoc = mapState.planningStartSocOverride ??
         (bmsState?.socPercent?.toDouble() ??
             (controllerState.battCapPercent > 0
                 ? controllerState.battCapPercent.toDouble()
                 : _customStartSoc));
 
+    final double effectiveSoc = currentSoc > 0 ? currentSoc : 85.0;
+
     final double ecoRangeKm =
-        (learnedModel.learnedCapacityWh * (currentSoc / 100.0)) /
+        (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
             (learnedModel.baseWhPerKm * 0.85);
     final double normalRangeKm =
-        (learnedModel.learnedCapacityWh * (currentSoc / 100.0)) /
+        (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
             learnedModel.baseWhPerKm;
     final double sportRangeKm =
-        (learnedModel.learnedCapacityWh * (currentSoc / 100.0)) /
+        (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
             (learnedModel.baseWhPerKm * 1.35);
 
     // Auto-center map on first GPS fix
@@ -554,7 +556,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
 
               // 3-Zone Dynamic Range Heatmap Circles (High contrast on both light vector and dark satellite maps)
-              if (effectiveOrigin != null && normalRangeKm > 1.0)
+              if (effectiveOrigin != null)
                 CircleLayer(circles: [
                   // Eco Zone (Max Reach) - Green
                   CircleMarker(
