@@ -16,7 +16,7 @@ void main() {
 
   group('MapStateNotifier', () {
     test('setDestination stores point and clears previous selection', () {
-      final c = MapStateNotifier();
+      final c = MapStateNotifier(null, autoInitGps: false);
       c.selectAlternative(RouteAlternative(
         profile: RoutingProfile.fastestCar,
         route: const NavigationRoute(
@@ -36,7 +36,7 @@ void main() {
     });
 
     test('selectAlternative keeps destination', () {
-      final c = MapStateNotifier();
+      final c = MapStateNotifier(null, autoInitGps: false);
       c.setDestination(const GeoLatLng(latitude: 52.9, longitude: 13.87));
       final alt = RouteAlternative(
         profile: RoutingProfile.trailForest,
@@ -53,7 +53,7 @@ void main() {
     });
 
     test('clearRoute keeps origin only', () {
-      final c = MapStateNotifier();
+      final c = MapStateNotifier(null, autoInitGps: false);
       c.setDestination(const GeoLatLng(latitude: 1, longitude: 2));
       c.clearRoute();
       expect(c.state.destination, isNull);

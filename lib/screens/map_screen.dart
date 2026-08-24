@@ -206,24 +206,52 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               userAgentPackageName: 'de.neuleo.arcdash',
               maxNativeZoom: 19,
             ),
-            if (mapState.destination != null)
+            if (mapState.destination != null || mapState.origin != null)
               MarkerLayer(markers: [
-                Marker(
-                  width: 44,
-                  height: 44,
-                  point: ll.LatLng(mapState.destination!.latitude,
-                      mapState.destination!.longitude),
-                  child: const Icon(Icons.location_on,
-                      color: Color(0xFFFF5252), size: 40),
-                ),
+                if (mapState.destination != null)
+                  Marker(
+                    width: 44,
+                    height: 44,
+                    point: ll.LatLng(mapState.destination!.latitude,
+                        mapState.destination!.longitude),
+                    child: const Icon(Icons.location_on,
+                        color: Color(0xFFFF5252), size: 40),
+                  ),
                 if (mapState.origin != null)
                   Marker(
-                    width: 36,
-                    height: 36,
+                    width: 28,
+                    height: 28,
                     point: ll.LatLng(
                         mapState.origin!.latitude, mapState.origin!.longitude),
-                    child: const Icon(Icons.my_location,
-                        color: Color(0xFF54E39E), size: 32),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF2979FF).withOpacity(0.3),
+                          ),
+                        ),
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF2979FF),
+                            border: Border.all(color: Colors.white, width: 2.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
               ]),
             if (selected != null && selected.route.geometry.isNotEmpty)
@@ -314,14 +342,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ]),
         ),
 
-        // My Location Button (Bottom-Left above possible route card)
+        // My Location Button (Bottom-Right above possible route card)
         Positioned(
-          left: 16,
+          right: 16,
           bottom: selected != null ? 90 : 20,
           child: FloatingActionButton.small(
             heroTag: 'my_location_btn',
             backgroundColor: const Color(0xF2111518),
-            foregroundColor: const Color(0xFF54E39E),
+            foregroundColor: const Color(0xFF2979FF),
             tooltip: 'Zu meinem Standort',
             onPressed: () async {
               await ref

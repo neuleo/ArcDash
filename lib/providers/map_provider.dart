@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
+import 'package:arcdash/services/gps_service.dart';
 import 'package:arcdash/services/routing/multi_routing_service.dart';
 
 /// State of the map screen: origin, destination, alternatives, selection.
@@ -42,7 +45,43 @@ class MapState {
 }
 
 class MapStateNotifier extends StateNotifier<MapState> {
-  MapStateNotifier() : super(const MapState());
+  MapStateNotifier(this._ref, {bool autoInitGps = true})
+      : super(const MapState()) {
+    if (autoInitGps) {
+      _initGps();
+    }
+  }
+
+  final Ref? _ref;
+  StreamSubscription<GpsFix>? _gpsSub;
+
+  void _initGps() {
+    if (_ref == null) return;
+    try {
+      final gpsService = _ref.read(gpsServiceProvider);
+      gpsService.start().then((started) {
+        if (started) {
+          _gpsSub = gpsService.stream.listen((fix) {
+            if (fix.isValid) {
+              state = state.copyWith(
+                origin:
+                    GeoLatLng(latitude: fix.latitude, longitude: fix.longitude),
+                originLabel: 'Mein Standort',
+              );
+            }
+          });
+        }
+      }).catchError((_) {
+        // MissingPluginException in widget test / background execution
+      });
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _gpsSub?.cancel();
+    super.dispose();
+  }
 
   void setDestination(GeoLatLng point, {String? label}) {
     state = state.copyWith(
@@ -95,4 +134,4 @@ class MapStateNotifier extends StateNotifier<MapState> {
 }
 
 final mapControllerProvider = StateNotifierProvider<MapStateNotifier, MapState>(
-    (ref) => MapStateNotifier());
+    (ref) => MapStateNotifier(ref));
