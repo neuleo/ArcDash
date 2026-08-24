@@ -6,13 +6,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
 
 import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
+import 'package:arcdash/models/map_favorite.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/demo_controller_provider.dart';
 import 'package:arcdash/providers/demo_mode_provider.dart';
 import 'package:arcdash/providers/map_provider.dart';
 import 'package:arcdash/services/geocoding/geocoding_service.dart';
 import 'package:arcdash/services/navigation/charging_station_service.dart';
-import 'package:arcdash/services/navigation/navigation_engine.dart';
+import 'package:arcdash/services/navigation/learned_energy_model.dart';
 import 'package:arcdash/services/routing/multi_routing_service.dart';
 import 'package:arcdash/widgets/map_cockpit_hud.dart';
 import 'package:arcdash/widgets/route_elevation_chart.dart';
@@ -20,14 +21,16 @@ import 'package:arcdash/widgets/route_elevation_chart.dart';
 final chargingStationServiceProvider =
     Provider<ChargingStationService>((ref) => ChargingStationService());
 
-/// Full-featured E-Moto Navigation Screen:
-/// - 4 Free Routing Profiles (Fastest, Trail & Forest, Scenic, E-Bike)
-/// - Turn-by-Turn Guidance Banner
-/// - Live HUD Cockpit Overlay (Speed, SOC, kW)
-/// - 3-Zonen Range Circle Layer
-/// - Interactive Route Elevation Chart (fl_chart)
-/// - Free EV Charging & Schuko 230V Socket POI Finder
-/// - Auto-Center GPS & Head-up Orientation Lock
+/// Comprehensive E-Moto Navigation & Trip Planning Screen:
+/// - 4 Multi-Provider Routes (Fastest, Trail/Forest, Scenic, E-Bike)
+/// - Self-learning Energy & Range estimation based on ride history
+/// - Tour Planner with Start-SOC Slider override
+/// - Favorites (Home, Work, Custom) & Quick Recents
+/// - 3D / Head-Up Perspective Lock with smooth Auto-Follow & Custom Zoom
+/// - Turn-by-Turn Guidance Banner with distance auto-advancing
+/// - Live Cockpit HUD Overlay on Map (Speed, SOC, kW)
+/// - 3-Zone Range Heatmap circles
+/// - 230V Schuko & EV Charging POI Finder
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -47,6 +50,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _isSatellite = false;
   bool _hasInitialCentered = false;
   bool _showChargingStations = false;
+  bool _showTourPlanner = false;
+  double _customStartSoc = 100.0;
 
   @override
   void dispose() {
@@ -112,28 +117,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final state = ref.read(mapControllerProvider);
     final dest = state.destination;
     if (dest == null) return;
-    final origin = state.origin ??
-        const GeoLatLng(
-            latitude: 52.5200, longitude: 13.4050); // Berlin default
+    final origin =
+        state.origin ?? const GeoLatLng(latitude: 52.5200, longitude: 13.4050);
 
     final controllerState = ref.read(effectiveControllerProvider);
     final bmsState = ref.read(effectiveBmsProvider);
-    final learnedProfile = ref.read(rangePredictionStateProvider);
+    final learnedModel = ref.read(learnedEnergyModelProvider);
 
-    final double socPercent = bmsState?.socPercent?.toDouble() ??
-        (controllerState.battCapPercent > 0
-            ? controllerState.battCapPercent.toDouble()
-            : 85.0);
-
-    final double batteryCapacityWh =
-        learnedProfile?.learnedCapacityWh ?? 4000.0;
-
-    final double? avgWhPerKm =
-        (learnedProfile?.consumptionHistoryWhPerKm.isNotEmpty ?? false)
-            ? (learnedProfile!.consumptionHistoryWhPerKm
-                    .reduce((a, b) => a + b) /
-                learnedProfile.consumptionHistoryWhPerKm.length)
-            : 35.0;
+    final double effectiveSoc = state.planningStartSocOverride ??
+        (bmsState?.socPercent?.toDouble() ??
+            (controllerState.battCapPercent > 0
+                ? controllerState.battCapPercent.toDouble()
+                : _customStartSoc));
 
     setState(() => _routing = true);
     final svc = ref.read(multiRoutingServiceProvider);
@@ -141,9 +136,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final alternatives = await svc.fetchAlternatives(
         origin: origin,
         destination: dest,
-        batteryCapacityWh: batteryCapacityWh,
-        socPercent: socPercent,
-        avgWhPerKm: avgWhPerKm,
+        batteryCapacityWh: learnedModel.learnedCapacityWh,
+        socPercent: effectiveSoc,
+        avgWhPerKm: learnedModel.baseWhPerKm,
       );
       if (!mounted) return;
       ref.read(mapControllerProvider.notifier).setAlternatives(alternatives);
@@ -265,7 +260,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ref.read(mapControllerProvider.notifier).selectAlternative(a);
                 },
               ),
-              // Elevation profile preview
               if (a.route.elevationGainMetersTotal > 0)
                 Padding(
                   padding:
@@ -281,40 +275,129 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  void _showAddFavoriteDialog(GeoLatLng location, String defaultTitle) {
+    final titleCtrl = TextEditingController(text: defaultTitle);
+    FavoriteType selectedType = FavoriteType.custom;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDlgState) => AlertDialog(
+          backgroundColor: const Color(0xFF0D1117),
+          title: const Text('Favorit speichern',
+              style: TextStyle(color: Colors.white, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'Name des Ortes',
+                  labelStyle: TextStyle(color: Colors.white54),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Zuhause'),
+                    selected: selectedType == FavoriteType.home,
+                    onSelected: (s) =>
+                        setDlgState(() => selectedType = FavoriteType.home),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Arbeit'),
+                    selected: selectedType == FavoriteType.work,
+                    onSelected: (s) =>
+                        setDlgState(() => selectedType = FavoriteType.work),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Ziel'),
+                    selected: selectedType == FavoriteType.custom,
+                    onSelected: (s) =>
+                        setDlgState(() => selectedType = FavoriteType.custom),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Abbrechen',
+                  style: TextStyle(color: Colors.white54)),
+              onPressed: () => Navigator.pop(context),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00E5FF),
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('Speichern',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                final fav = MapFavorite(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  title: titleCtrl.text.trim().isEmpty
+                      ? defaultTitle
+                      : titleCtrl.text.trim(),
+                  location: location,
+                  type: selectedType,
+                  createdAt: DateTime.now(),
+                );
+                ref.read(mapControllerProvider.notifier).addFavorite(fav);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final mapState = ref.watch(mapControllerProvider);
     final controllerState = ref.watch(effectiveControllerProvider);
     final bmsState = ref.watch(effectiveBmsProvider);
-    final learnedProfile = ref.watch(rangePredictionStateProvider);
+    final learnedModel = ref.watch(learnedEnergyModelProvider);
 
-    // Live Telemetry for HUD & Range
-    final double currentSoc = bmsState?.socPercent?.toDouble() ??
-        (controllerState.battCapPercent > 0
-            ? controllerState.battCapPercent.toDouble()
-            : 85.0);
-    final double capacityWh = learnedProfile?.learnedCapacityWh ?? 4000.0;
-    final double avgWhKm =
-        (learnedProfile?.consumptionHistoryWhPerKm.isNotEmpty ?? false)
-            ? (learnedProfile!.consumptionHistoryWhPerKm
-                    .reduce((a, b) => a + b) /
-                learnedProfile.consumptionHistoryWhPerKm.length)
-            : 35.0;
+    final double currentSoc = mapState.planningStartSocOverride ??
+        (bmsState?.socPercent?.toDouble() ??
+            (controllerState.battCapPercent > 0
+                ? controllerState.battCapPercent.toDouble()
+                : _customStartSoc));
 
-    // 3-Zone Range distances in km
     final double ecoRangeKm =
-        (capacityWh * (currentSoc / 100.0)) / (avgWhKm * 0.85);
-    final double normalRangeKm = (capacityWh * (currentSoc / 100.0)) / avgWhKm;
+        (learnedModel.learnedCapacityWh * (currentSoc / 100.0)) /
+            (learnedModel.baseWhPerKm * 0.85);
+    final double normalRangeKm =
+        (learnedModel.learnedCapacityWh * (currentSoc / 100.0)) /
+            learnedModel.baseWhPerKm;
     final double sportRangeKm =
-        (capacityWh * (currentSoc / 100.0)) / (avgWhKm * 1.35);
+        (learnedModel.learnedCapacityWh * (currentSoc / 100.0)) /
+            (learnedModel.baseWhPerKm * 1.35);
 
-    // Auto-center map to origin upon first valid GPS fix
+    // Auto-center map on first GPS fix
     if (!_hasInitialCentered && mapState.origin != null) {
       _hasInitialCentered = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _mapController.move(
           ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
-          14.0,
+          mapState.userZoom,
+        );
+      });
+    }
+
+    // Auto-follow navigation camera update with custom zoom
+    if (mapState.isNavigating &&
+        mapState.autoFollowUser &&
+        mapState.origin != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(
+          ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
+          mapState.userZoom,
         );
       });
     }
@@ -333,6 +416,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         ? selected.route.maneuvers[mapState.currentManeuverIndex]
         : null;
 
+    final isHeadUp = mapState.perspective == MapPerspective.headUp;
+
     return Scaffold(
       backgroundColor: const Color(0xFF050608),
       appBar: AppBar(
@@ -343,7 +428,28 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           style: const TextStyle(fontSize: 16, letterSpacing: 1),
         ),
         actions: [
-          // Charging stations / Schuko socket search toggle
+          // Tour Planner toggle (Start-SOC)
+          IconButton(
+            icon: Icon(
+              Icons.tune,
+              color:
+                  _showTourPlanner ? const Color(0xFF00E5FF) : Colors.white54,
+            ),
+            tooltip: 'Tour-Planer (Start-SOC)',
+            onPressed: () =>
+                setState(() => _showTourPlanner = !_showTourPlanner),
+          ),
+          // Head-Up / 3D Perspective Toggle
+          IconButton(
+            icon: Icon(
+              isHeadUp ? Icons.explore : Icons.north,
+              color: isHeadUp ? const Color(0xFF00E5FF) : Colors.white54,
+            ),
+            tooltip: isHeadUp ? 'Fahrtrichtung oben (3D)' : 'Nordausrichtung',
+            onPressed: () =>
+                ref.read(mapControllerProvider.notifier).togglePerspective(),
+          ),
+          // Charging stations toggle
           IconButton(
             icon: Icon(
               Icons.ev_station,
@@ -376,11 +482,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           mapController: _mapController,
           options: MapOptions(
             initialCenter: center,
-            initialZoom:
-                selected != null || mapState.destination != null ? 13.5 : 12,
+            initialZoom: mapState.userZoom,
+            initialRotation: isHeadUp ? mapState.currentHeadingDeg : 0.0,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),
+            onPositionChanged: (pos, hasGesture) {
+              if (hasGesture) {
+                // User interacted: record custom zoom without losing track of origin
+                ref.read(mapControllerProvider.notifier).setUserZoom(pos.zoom);
+              }
+            },
             onLongPress: (_, pos) =>
                 _onMapLongPress(pos.latitude, pos.longitude),
           ),
@@ -393,10 +505,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               maxNativeZoom: 19,
             ),
 
-            // 3-Zone Dynamic Range Heatmap Circles (Eco, Normal, Sport/Trail)
+            // 3-Zone Dynamic Range Heatmap Circles
             if (mapState.origin != null && normalRangeKm > 1.0)
               CircleLayer(circles: [
-                // Eco Zone (Max Reach)
                 CircleMarker(
                   point: ll.LatLng(
                       mapState.origin!.latitude, mapState.origin!.longitude),
@@ -406,7 +517,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   borderColor: const Color(0xFF54E39E).withOpacity(0.35),
                   borderStrokeWidth: 1.2,
                 ),
-                // Normal Zone
                 CircleMarker(
                   point: ll.LatLng(
                       mapState.origin!.latitude, mapState.origin!.longitude),
@@ -416,7 +526,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   borderColor: const Color(0xFF00E5FF).withOpacity(0.5),
                   borderStrokeWidth: 1.5,
                 ),
-                // Sport / Heavy Terrain Zone
                 CircleMarker(
                   point: ll.LatLng(
                       mapState.origin!.latitude, mapState.origin!.longitude),
@@ -476,8 +585,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     height: 44,
                     point: ll.LatLng(mapState.destination!.latitude,
                         mapState.destination!.longitude),
-                    child: const Icon(Icons.location_on,
-                        color: Color(0xFFFF5252), size: 40),
+                    child: GestureDetector(
+                      onTap: () => _showAddFavoriteDialog(mapState.destination!,
+                          mapState.destinationLabel ?? 'Gespeicherter Ort'),
+                      child: const Icon(Icons.location_on,
+                          color: Color(0xFFFF5252), size: 40),
+                    ),
                   ),
                 if (mapState.origin != null)
                   Marker(
@@ -531,9 +644,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ],
         ),
 
-        // Live E-Moto HUD Cockpit Overlay on Map (Top-Left under Search/Banner)
+        // Live E-Moto HUD Cockpit Overlay on Map (Top-Left)
         Positioned(
-          top: isNavigating ? 90 : 75,
+          top: isNavigating ? 90 : 120,
           left: 14,
           child: MapCockpitHud(
             speedKph: controllerState.speedKph,
@@ -543,7 +656,62 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
         ),
 
-        // Search bar + results (hidden during active turn-by-turn navigation)
+        // Tour Planner (Start-SOC Slider) Card Overlay
+        if (_showTourPlanner && !isNavigating)
+          Positioned(
+            top: 70,
+            left: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xF20D1117),
+                borderRadius: BorderRadius.circular(16),
+                border:
+                    Border.all(color: const Color(0xFF00E5FF).withOpacity(0.4)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'TOUR-PLANER: START-AKKU',
+                        style: TextStyle(
+                            color: Color(0xFF00E5FF),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                            letterSpacing: 1),
+                      ),
+                      Text(
+                        '${currentSoc.round()} %',
+                        style: const TextStyle(
+                            color: Color(0xFF54E39E),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: currentSoc,
+                    min: 5.0,
+                    max: 100.0,
+                    divisions: 19,
+                    activeColor: const Color(0xFF00E5FF),
+                    onChanged: (v) {
+                      setState(() => _customStartSoc = v);
+                      ref
+                          .read(mapControllerProvider.notifier)
+                          .setPlanningStartSoc(v);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // Search bar & Favorites Quick Row
         if (!isNavigating)
           Positioned(
             top: 10,
@@ -582,6 +750,71 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       borderSide: BorderSide.none),
                 ),
               ),
+
+              // Favorites Quick Filter Chips (Home, Work, Recents)
+              if (_results.isEmpty &&
+                  (mapState.favorites.isNotEmpty ||
+                      mapState.recents.isNotEmpty))
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final fav in mapState.favorites)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              backgroundColor: const Color(0xE6111518),
+                              avatar: Icon(
+                                fav.type == FavoriteType.home
+                                    ? Icons.home
+                                    : (fav.type == FavoriteType.work
+                                        ? Icons.work
+                                        : Icons.star),
+                                color: const Color(0xFF00E5FF),
+                                size: 16,
+                              ),
+                              label: Text(fav.title,
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 12)),
+                              onPressed: () {
+                                ref
+                                    .read(mapControllerProvider.notifier)
+                                    .setDestination(
+                                      fav.location,
+                                      label: fav.title,
+                                    );
+                                _route();
+                              },
+                            ),
+                          ),
+                        for (final rec in mapState.recents.take(3))
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              backgroundColor: const Color(0xCC111518),
+                              avatar: const Icon(Icons.history,
+                                  color: Colors.white38, size: 16),
+                              label: Text(rec.title,
+                                  style: const TextStyle(
+                                      color: Colors.white70, fontSize: 12)),
+                              onPressed: () {
+                                ref
+                                    .read(mapControllerProvider.notifier)
+                                    .setDestination(
+                                      rec.location,
+                                      label: rec.title,
+                                    );
+                                _route();
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
               if (_results.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Container(
@@ -711,7 +944,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               if (pos != null) {
                 _mapController.move(
                   ll.LatLng(pos.latitude, pos.longitude),
-                  15.0,
+                  ref.read(mapControllerProvider).userZoom,
                 );
               }
             },

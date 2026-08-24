@@ -5,6 +5,7 @@ import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/map_provider.dart';
 import 'package:arcdash/screens/map_screen.dart';
+import 'package:arcdash/services/navigation/map_favorites_repository.dart';
 import 'package:arcdash/services/range_prediction_repository.dart';
 import 'package:arcdash/services/routing/multi_routing_service.dart';
 import 'package:arcdash/services/storage_service.dart';
@@ -12,10 +13,13 @@ import 'package:arcdash/services/storage_service.dart';
 Widget _wrap(Widget child) {
   final memoryStorage = MemoryStorage();
   final repo = RangePredictionRepository(storage: memoryStorage);
+  final favRepo = MapFavoritesRepository(storage: memoryStorage);
+
   return ProviderScope(
     overrides: [
       storageServiceProvider.overrideWithValue(StorageService()),
       rangePredictionRepositoryProvider.overrideWithValue(repo),
+      mapFavoritesRepositoryProvider.overrideWithValue(favRepo),
       rangePredictionStateProvider.overrideWith(
           (ref) => RangePredictionNotifier(repo, 'TEST_CONTROLLER')),
     ],
@@ -103,9 +107,19 @@ void main() {
       await tester.pumpWidget(_wrap(const MapScreen()));
       await tester.pump(const Duration(seconds: 1));
 
-      // Simulate the controller path directly (flutter_map tap needs gestures
-      // on the tile stream; the callback is what we want to verify):
-      final container = ProviderContainer();
+      final memoryStorage = MemoryStorage();
+      final repo = RangePredictionRepository(storage: memoryStorage);
+      final favRepo = MapFavoritesRepository(storage: memoryStorage);
+
+      final container = ProviderContainer(
+        overrides: [
+          storageServiceProvider.overrideWithValue(StorageService()),
+          rangePredictionRepositoryProvider.overrideWithValue(repo),
+          mapFavoritesRepositoryProvider.overrideWithValue(favRepo),
+          rangePredictionStateProvider.overrideWith(
+              (ref) => RangePredictionNotifier(repo, 'TEST_CONTROLLER')),
+        ],
+      );
       addTearDown(container.dispose);
       final controller = container.read(mapControllerProvider.notifier);
       controller.setDestinationFromTap(52.90, 13.87);
