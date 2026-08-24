@@ -291,29 +291,50 @@ class MapStateNotifier extends StateNotifier<MapState> {
   }
 
   void addFavorite(MapFavorite favorite) {
-    if (_ref == null) return;
-    final repo = _ref.read(mapFavoritesRepositoryProvider);
     final favs = List<MapFavorite>.from(state.favorites);
     favs.removeWhere((e) => e.id == favorite.id || e.title == favorite.title);
     favs.insert(0, favorite);
-    repo.saveFavorites(favs);
+    if (_ref != null) {
+      final repo = _ref.read(mapFavoritesRepositoryProvider);
+      repo.saveFavorites(favs);
+    }
+    state = state.copyWith(favorites: favs);
+  }
+
+  void updateFavorite(MapFavorite favorite) {
+    final favs = List<MapFavorite>.from(state.favorites);
+    final idx = favs.indexWhere((e) => e.id == favorite.id);
+    if (idx >= 0) {
+      favs[idx] = favorite;
+    } else {
+      favs.insert(0, favorite);
+    }
+    if (_ref != null) {
+      final repo = _ref.read(mapFavoritesRepositoryProvider);
+      repo.saveFavorites(favs);
+    }
     state = state.copyWith(favorites: favs);
   }
 
   void removeFavorite(String id) {
-    if (_ref == null) return;
-    final repo = _ref.read(mapFavoritesRepositoryProvider);
     final favs = List<MapFavorite>.from(state.favorites)
       ..removeWhere((e) => e.id == id);
-    repo.saveFavorites(favs);
+    if (_ref != null) {
+      final repo = _ref.read(mapFavoritesRepositoryProvider);
+      repo.saveFavorites(favs);
+    }
     state = state.copyWith(favorites: favs);
   }
 
   void addRecent(MapFavorite recent) {
-    if (_ref == null) return;
-    final repo = _ref.read(mapFavoritesRepositoryProvider);
-    repo.addRecent(recent);
-    state = state.copyWith(recents: repo.loadRecents());
+    if (_ref != null) {
+      final repo = _ref.read(mapFavoritesRepositoryProvider);
+      repo.addRecent(recent);
+      state = state.copyWith(recents: repo.loadRecents());
+    } else {
+      final recs = List<MapFavorite>.from(state.recents)..insert(0, recent);
+      state = state.copyWith(recents: recs);
+    }
   }
 
   void setDestination(GeoLatLng point, {String? label}) {
