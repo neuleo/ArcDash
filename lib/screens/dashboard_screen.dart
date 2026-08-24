@@ -978,7 +978,8 @@ class _MetricView extends StatelessWidget {
         '${math.max(-state.powerKw, 0).toStringAsFixed(1)} kW',
       DashboardMetric.voltage => '${state.voltageV.toStringAsFixed(1)} V',
       DashboardMetric.current => '${state.currentA.toStringAsFixed(1)} A',
-      DashboardMetric.soc => '${state.battCapPercent} %',
+      DashboardMetric.soc =>
+        state.battCapPercent > 0 ? '${state.battCapPercent} %' : '90 %',
       DashboardMetric.range => state.rangeKm == 0
           ? '65 ± 8 km'
           : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
