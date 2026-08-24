@@ -175,7 +175,7 @@ void main() {
       expect(alts.every((a) => a.provider == 'OSRM'), isTrue);
     });
 
-    test('RouteAlternative formatting', () {
+    test('RouteAlternative formatting with energy estimation', () {
       final route = NavigationRoute(
         segments: const [
           RouteSegment(start: origin, end: dest, distanceMeters: 4200),
@@ -187,13 +187,20 @@ void main() {
         providerName: 'OSRM',
         geometry: const [origin, dest],
       );
-      final alt =
-          RouteAlternative(profile: RoutingProfile.fastestCar, route: route);
+      final alt = RouteAlternative(
+        profile: RoutingProfile.fastestCar,
+        route: route,
+        energyEstimation: const EnergyEstimationResult(
+          requiredEnergyWh: 147.0,
+          estimatedEndSocPercent: 81.3,
+        ),
+      );
 
       expect(alt.distanceText, '4.2 km');
       expect(alt.durationText, '13 min');
       expect(alt.elevationText, '+45 m');
       expect(alt.label, 'Schnellste');
+      expect(alt.socEstimationText, '81 % Rest (147 Wh)');
     });
   });
 }

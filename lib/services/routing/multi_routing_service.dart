@@ -9,8 +9,13 @@ import 'package:arcdash/services/routing/valhalla_routing_service.dart';
 class RouteAlternative {
   final RoutingProfile profile;
   final NavigationRoute route;
+  final EnergyEstimationResult? energyEstimation;
 
-  const RouteAlternative({required this.profile, required this.route});
+  const RouteAlternative({
+    required this.profile,
+    required this.route,
+    this.energyEstimation,
+  });
 
   String get label => profile.label;
   String get provider => route.providerName;
@@ -29,6 +34,13 @@ class RouteAlternative {
   String get elevationText => route.elevationGainMetersTotal > 0
       ? '+${route.elevationGainMetersTotal.round()} m'
       : '';
+
+  String get socEstimationText {
+    if (energyEstimation == null) return '';
+    final endSoc = energyEstimation!.estimatedEndSocPercent.round();
+    final usedWh = energyEstimation!.requiredEnergyWh.round();
+    return '$endSoc % Rest ($usedWh Wh)';
+  }
 }
 
 /// Computes all available alternatives for a trip across the free providers.
@@ -47,36 +59,66 @@ class MultiRoutingService {
   final ValhallaRoutingService _valhalla;
 
   /// All four profiles in parallel; returns whatever succeeded (≥1).
-  ///
-  /// Valhalla is the slowest/flakiest community endpoint — we give it a head
-  /// start via its own shorter window and fall back to an OSRM-based
-  /// "ebike" alternative so the sheet still shows 4 options.
   Future<List<RouteAlternative>> fetchAlternatives({
     required GeoLatLng origin,
     required GeoLatLng destination,
+    double? batteryCapacityWh,
+    double? socPercent,
+    double? avgWhPerKm,
   }) async {
+    final energyProfile = EnergyProfile(
+      baseConsumptionWhPerKm: avgWhPerKm ?? 35.0,
+      elevationGainWhPerMeter: 0.25,
+      elevationLossRegenWhPerMeter: 0.05,
+    );
+
+    RouteAlternative wrap(RoutingProfile profile, NavigationRoute route) {
+      EnergyEstimationResult? estimation;
+      if (batteryCapacityWh != null &&
+          batteryCapacityWh > 0 &&
+          socPercent != null) {
+        final totalGain = route.elevationGainMetersTotal;
+        final segment = RouteSegment(
+          start: origin,
+          end: destination,
+          distanceMeters: route.totalDistanceMeters,
+          startElevationMeters: 0,
+          endElevationMeters: totalGain,
+        );
+        estimation = energyProfile.calculateEnergyNeed(
+          segment: segment,
+          currentBatteryCapacityWh: batteryCapacityWh,
+          currentSocPercent: socPercent,
+        );
+      }
+      return RouteAlternative(
+        profile: profile,
+        route: route,
+        energyEstimation: estimation,
+      );
+    }
+
     final results = await Future.wait([
       _safe(() async {
         final r = await _osrm.calculateRoute(
             origin: origin, destination: destination);
-        return RouteAlternative(profile: RoutingProfile.fastestCar, route: r);
+        return wrap(RoutingProfile.fastestCar, r);
       }),
       _safe(() async {
         final r = await _brouter.calculateRoute(
             origin: origin,
             destination: destination,
             preference: RoutingPreference.trailPreferred);
-        return RouteAlternative(profile: RoutingProfile.trailForest, route: r);
+        return wrap(RoutingProfile.trailForest, r);
       }),
       _safe(() async {
         final r = await _brouter.calculateRoute(
             origin: origin,
             destination: destination,
             preference: RoutingPreference.avoidHighways);
-        return RouteAlternative(
-            profile: RoutingProfile.scenicTrekking, route: r);
+        return wrap(RoutingProfile.scenicTrekking, r);
       }),
-      _safe(() => _ebikeRoute(origin, destination),
+      _safe(() => _ebikeRoute(origin, destination, wrap),
           timeout: const Duration(seconds: 12)),
     ]);
 
@@ -85,17 +127,20 @@ class MultiRoutingService {
 
   /// E-bike profile: Valhalla first (elevation-aware), OSRM fallback.
   Future<RouteAlternative> _ebikeRoute(
-      GeoLatLng origin, GeoLatLng destination) async {
+    GeoLatLng origin,
+    GeoLatLng destination,
+    RouteAlternative Function(RoutingProfile, NavigationRoute) wrap,
+  ) async {
     try {
       final r = await _valhalla.calculateRoute(
           origin: origin,
           destination: destination,
           preference: RoutingPreference.avoidHighways);
-      return RouteAlternative(profile: RoutingProfile.ebikeOptimized, route: r);
+      return wrap(RoutingProfile.ebikeOptimized, r);
     } catch (_) {
       final r =
           await _osrm.calculateRoute(origin: origin, destination: destination);
-      return RouteAlternative(profile: RoutingProfile.ebikeOptimized, route: r);
+      return wrap(RoutingProfile.ebikeOptimized, r);
     }
   }
 

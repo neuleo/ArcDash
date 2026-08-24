@@ -82,6 +82,23 @@ extension RoutingProfileX on RoutingProfile {
       };
 }
 
+/// A turn-by-turn navigation step / instruction along a route.
+class RouteManeuver {
+  final String instruction;
+  final double distanceMeters;
+  final GeoLatLng? location;
+  final String? modifier; // 'left', 'right', 'slight right', etc.
+  final String? type; // 'turn', 'depart', 'arrive', etc.
+
+  const RouteManeuver({
+    required this.instruction,
+    required this.distanceMeters,
+    this.location,
+    this.modifier,
+    this.type,
+  });
+}
+
 class NavigationRoute {
   final List<RouteSegment> segments;
   final double totalDistanceMeters;
@@ -99,6 +116,9 @@ class NavigationRoute {
   /// Which free service computed this route ('OSRM' | 'BRouter' | 'Valhalla').
   final String providerName;
 
+  /// Turn-by-turn maneuvers along the route.
+  final List<RouteManeuver> maneuvers;
+
   const NavigationRoute({
     required this.segments,
     required this.totalDistanceMeters,
@@ -107,6 +127,7 @@ class NavigationRoute {
     this.durationSeconds = 0,
     this.elevationGainMetersTotal = 0,
     this.providerName = '',
+    this.maneuvers = const [],
   });
 }
 

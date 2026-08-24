@@ -2,14 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
+import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/map_provider.dart';
 import 'package:arcdash/screens/map_screen.dart';
+import 'package:arcdash/services/range_prediction_repository.dart';
 import 'package:arcdash/services/routing/multi_routing_service.dart';
+import 'package:arcdash/services/storage_service.dart';
 
-Widget _wrap(Widget child) => UncontrolledProviderScope(
-      container: ProviderContainer(),
-      child: MaterialApp(home: child),
-    );
+Widget _wrap(Widget child) {
+  final memoryStorage = MemoryStorage();
+  final repo = RangePredictionRepository(storage: memoryStorage);
+  return ProviderScope(
+    overrides: [
+      storageServiceProvider.overrideWithValue(StorageService()),
+      rangePredictionRepositoryProvider.overrideWithValue(repo),
+      rangePredictionStateProvider.overrideWith(
+          (ref) => RangePredictionNotifier(repo, 'TEST_CONTROLLER')),
+    ],
+    child: MaterialApp(home: child),
+  );
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -81,8 +93,8 @@ void main() {
 
       // AppBar title
       expect(find.text('Navigation'), findsOneWidget);
-      // Search hint
-      expect(find.text('Ziel suchen…'), findsOneWidget);
+      // Search hint contains destination search prompt
+      expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets(

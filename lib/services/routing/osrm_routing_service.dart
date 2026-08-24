@@ -24,7 +24,7 @@ class OsrmRoutingService implements RoutingService {
     final url = '$_baseUrl/'
         '${origin.longitude},${origin.latitude};'
         '${destination.longitude},${destination.latitude}'
-        '?overview=full&geometries=geojson&alternatives=false&steps=false';
+        '?overview=full&geometries=geojson&alternatives=false&steps=true';
 
     final response = await _client.get(Uri.parse(url)).timeout(
           const Duration(seconds: 20),
@@ -56,6 +56,60 @@ class OsrmRoutingService implements RoutingService {
     final distanceM = (route['distance'] as num).toDouble();
     final durationS = (route['duration'] as num).toDouble();
 
+    final maneuvers = <RouteManeuver>[];
+    final legs = (route['legs'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    for (final leg in legs) {
+      final steps = (leg['steps'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      for (final step in steps) {
+        final maneuver = (step['maneuver'] ?? {}) as Map<String, dynamic>;
+        final type = maneuver['type'] as String?;
+        final modifier = maneuver['modifier'] as String?;
+        final name = (step['name'] as String?) ?? '';
+        final stepDistance = (step['distance'] as num?)?.toDouble() ?? 0.0;
+
+        var instruction = '';
+        if (type == 'depart') {
+          instruction = name.isNotEmpty ? 'Start auf $name' : 'Fahrt starten';
+        } else if (type == 'arrive') {
+          instruction = 'Ziel erreicht';
+        } else if (type == 'turn') {
+          final modText = switch (modifier) {
+            'left' => 'links abbiegen',
+            'right' => 'rechts abbiegen',
+            'slight left' => 'halb links abbiegen',
+            'slight right' => 'halb rechts abbiegen',
+            'sharp left' => 'scharf links abbiegen',
+            'sharp right' => 'scharf rechts abbiegen',
+            'straight' => 'geradeaus weiter',
+            _ => 'abbiegen',
+          };
+          instruction = name.isNotEmpty ? '$modText auf $name' : modText;
+        } else if (type == 'continue' || type == 'new name') {
+          instruction =
+              name.isNotEmpty ? 'Weiter auf $name' : 'Geradeaus weiter';
+        } else {
+          instruction = name.isNotEmpty ? 'Weiter auf $name' : 'Weiterfahren';
+        }
+
+        GeoLatLng? stepLoc;
+        final locCoords = (maneuver['location'] as List?)?.cast<dynamic>();
+        if (locCoords != null && locCoords.length >= 2) {
+          stepLoc = GeoLatLng(
+            latitude: (locCoords[1] as num).toDouble(),
+            longitude: (locCoords[0] as num).toDouble(),
+          );
+        }
+
+        maneuvers.add(RouteManeuver(
+          instruction: instruction,
+          distanceMeters: stepDistance,
+          location: stepLoc,
+          modifier: modifier,
+          type: type,
+        ));
+      }
+    }
+
     return NavigationRoute(
       segments: [
         RouteSegment(
@@ -69,6 +123,7 @@ class OsrmRoutingService implements RoutingService {
       geometry: coords,
       durationSeconds: durationS,
       providerName: 'OSRM',
+      maneuvers: maneuvers,
     );
   }
 

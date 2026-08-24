@@ -6,7 +6,7 @@ import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
 import 'package:arcdash/services/gps_service.dart';
 import 'package:arcdash/services/routing/multi_routing_service.dart';
 
-/// State of the map screen: origin, destination, alternatives, selection.
+/// State of the map screen: origin, destination, alternatives, selection, navigation active.
 class MapState {
   final GeoLatLng? origin;
   final String? originLabel;
@@ -14,6 +14,9 @@ class MapState {
   final String? destinationLabel;
   final List<RouteAlternative> alternatives;
   final RouteAlternative? selected;
+  final bool isNavigating;
+  final int currentManeuverIndex;
+  final double? estimatedRangeKm;
 
   const MapState({
     this.origin,
@@ -22,6 +25,9 @@ class MapState {
     this.destinationLabel,
     this.alternatives = const [],
     this.selected,
+    this.isNavigating = false,
+    this.currentManeuverIndex = 0,
+    this.estimatedRangeKm,
   });
 
   MapState copyWith({
@@ -33,6 +39,9 @@ class MapState {
     List<RouteAlternative>? alternatives,
     RouteAlternative? selected,
     bool clearSelected = false,
+    bool? isNavigating,
+    int? currentManeuverIndex,
+    double? estimatedRangeKm,
   }) =>
       MapState(
         origin: clearOrigin ? null : (origin ?? this.origin),
@@ -41,6 +50,9 @@ class MapState {
         destinationLabel: destinationLabel ?? this.destinationLabel,
         alternatives: alternatives ?? this.alternatives,
         selected: clearSelected ? null : (selected ?? this.selected),
+        isNavigating: isNavigating ?? this.isNavigating,
+        currentManeuverIndex: currentManeuverIndex ?? this.currentManeuverIndex,
+        estimatedRangeKm: estimatedRangeKm ?? this.estimatedRangeKm,
       );
 }
 
@@ -63,9 +75,10 @@ class MapStateNotifier extends StateNotifier<MapState> {
         if (started) {
           _gpsSub = gpsService.stream.listen((fix) {
             if (fix.isValid) {
+              final newOrigin =
+                  GeoLatLng(latitude: fix.latitude, longitude: fix.longitude);
               state = state.copyWith(
-                origin:
-                    GeoLatLng(latitude: fix.latitude, longitude: fix.longitude),
+                origin: newOrigin,
                 originLabel: 'Mein Standort',
               );
             }
@@ -83,12 +96,18 @@ class MapStateNotifier extends StateNotifier<MapState> {
     super.dispose();
   }
 
+  void setEstimatedRangeKm(double km) {
+    state = state.copyWith(estimatedRangeKm: km);
+  }
+
   void setDestination(GeoLatLng point, {String? label}) {
     state = state.copyWith(
       destination: point,
       destinationLabel: label ?? 'Gewählter Punkt',
       clearSelected: true,
       alternatives: const [],
+      isNavigating: false,
+      currentManeuverIndex: 0,
     );
   }
 
@@ -125,11 +144,50 @@ class MapStateNotifier extends StateNotifier<MapState> {
   }
 
   void selectAlternative(RouteAlternative a) {
-    state = state.copyWith(selected: a);
+    state = state.copyWith(
+      selected: a,
+      isNavigating: false,
+      currentManeuverIndex: 0,
+    );
+  }
+
+  void startNavigation() {
+    if (state.selected != null) {
+      state = state.copyWith(
+        isNavigating: true,
+        currentManeuverIndex: 0,
+      );
+    }
+  }
+
+  void stopNavigation() {
+    state = state.copyWith(isNavigating: false);
+  }
+
+  void nextManeuver() {
+    if (state.selected != null &&
+        state.currentManeuverIndex <
+            state.selected!.route.maneuvers.length - 1) {
+      state = state.copyWith(
+        currentManeuverIndex: state.currentManeuverIndex + 1,
+      );
+    }
+  }
+
+  void prevManeuver() {
+    if (state.currentManeuverIndex > 0) {
+      state = state.copyWith(
+        currentManeuverIndex: state.currentManeuverIndex - 1,
+      );
+    }
   }
 
   void clearRoute() {
-    state = MapState(origin: state.origin, originLabel: state.originLabel);
+    state = MapState(
+      origin: state.origin,
+      originLabel: state.originLabel,
+      estimatedRangeKm: state.estimatedRangeKm,
+    );
   }
 }
 

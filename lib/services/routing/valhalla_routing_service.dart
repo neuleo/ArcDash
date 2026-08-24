@@ -58,14 +58,14 @@ class ValhallaRoutingService implements RoutingService {
     final geometry = <GeoLatLng>[];
     double totalKm = 0;
     double totalTime = 0;
-    final maneuvers = <ValhallaManeuver>[];
+    final maneuvers = <RouteManeuver>[];
 
     for (final leg in (trip['legs'] as List).cast<Map<String, dynamic>>()) {
       totalKm += (leg['length'] as num).toDouble();
       totalTime += (leg['time'] as num).toDouble();
       geometry.addAll(decodePolyline(leg['shape'] as String));
       for (final m in (leg['maneuvers'] as List).cast<Map<String, dynamic>>()) {
-        maneuvers.add(ValhallaManeuver(
+        maneuvers.add(RouteManeuver(
           instruction: (m['instruction'] ?? '') as String,
           distanceMeters: ((m['length'] as num?)?.toDouble() ?? 0) * 1000,
         ));
@@ -84,6 +84,7 @@ class ValhallaRoutingService implements RoutingService {
       geometry: geometry,
       durationSeconds: totalTime,
       providerName: 'Valhalla',
+      maneuvers: maneuvers,
     );
   }
 
@@ -118,16 +119,6 @@ class ValhallaRoutingService implements RoutingService {
   }
 
   void dispose() => _client.close();
-}
-
-class ValhallaManeuver {
-  final String instruction;
-  final double distanceMeters;
-
-  const ValhallaManeuver({
-    required this.instruction,
-    required this.distanceMeters,
-  });
 }
 
 class ValhallaException implements Exception {
