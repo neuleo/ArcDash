@@ -114,6 +114,11 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   DateTime _lastPacketTime = DateTime.now();
   double _packetRate = 0.0;
 
+  // Throttle state emission to Flutter UI at max 15 Hz (~66ms) to prevent UI thread lag
+  DateTime _lastStateEmitTime = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _pendingEmitTimer;
+  ControllerState? _pendingState;
+
   List<String> get debugPackets => List.unmodifiable(_debugPackets);
   double get packetRate => _packetRate;
   DiagnosticLog get diagnostics => _diagnostics;
@@ -144,6 +149,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     } else if (cs == DongleConnectionState.disconnected) {
       _streamInitTimer?.cancel();
       _streamInitTimer = null;
+      _pendingEmitTimer?.cancel();
+      _pendingEmitTimer = null;
       _dataSub?.cancel();
       _dataSub = null;
       _framer.reset();
@@ -316,8 +323,11 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       record(ControllerTelemetry.motorTemperature, update.motorTempC!);
     }
     if (update.battCapPercent != null) {
-      next = next.copyWith(battCapPercent: update.battCapPercent);
-      record(ControllerTelemetry.soc, update.battCapPercent!);
+      // Direct FarDriver packet reported SOC (0..100)
+      if (update.battCapPercent! > 0) {
+        next = next.copyWith(battCapPercent: update.battCapPercent);
+        record(ControllerTelemetry.soc, update.battCapPercent!);
+      }
     }
     if (update.mosTempC != null) {
       next = next.copyWith(controllerTempC: update.mosTempC);
@@ -347,11 +357,36 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     if (update.voltageV != null || update.currentA != null) {
       record(ControllerTelemetry.power, next.powerKw);
     }
-    state = next.copyWith(telemetrySamples: Map.unmodifiable(samples));
+    final finalState =
+        next.copyWith(telemetrySamples: Map.unmodifiable(samples));
 
     // Save stock backup on first connect if not already done
     if (!_storage.firstConnectDone && update.maxLineCurrRaw != null) {
       _saveStockBackup();
+    }
+
+    _emitThrottled(finalState);
+  }
+
+  void _emitThrottled(ControllerState targetState) {
+    final now = DateTime.now();
+    final elapsedMs = now.difference(_lastStateEmitTime).inMilliseconds;
+    if (elapsedMs >= 66) {
+      _pendingEmitTimer?.cancel();
+      _pendingEmitTimer = null;
+      _pendingState = null;
+      _lastStateEmitTime = now;
+      state = targetState;
+    } else {
+      _pendingState = targetState;
+      _pendingEmitTimer ??= Timer(Duration(milliseconds: 66 - elapsedMs), () {
+        if (_pendingState != null) {
+          _lastStateEmitTime = DateTime.now();
+          state = _pendingState!;
+          _pendingState = null;
+        }
+        _pendingEmitTimer = null;
+      });
     }
   }
 

@@ -421,12 +421,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       });
     }
 
+    final effectiveOrigin = mapState.origin ??
+        const GeoLatLng(latitude: 52.5200, longitude: 13.4050);
+
     final center = mapState.destination != null
         ? ll.LatLng(
             mapState.destination!.latitude, mapState.destination!.longitude)
-        : (mapState.origin != null
-            ? ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude)
-            : const ll.LatLng(52.5200, 13.4050));
+        : ll.LatLng(effectiveOrigin.latitude, effectiveOrigin.longitude);
     final selected = mapState.selected;
     final isNavigating = mapState.isNavigating;
     final currentManeuver = (selected != null &&
@@ -553,12 +554,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
 
               // 3-Zone Dynamic Range Heatmap Circles (High contrast on both light vector and dark satellite maps)
-              if (mapState.origin != null && normalRangeKm > 1.0)
+              if (effectiveOrigin != null && normalRangeKm > 1.0)
                 CircleLayer(circles: [
                   // Eco Zone (Max Reach) - Green
                   CircleMarker(
                     point: ll.LatLng(
-                        mapState.origin!.latitude, mapState.origin!.longitude),
+                        effectiveOrigin.latitude, effectiveOrigin.longitude),
                     radius: ecoRangeKm * 1000,
                     useRadiusInMeter: true,
                     color: const Color(0xFF00C853).withOpacity(0.12),
@@ -568,7 +569,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   // Normal Zone - Vibrant Cyan/Blue
                   CircleMarker(
                     point: ll.LatLng(
-                        mapState.origin!.latitude, mapState.origin!.longitude),
+                        effectiveOrigin.latitude, effectiveOrigin.longitude),
                     radius: normalRangeKm * 1000,
                     useRadiusInMeter: true,
                     color: const Color(0xFF0091EA).withOpacity(0.15),
@@ -578,7 +579,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   // Sport / Heavy Terrain Zone - Orange/Red
                   CircleMarker(
                     point: ll.LatLng(
-                        mapState.origin!.latitude, mapState.origin!.longitude),
+                        effectiveOrigin.latitude, effectiveOrigin.longitude),
                     radius: sportRangeKm * 1000,
                     useRadiusInMeter: true,
                     color: const Color(0xFFFF6D00).withOpacity(0.15),
