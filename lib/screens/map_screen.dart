@@ -815,12 +815,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ),
 
-          // Live E-Moto HUD Cockpit Overlay on Map (Top-Left under search)
+          // Live E-Moto HUD Cockpit Overlay on Map (Top-Left under search in portrait, bottom-left in landscape)
           Positioned(
             top: isNavigating
-                ? (isLandscape ? 80 : 90)
-                : (isLandscape ? 14 : 120),
-            left: isLandscape ? 70 : 14,
+                ? (isLandscape ? null : 90)
+                : (isLandscape ? null : 120),
+            bottom: isLandscape ? (selected != null ? 140 : 20) : null,
+            left: isLandscape ? 20 : 14,
             child: MapCockpitHud(
               speedKph: controllerState.speedKph,
               socPercent: currentSoc.round(),
