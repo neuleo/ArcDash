@@ -20,8 +20,13 @@ class BRouterRoutingService implements RoutingService {
     List<GeoLatLng> waypoints = const [],
     RoutingPreference preference = RoutingPreference.trailPreferred,
   }) async {
-    final brouterProfile =
-        preference == RoutingPreference.trailPreferred ? 'mtb' : 'trekking';
+    final brouterProfile = switch (preference) {
+      RoutingPreference.fastest => 'moped',
+      RoutingPreference.trailPreferred => 'mtb',
+      RoutingPreference.avoidHighways ||
+      RoutingPreference.shortest =>
+        'trekking',
+    };
 
     final allPoints = [origin, ...waypoints, destination];
     final lonlatsString =

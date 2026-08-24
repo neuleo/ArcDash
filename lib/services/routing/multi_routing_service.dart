@@ -133,12 +133,22 @@ class MultiRoutingService {
 
     final results = await Future.wait([
       _safe(() async {
-        final r = await _osrm.calculateRoute(
-          origin: origin,
-          destination: destination,
-          waypoints: effectiveWaypoints,
-        );
-        return wrap(RoutingProfile.fastestCar, r);
+        try {
+          final r = await _brouter.calculateRoute(
+            origin: origin,
+            destination: destination,
+            waypoints: effectiveWaypoints,
+            preference: RoutingPreference.fastest,
+          );
+          return wrap(RoutingProfile.fastestCar, r);
+        } catch (_) {
+          final r = await _osrm.calculateRoute(
+            origin: origin,
+            destination: destination,
+            waypoints: effectiveWaypoints,
+          );
+          return wrap(RoutingProfile.fastestCar, r);
+        }
       }),
       _safe(() async {
         final r = await _brouter.calculateRoute(
