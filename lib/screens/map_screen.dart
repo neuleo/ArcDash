@@ -22,17 +22,13 @@ final chargingStationServiceProvider =
     Provider<ChargingStationService>((ref) => ChargingStationService());
 
 /// Comprehensive E-Moto Navigation & Trip Planning Screen:
-/// - Landscape UX: Floating controls, no bulky top bar, bottom-left compact card
-/// - Multi-Stop Waypoint system & 'Zurück zum Start' Roundtrip
-/// - 4 Multi-Provider Routes (Fastest without Autobahn, Trail/Forest, Scenic, E-Bike)
-/// - Self-learning Energy & Range estimation
-/// - Tour Planner with Start-SOC Slider & Capacity in dedicated BottomSheet
-/// - Intuitive Favorites Management (Home, Work, Custom) with Long-Press CRUD
-/// - 3D / Head-Up Perspective Lock with smooth Auto-Follow & Custom Zoom
-/// - Turn-by-Turn Guidance Banner
+/// - Clean Non-Overlapping BottomSheets for Tour Planner & Options
+/// - Full Favorites Management (Home, Work, Custom) with Long-Press CRUD
+/// - High-Contrast Range Heatmap Circles (Eco, Normal, Sport)
+/// - Multi-Stop Waypoint & Roundtrip Planning
+/// - Turn-by-Turn Navigation Banner
 /// - Live Cockpit HUD Overlay on Map
-/// - 3-Zone Range Heatmap circles
-/// - 230V Schuko & EV Charging POI Finder
+/// - Strict Motorway Avoidance for E-Motorcycles
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -43,6 +39,7 @@ class MapScreen extends ConsumerStatefulWidget {
 class _MapScreenState extends ConsumerState<MapScreen> {
   final MapController _mapController = MapController();
   final TextEditingController _searchCtrl = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   Timer? _debounce;
   List<GeoSearchResult> _results = [];
   List<ChargingStationPoi> _chargingStations = [];
@@ -58,6 +55,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void dispose() {
     _debounce?.cancel();
     _searchCtrl.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -80,7 +78,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Future<void> _pickDestination(GeoSearchResult r) async {
-    FocusScope.of(context).unfocus();
+    _searchFocusNode.unfocus();
     _searchCtrl.clear();
     setState(() => _results = []);
     ref.read(mapControllerProvider.notifier).setDestination(
@@ -91,14 +89,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Future<void> _onMapLongPress(double lat, double lon) async {
-    FocusScope.of(context).unfocus();
+    _searchFocusNode.unfocus();
     _searchCtrl.clear();
     setState(() => _results = []);
     final point = GeoLatLng(latitude: lat, longitude: lon);
     final mapState = ref.read(mapControllerProvider);
 
     if (mapState.destination != null) {
-      // Already has destination -> add as intermediate waypoint
       ref.read(mapControllerProvider.notifier).addWaypoint(point);
     } else {
       ref.read(mapControllerProvider.notifier).setDestinationFromTap(lat, lon);
@@ -131,7 +128,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     final waypoints = List<GeoLatLng>.from(state.waypoints);
     if (state.isRoundTrip) {
-      // In round-trip mode, intermediate destination becomes a waypoint, and final destination is origin
       waypoints.add(dest);
       dest = origin;
     }
@@ -174,6 +170,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Future<void> _showAlternativesSheet(List<RouteAlternative> alts) {
+    _searchFocusNode.unfocus();
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -296,6 +293,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   void _showTourPlannerSheet(BuildContext context) {
+    _searchFocusNode.unfocus();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -519,6 +517,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   void _showOptionsSheet(BuildContext context) {
+    _searchFocusNode.unfocus();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -683,6 +682,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   void _showFavoriteManagerSheet(BuildContext context, MapFavorite fav) {
+    _searchFocusNode.unfocus();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF0D1117),
@@ -804,6 +804,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   void _showAddOrEditFavoriteSheet(BuildContext context,
       {GeoLatLng? location, MapFavorite? existing}) {
+    _searchFocusNode.unfocus();
     final titleCtrl = TextEditingController(
         text: existing?.title ?? (location != null ? 'Mein Ort' : ''));
     FavoriteType selectedType = existing?.type ?? FavoriteType.custom;
@@ -981,7 +982,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final controllerState = ref.watch(effectiveControllerProvider);
     final bmsState = ref.watch(effectiveBmsProvider);
     final learnedModel = ref.watch(learnedEnergyModelProvider);
-    // Live Telemetry for HUD & Range
+
     final double currentSoc = mapState.planningStartSocOverride ??
         (bmsState?.socPercent?.toDouble() ??
             (controllerState.battCapPercent > 0
@@ -1000,7 +1001,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
             (learnedModel.baseWhPerKm * 1.35);
 
-    // Auto-center map on first GPS fix
     if (!_hasInitialCentered && mapState.origin != null) {
       _hasInitialCentered = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1011,7 +1011,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       });
     }
 
-    // Auto-follow navigation camera update with custom zoom
     if (mapState.isNavigating &&
         mapState.autoFollowUser &&
         mapState.origin != null) {
@@ -1046,7 +1045,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFF050608),
         appBar: isLandscape
-            ? null // Hide full AppBar in landscape to maximize map viewport
+            ? null
             : AppBar(
                 backgroundColor: const Color(0xFF0D1117),
                 foregroundColor: Colors.white,
@@ -1055,7 +1054,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   style: const TextStyle(fontSize: 16, letterSpacing: 1),
                 ),
                 actions: [
-                  // Waypoints / Options modal trigger
                   IconButton(
                     icon: Icon(
                       Icons.add_location_alt_outlined,
@@ -1067,7 +1065,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     tooltip: 'Wegpunkte & Optionen',
                     onPressed: () => _showOptionsSheet(context),
                   ),
-                  // Tour Planner modal trigger
                   IconButton(
                     icon: Icon(
                       Icons.tune,
@@ -1078,7 +1075,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     tooltip: 'Tour-Planer (Start-SOC)',
                     onPressed: () => _showTourPlannerSheet(context),
                   ),
-                  // Head-Up / 3D Perspective Toggle
                   IconButton(
                     icon: Icon(
                       isHeadUp ? Icons.explore : Icons.north,
@@ -1092,7 +1088,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         .read(mapControllerProvider.notifier)
                         .togglePerspective(),
                   ),
-                  // Charging stations toggle
                   IconButton(
                     icon: Icon(
                       Icons.ev_station,
@@ -1109,7 +1104,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       }
                     },
                   ),
-                  // Satellite View Toggle
                   IconButton(
                     icon: Icon(
                       _isSatellite
@@ -1153,10 +1147,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 maxNativeZoom: 19,
               ),
 
-              // 3-Zone Dynamic Range Heatmap Circles (High contrast on both light vector and dark satellite maps)
+              // 3-Zone Dynamic Range Heatmap Circles
               if (effectiveOrigin != null)
                 CircleLayer(circles: [
-                  // Eco Zone (Max Reach) - Green
                   CircleMarker(
                     point: ll.LatLng(
                         effectiveOrigin.latitude, effectiveOrigin.longitude),
@@ -1166,7 +1159,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     borderColor: const Color(0xFF00C853),
                     borderStrokeWidth: 2.5,
                   ),
-                  // Normal Zone - Vibrant Cyan/Blue
                   CircleMarker(
                     point: ll.LatLng(
                         effectiveOrigin.latitude, effectiveOrigin.longitude),
@@ -1176,7 +1168,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     borderColor: const Color(0xFF0091EA),
                     borderStrokeWidth: 3.0,
                   ),
-                  // Sport / Heavy Terrain Zone - Orange/Red
                   CircleMarker(
                     point: ll.LatLng(
                         effectiveOrigin.latitude, effectiveOrigin.longitude),
@@ -1235,7 +1226,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   mapState.waypoints.isNotEmpty ||
                   mapState.favorites.isNotEmpty)
                 MarkerLayer(markers: [
-                  // Favorite Pins on Map
                   for (final fav in mapState.favorites)
                     Marker(
                       width: 34,
@@ -1269,8 +1259,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                       ),
                     ),
-
-                  // Destination marker
                   if (mapState.destination != null)
                     Marker(
                       width: 44,
@@ -1286,8 +1274,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             color: Color(0xFFFF5252), size: 40),
                       ),
                     ),
-
-                  // Intermediate Waypoints Markers
                   for (int i = 0; i < mapState.waypoints.length; i++)
                     Marker(
                       width: 32,
@@ -1318,8 +1304,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         ),
                       ),
                     ),
-
-                  // User location marker
                   if (mapState.origin != null)
                     Marker(
                       width: 28,
@@ -1359,7 +1343,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                 ]),
 
-              // Route Polyline
               if (selected != null && selected.route.geometry.isNotEmpty)
                 PolylineLayer(polylines: [
                   Polyline(
@@ -1372,8 +1355,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ]),
             ],
           ),
-
-          // Floating Landscape Top Action Bar (Compact)
           if (isLandscape && !isNavigating)
             Positioned(
               top: 14,
@@ -1450,8 +1431,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
             ),
-
-          // Live E-Moto HUD Cockpit Overlay on Map
           Positioned(
             top: isNavigating
                 ? (isLandscape ? null : 90)
@@ -1465,8 +1444,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               motorTempC: controllerState.motorTempC,
             ),
           ),
-
-          // Search bar & Favorites Quick Row (hidden during navigation)
           if (!isNavigating)
             Positioned(
               top: 10,
@@ -1475,6 +1452,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: Column(children: [
                 TextField(
                   controller: _searchCtrl,
+                  focusNode: _searchFocusNode,
                   onChanged: _onSearchChanged,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
@@ -1506,8 +1484,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         borderSide: BorderSide.none),
                   ),
                 ),
-
-                // Favorites Quick Filter Chips (Home, Work, Custom & Quick Actions)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: SingleChildScrollView(
@@ -1613,7 +1589,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                   ),
                 ),
-
                 if (_results.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Container(
@@ -1651,8 +1626,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ],
               ]),
             ),
-
-          // Turn-by-Turn Guidance Banner at top when Navigating
           if (isNavigating && currentManeuver != null)
             Positioned(
               top: 10,
@@ -1728,8 +1701,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
             ),
-
-          // Point of No Return Alert Banner
           if (mapState.pointOfNoReturnTriggered &&
               mapState.pointOfNoReturnEnabled)
             Positioned(
@@ -1781,8 +1752,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
             ),
-
-          // My Location Button (Bottom-Right)
           Positioned(
             right: 16,
             bottom: isLandscape
@@ -1808,8 +1777,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               child: const Icon(Icons.my_location),
             ),
           ),
-
-          // Route Summary & Action Card (Landscape: Compact Floating Card on Bottom-Left; Portrait: Bottom Bar)
           if (selected != null)
             Positioned(
               bottom: 14,
@@ -1954,8 +1921,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ),
             ),
-
-          // Routing progress overlay
           if (_routing || _loadingPois)
             Positioned.fill(
               child: ColoredBox(
