@@ -150,6 +150,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     setState(() => _routing = true);
     final svc = ref.read(multiRoutingServiceProvider);
+    final chargingSvc = ref.read(chargingStationServiceProvider);
     try {
       final alternatives = await svc.fetchAlternatives(
         origin: origin,
@@ -158,6 +159,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         batteryCapacityWh: learnedModel.learnedCapacityWh,
         socPercent: effectiveSoc,
         avgWhPerKm: learnedModel.baseWhPerKm,
+        autoInsertChargingStops: state.autoChargingStopsEnabled,
+        chargingStationService: chargingSvc,
       );
       if (!mounted) return;
       ref.read(mapControllerProvider.notifier).setAlternatives(alternatives);
@@ -902,6 +905,59 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         },
                       ),
                     ),
+                    // Auto-Charging Stops toggle
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        Icons.ev_station,
+                        color: mapState.autoChargingStopsEnabled
+                            ? const Color(0xFF00E5FF)
+                            : Colors.white54,
+                      ),
+                      title: const Text('Auto-Ladestopps bei leerem Akku',
+                          style: TextStyle(color: Colors.white, fontSize: 13)),
+                      subtitle: const Text(
+                          'Fügt automatisch Ladesäulen auf halber Strecke ein',
+                          style:
+                              TextStyle(color: Colors.white38, fontSize: 10)),
+                      trailing: Switch(
+                        value: mapState.autoChargingStopsEnabled,
+                        activeColor: const Color(0xFF00E5FF),
+                        onChanged: (_) {
+                          ref
+                              .read(mapControllerProvider.notifier)
+                              .toggleAutoChargingStops();
+                          _route();
+                        },
+                      ),
+                    ),
+                    // Point of No Return warning toggle
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        Icons.warning_amber_rounded,
+                        color: mapState.pointOfNoReturnEnabled
+                            ? Colors.orangeAccent
+                            : Colors.white54,
+                      ),
+                      title: const Text('Point of No Return Warnung',
+                          style: TextStyle(color: Colors.white, fontSize: 13)),
+                      subtitle: const Text(
+                          'Warnt, sobald Akku nur noch für den Heimweg reicht',
+                          style:
+                              TextStyle(color: Colors.white38, fontSize: 10)),
+                      trailing: Switch(
+                        value: mapState.pointOfNoReturnEnabled,
+                        activeColor: Colors.orangeAccent,
+                        onChanged: (_) {
+                          ref
+                              .read(mapControllerProvider.notifier)
+                              .togglePointOfNoReturn();
+                        },
+                      ),
+                    ),
                     if (mapState.waypoints.isNotEmpty) ...[
                       const Divider(color: Colors.white12),
                       for (int i = 0; i < mapState.waypoints.length; i++)
@@ -1251,6 +1307,59 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       onPressed: () => ref
                           .read(mapControllerProvider.notifier)
                           .stopNavigation(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Point of No Return Alert Banner
+          if (mapState.pointOfNoReturnTriggered &&
+              mapState.pointOfNoReturnEnabled)
+            Positioned(
+              top: isNavigating ? 90 : (isLandscape ? 60 : 70),
+              left: isLandscape ? 70 : 12,
+              right: isLandscape ? 70 : 12,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xF5331505),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.orangeAccent, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        color: Colors.orangeAccent, size: 28),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'POINT OF NO RETURN ERREICHT',
+                            style: TextStyle(
+                                color: Colors.orangeAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                letterSpacing: 1),
+                          ),
+                          Text(
+                            'Rest-Akku (${currentSoc.round()} %) reicht nur noch für den Heimweg (~${mapState.neededReturnSocPercent.round()} % nötig). Jetzt umkehren oder Zwischenladung einplanen!',
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 11),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

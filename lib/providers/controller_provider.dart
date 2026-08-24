@@ -119,6 +119,10 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   Timer? _pendingEmitTimer;
   ControllerState? _pendingState;
 
+  // Smoothed range estimation (EMA low-pass filter to eliminate voltage-sag fluctuations during acceleration)
+  double _smoothedRangeKm = 0.0;
+  double _smoothedUncertaintyKm = 5.0;
+
   List<String> get debugPackets => List.unmodifiable(_debugPackets);
   double get packetRate => _packetRate;
   DiagnosticLog get diagnostics => _diagnostics;
@@ -292,11 +296,29 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
                   learned.consumptionHistoryWhPerKm.length)
               : 56.0; // Wh/km default from live ride history
 
-      final dynamicRangeKm = (calcSoc * learnedCap / 100.0) / avgCons;
-      final dynamicUncertainty =
-          (learned != null && learned.socConfidence > 0.3)
-              ? dynamicRangeKm * 0.08
-              : 5.0;
+      final rawRangeKm = (calcSoc * learnedCap / 100.0) / avgCons;
+      final rawUncertainty = (learned != null && learned.socConfidence > 0.3)
+          ? rawRangeKm * 0.08
+          : 5.0;
+
+      // Exponential moving average filter with load-sag damping:
+      // When accelerating (>10A), voltage sags temporarily; damp changes strongly so range remains stable.
+      if (_smoothedRangeKm <= 0.1) {
+        _smoothedRangeKm = rawRangeKm;
+        _smoothedUncertaintyKm = rawUncertainty;
+      } else {
+        final isUnderLoad =
+            (update.currentA != null && update.currentA! > 10.0) ||
+                (next.currentA > 10.0);
+        final alpha = isUnderLoad ? 0.015 : 0.06;
+        _smoothedRangeKm =
+            _smoothedRangeKm * (1.0 - alpha) + rawRangeKm * alpha;
+        _smoothedUncertaintyKm =
+            _smoothedUncertaintyKm * (1.0 - alpha) + rawUncertainty * alpha;
+      }
+
+      final dynamicRangeKm = _smoothedRangeKm;
+      final dynamicUncertainty = _smoothedUncertaintyKm;
 
       next = next.copyWith(
         rangeKm: dynamicRangeKm,

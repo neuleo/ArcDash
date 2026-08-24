@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
+import 'package:arcdash/services/navigation/charging_station_service.dart';
+import 'package:arcdash/services/navigation/navigation_engine.dart';
 import 'package:arcdash/services/routing/osrm_routing_service.dart';
 import 'package:arcdash/services/routing/brouter_routing_service.dart';
 import 'package:arcdash/services/routing/valhalla_routing_service.dart';
@@ -66,12 +68,42 @@ class MultiRoutingService {
     double? batteryCapacityWh,
     double? socPercent,
     double? avgWhPerKm,
+    bool autoInsertChargingStops = false,
+    ChargingStationService? chargingStationService,
   }) async {
     final energyProfile = EnergyProfile(
       baseConsumptionWhPerKm: avgWhPerKm ?? 35.0,
       elevationGainWhPerMeter: 0.25,
       elevationLossRegenWhPerMeter: 0.05,
     );
+
+    var effectiveWaypoints = List<GeoLatLng>.from(waypoints);
+
+    // If autoInsertChargingStops is explicitly enabled and destination cannot be reached directly
+    if (autoInsertChargingStops &&
+        effectiveWaypoints.isEmpty &&
+        chargingStationService != null &&
+        batteryCapacityWh != null &&
+        socPercent != null) {
+      final approxDistKm =
+          NavigationEngine.distanceBetween(origin, destination) / 1000.0;
+      final totalEnergyAvailWh = batteryCapacityWh * (socPercent / 100.0);
+      final estimatedNeedWh = approxDistKm * (avgWhPerKm ?? 35.0);
+      if (estimatedNeedWh > (totalEnergyAvailWh * 0.9)) {
+        // Find charging station around midpoint
+        final midLat = (origin.latitude + destination.latitude) / 2.0;
+        final midLon = (origin.longitude + destination.longitude) / 2.0;
+        try {
+          final pois = await chargingStationService.findNearbyCharging(
+            center: GeoLatLng(latitude: midLat, longitude: midLon),
+            radiusMeters: 20000,
+          );
+          if (pois.isNotEmpty) {
+            effectiveWaypoints.add(pois.first.location);
+          }
+        } catch (_) {}
+      }
+    }
 
     RouteAlternative wrap(RoutingProfile profile, NavigationRoute route) {
       EnergyEstimationResult? estimation;
@@ -104,7 +136,7 @@ class MultiRoutingService {
         final r = await _osrm.calculateRoute(
           origin: origin,
           destination: destination,
-          waypoints: waypoints,
+          waypoints: effectiveWaypoints,
         );
         return wrap(RoutingProfile.fastestCar, r);
       }),
@@ -112,7 +144,7 @@ class MultiRoutingService {
         final r = await _brouter.calculateRoute(
           origin: origin,
           destination: destination,
-          waypoints: waypoints,
+          waypoints: effectiveWaypoints,
           preference: RoutingPreference.trailPreferred,
         );
         return wrap(RoutingProfile.trailForest, r);
@@ -121,12 +153,12 @@ class MultiRoutingService {
         final r = await _brouter.calculateRoute(
           origin: origin,
           destination: destination,
-          waypoints: waypoints,
+          waypoints: effectiveWaypoints,
           preference: RoutingPreference.avoidHighways,
         );
         return wrap(RoutingProfile.scenicTrekking, r);
       }),
-      _safe(() => _ebikeRoute(origin, destination, waypoints, wrap),
+      _safe(() => _ebikeRoute(origin, destination, effectiveWaypoints, wrap),
           timeout: const Duration(seconds: 12)),
     ]);
 

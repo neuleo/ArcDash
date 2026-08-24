@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
 import 'package:arcdash/models/map_favorite.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/demo_controller_provider.dart';
+import 'package:arcdash/providers/demo_mode_provider.dart';
 import 'package:arcdash/services/gps_service.dart';
 import 'package:arcdash/services/navigation/learned_energy_model.dart';
 import 'package:arcdash/services/navigation/map_favorites_repository.dart';
@@ -34,6 +36,11 @@ class MapState {
   final List<MapFavorite> recents;
   final double currentHeadingDeg;
   final bool isRoundTrip;
+  final bool pointOfNoReturnEnabled;
+  final bool autoChargingStopsEnabled;
+  final bool pointOfNoReturnTriggered;
+  final double neededReturnSocPercent;
+  final GeoLatLng? sessionStartingPoint;
 
   const MapState({
     this.origin,
@@ -54,6 +61,11 @@ class MapState {
     this.recents = const [],
     this.currentHeadingDeg = 0.0,
     this.isRoundTrip = false,
+    this.pointOfNoReturnEnabled = true,
+    this.autoChargingStopsEnabled = false,
+    this.pointOfNoReturnTriggered = false,
+    this.neededReturnSocPercent = 0.0,
+    this.sessionStartingPoint,
   });
 
   MapState copyWith({
@@ -78,6 +90,11 @@ class MapState {
     List<MapFavorite>? recents,
     double? currentHeadingDeg,
     bool? isRoundTrip,
+    bool? pointOfNoReturnEnabled,
+    bool? autoChargingStopsEnabled,
+    bool? pointOfNoReturnTriggered,
+    double? neededReturnSocPercent,
+    GeoLatLng? sessionStartingPoint,
   }) =>
       MapState(
         origin: clearOrigin ? null : (origin ?? this.origin),
@@ -100,6 +117,15 @@ class MapState {
         recents: recents ?? this.recents,
         currentHeadingDeg: currentHeadingDeg ?? this.currentHeadingDeg,
         isRoundTrip: isRoundTrip ?? this.isRoundTrip,
+        pointOfNoReturnEnabled:
+            pointOfNoReturnEnabled ?? this.pointOfNoReturnEnabled,
+        autoChargingStopsEnabled:
+            autoChargingStopsEnabled ?? this.autoChargingStopsEnabled,
+        pointOfNoReturnTriggered:
+            pointOfNoReturnTriggered ?? this.pointOfNoReturnTriggered,
+        neededReturnSocPercent:
+            neededReturnSocPercent ?? this.neededReturnSocPercent,
+        sessionStartingPoint: sessionStartingPoint ?? this.sessionStartingPoint,
       );
 }
 
@@ -164,11 +190,51 @@ class MapStateNotifier extends StateNotifier<MapState> {
                 nextIndex = progress.currentManeuverIndex;
               }
 
+              final startPoint = state.sessionStartingPoint ?? newOrigin;
+
+              // Point of No Return evaluation (Smart Home Return Buffer)
+              var ponrTriggered = false;
+              var neededReturnSoc = 0.0;
+              if (state.pointOfNoReturnEnabled && _ref != null) {
+                try {
+                  final homeFav = state.favorites
+                      .where((f) => f.type == FavoriteType.home)
+                      .firstOrNull;
+                  final basePoint = homeFav?.location ?? startPoint;
+                  final distKm =
+                      NavigationEngine.distanceBetween(newOrigin, basePoint) /
+                          1000.0;
+                  if (distKm > 1.0) {
+                    final learnedModel = _ref.read(learnedEnergyModelProvider);
+                    final ctrl = _ref.read(effectiveControllerProvider);
+                    final bms = _ref.read(effectiveBmsProvider);
+                    final curSoc = state.planningStartSocOverride ??
+                        (bms?.socPercent?.toDouble() ??
+                            (ctrl.battCapPercent > 0
+                                ? ctrl.battCapPercent.toDouble()
+                                : 85.0));
+
+                    final energyNeedWh =
+                        distKm * 1.35 * learnedModel.baseWhPerKm;
+                    final socNeed =
+                        (energyNeedWh / learnedModel.learnedCapacityWh) * 100.0;
+                    neededReturnSoc = (socNeed + 10.0).clamp(0.0, 100.0);
+
+                    if (curSoc <= neededReturnSoc) {
+                      ponrTriggered = true;
+                    }
+                  }
+                } catch (_) {}
+              }
+
               state = state.copyWith(
                 origin: newOrigin,
                 originLabel: 'Mein Standort',
+                sessionStartingPoint: startPoint,
                 currentManeuverIndex: nextIndex,
                 currentHeadingDeg: heading,
+                pointOfNoReturnTriggered: ponrTriggered,
+                neededReturnSocPercent: neededReturnSoc,
               );
             }
           });
@@ -202,6 +268,18 @@ class MapStateNotifier extends StateNotifier<MapState> {
         ? MapPerspective.headUp
         : MapPerspective.northUp;
     state = state.copyWith(perspective: next);
+  }
+
+  void togglePointOfNoReturn() {
+    state = state.copyWith(
+      pointOfNoReturnEnabled: !state.pointOfNoReturnEnabled,
+    );
+  }
+
+  void toggleAutoChargingStops() {
+    state = state.copyWith(
+      autoChargingStopsEnabled: !state.autoChargingStopsEnabled,
+    );
   }
 
   void setUserZoom(double zoom) {
