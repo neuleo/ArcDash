@@ -11,10 +11,23 @@ import 'package:arcdash/providers/demo_controller_provider.dart';
 import 'package:arcdash/providers/demo_mode_provider.dart';
 import 'package:arcdash/providers/map_provider.dart';
 import 'package:arcdash/services/geocoding/geocoding_service.dart';
+import 'package:arcdash/services/navigation/charging_station_service.dart';
+import 'package:arcdash/services/navigation/navigation_engine.dart';
 import 'package:arcdash/services/routing/multi_routing_service.dart';
+import 'package:arcdash/widgets/map_cockpit_hud.dart';
+import 'package:arcdash/widgets/route_elevation_chart.dart';
 
-/// Full-screen map with destination search, free multi-provider routing,
-/// turn-by-turn guidance, range circle and live battery SOC forecast.
+final chargingStationServiceProvider =
+    Provider<ChargingStationService>((ref) => ChargingStationService());
+
+/// Full-featured E-Moto Navigation Screen:
+/// - 4 Free Routing Profiles (Fastest, Trail & Forest, Scenic, E-Bike)
+/// - Turn-by-Turn Guidance Banner
+/// - Live HUD Cockpit Overlay (Speed, SOC, kW)
+/// - 3-Zonen Range Circle Layer
+/// - Interactive Route Elevation Chart (fl_chart)
+/// - Free EV Charging & Schuko 230V Socket POI Finder
+/// - Auto-Center GPS & Head-up Orientation Lock
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -27,10 +40,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   Timer? _debounce;
   List<GeoSearchResult> _results = [];
+  List<ChargingStationPoi> _chargingStations = [];
   bool _searching = false;
   bool _routing = false;
+  bool _loadingPois = false;
   bool _isSatellite = false;
   bool _hasInitialCentered = false;
+  bool _showChargingStations = false;
 
   @override
   void dispose() {
@@ -76,6 +92,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     await _route();
   }
 
+  Future<void> _loadNearbyCharging() async {
+    final origin = ref.read(mapControllerProvider).origin ??
+        const GeoLatLng(latitude: 52.5200, longitude: 13.4050);
+    setState(() {
+      _loadingPois = true;
+      _showChargingStations = true;
+    });
+    final svc = ref.read(chargingStationServiceProvider);
+    final pois = await svc.findNearbyCharging(center: origin);
+    if (!mounted) return;
+    setState(() {
+      _chargingStations = pois;
+      _loadingPois = false;
+    });
+  }
+
   Future<void> _route() async {
     final state = ref.read(mapControllerProvider);
     final dest = state.destination;
@@ -116,7 +148,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       if (!mounted) return;
       ref.read(mapControllerProvider.notifier).setAlternatives(alternatives);
       if (alternatives.isNotEmpty && mounted) {
-        // Auto-select first alternative and show bottom sheet
         ref
             .read(mapControllerProvider.notifier)
             .selectAlternative(alternatives.first);
@@ -130,16 +161,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Future<void> _showAlternativesSheet(List<RouteAlternative> alts) {
     return showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: const Color(0xFF0D1117),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        minChildSize: 0.35,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (context, scrollController) => ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -157,7 +194,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ],
               ),
             ),
-            for (final a in alts)
+            for (final a in alts) ...[
               ListTile(
                 leading: Icon(
                   switch (a.profile) {
@@ -228,7 +265,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ref.read(mapControllerProvider.notifier).selectAlternative(a);
                 },
               ),
-            const SizedBox(height: 12),
+              // Elevation profile preview
+              if (a.route.elevationGainMetersTotal > 0)
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: RouteElevationChart(route: a.route),
+                ),
+              const Divider(color: Colors.white10),
+            ],
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -242,7 +288,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final bmsState = ref.watch(effectiveBmsProvider);
     final learnedProfile = ref.watch(rangePredictionStateProvider);
 
-    // Calculate dynamic range in km from battery SOC + learned consumption
+    // Live Telemetry for HUD & Range
     final double currentSoc = bmsState?.socPercent?.toDouble() ??
         (controllerState.battCapPercent > 0
             ? controllerState.battCapPercent.toDouble()
@@ -254,8 +300,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     .reduce((a, b) => a + b) /
                 learnedProfile.consumptionHistoryWhPerKm.length)
             : 35.0;
-    final double estimatedRangeKm =
-        (capacityWh * (currentSoc / 100.0)) / avgWhKm;
+
+    // 3-Zone Range distances in km
+    final double ecoRangeKm =
+        (capacityWh * (currentSoc / 100.0)) / (avgWhKm * 0.85);
+    final double normalRangeKm = (capacityWh * (currentSoc / 100.0)) / avgWhKm;
+    final double sportRangeKm =
+        (capacityWh * (currentSoc / 100.0)) / (avgWhKm * 1.35);
 
     // Auto-center map to origin upon first valid GPS fix
     if (!_hasInitialCentered && mapState.origin != null) {
@@ -263,7 +314,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _mapController.move(
           ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
-          13.5,
+          14.0,
         );
       });
     }
@@ -292,6 +343,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           style: const TextStyle(fontSize: 16, letterSpacing: 1),
         ),
         actions: [
+          // Charging stations / Schuko socket search toggle
+          IconButton(
+            icon: Icon(
+              Icons.ev_station,
+              color: _showChargingStations
+                  ? const Color(0xFF54E39E)
+                  : Colors.white54,
+            ),
+            tooltip: 'Ladesäulen & Steckdosen anzeigen',
+            onPressed: () {
+              if (!_showChargingStations) {
+                _loadNearbyCharging();
+              } else {
+                setState(() => _showChargingStations = false);
+              }
+            },
+          ),
+          // Satellite View Toggle
           IconButton(
             icon: Icon(
               _isSatellite ? Icons.map_outlined : Icons.satellite_alt_outlined,
@@ -308,7 +377,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           options: MapOptions(
             initialCenter: center,
             initialZoom:
-                selected != null || mapState.destination != null ? 13.5 : 11,
+                selected != null || mapState.destination != null ? 13.5 : 12,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),
@@ -324,19 +393,79 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               maxNativeZoom: 19,
             ),
 
-            // Estimated Reichweiten-Kreis (Range circle in km around user location)
-            if (mapState.origin != null && estimatedRangeKm > 1.0)
+            // 3-Zone Dynamic Range Heatmap Circles (Eco, Normal, Sport/Trail)
+            if (mapState.origin != null && normalRangeKm > 1.0)
               CircleLayer(circles: [
+                // Eco Zone (Max Reach)
                 CircleMarker(
                   point: ll.LatLng(
                       mapState.origin!.latitude, mapState.origin!.longitude),
-                  radius: estimatedRangeKm * 1000, // meters
+                  radius: ecoRangeKm * 1000,
                   useRadiusInMeter: true,
-                  color: const Color(0xFF00E5FF).withOpacity(0.08),
-                  borderColor: const Color(0xFF00E5FF).withOpacity(0.4),
+                  color: const Color(0xFF54E39E).withOpacity(0.04),
+                  borderColor: const Color(0xFF54E39E).withOpacity(0.35),
+                  borderStrokeWidth: 1.2,
+                ),
+                // Normal Zone
+                CircleMarker(
+                  point: ll.LatLng(
+                      mapState.origin!.latitude, mapState.origin!.longitude),
+                  radius: normalRangeKm * 1000,
+                  useRadiusInMeter: true,
+                  color: const Color(0xFF00E5FF).withOpacity(0.06),
+                  borderColor: const Color(0xFF00E5FF).withOpacity(0.5),
                   borderStrokeWidth: 1.5,
                 ),
+                // Sport / Heavy Terrain Zone
+                CircleMarker(
+                  point: ll.LatLng(
+                      mapState.origin!.latitude, mapState.origin!.longitude),
+                  radius: sportRangeKm * 1000,
+                  useRadiusInMeter: true,
+                  color: Colors.orangeAccent.withOpacity(0.06),
+                  borderColor: Colors.orangeAccent.withOpacity(0.4),
+                  borderStrokeWidth: 1.2,
+                ),
               ]),
+
+            // Charging Station POI Markers
+            if (_showChargingStations && _chargingStations.isNotEmpty)
+              MarkerLayer(
+                markers: _chargingStations.map((poi) {
+                  return Marker(
+                    width: 36,
+                    height: 36,
+                    point: ll.LatLng(
+                        poi.location.latitude, poi.location.longitude),
+                    child: GestureDetector(
+                      onTap: () {
+                        ref.read(mapControllerProvider.notifier).setDestination(
+                              poi.location,
+                              label: poi.name,
+                            );
+                        _route();
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: poi.hasSchuko
+                              ? const Color(0xFF54E39E)
+                              : const Color(0xFF00E5FF),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: const Icon(Icons.ev_station,
+                            color: Colors.black, size: 20),
+                      ),
+                    ),
+                  );
+                }).toList(growable: false),
+              ),
 
             // User location & Destination markers
             if (mapState.destination != null || mapState.origin != null)
@@ -400,6 +529,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
               ]),
           ],
+        ),
+
+        // Live E-Moto HUD Cockpit Overlay on Map (Top-Left under Search/Banner)
+        Positioned(
+          top: isNavigating ? 90 : 75,
+          left: 14,
+          child: MapCockpitHud(
+            speedKph: controllerState.speedKph,
+            socPercent: currentSoc.round(),
+            powerKw: controllerState.powerKw,
+            motorTempC: controllerState.motorTempC,
+          ),
         ),
 
         // Search bar + results (hidden during active turn-by-turn navigation)
@@ -647,7 +788,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.alt_route, color: Colors.white70),
-                      tooltip: 'Alternative Routen',
+                      tooltip: 'Alternative Routen & Höhenprofil',
                       onPressed: () =>
                           _showAlternativesSheet(mapState.alternatives),
                     ),
@@ -721,11 +862,25 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
 
         // Routing progress overlay
-        if (_routing)
-          const Positioned.fill(
+        if (_routing || _loadingPois)
+          Positioned.fill(
             child: ColoredBox(
               color: Colors.black38,
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 12),
+                    Text(
+                      _loadingPois
+                          ? 'Suche Ladesäulen in der Nähe…'
+                          : 'Berechne Routen & Akkubedarf…',
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
       ]),
