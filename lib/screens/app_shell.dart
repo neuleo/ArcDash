@@ -55,9 +55,11 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final useRail = constraints.maxWidth >= 700;
+        final useLandscape = constraints.maxWidth >= 600 ||
+            MediaQuery.of(context).orientation == Orientation.landscape ||
+            constraints.maxWidth > constraints.maxHeight;
 
-        if (useRail) {
+        if (useLandscape) {
           return Scaffold(
             key: _scaffoldKey,
             drawer: Drawer(
@@ -131,26 +133,30 @@ class _AppShellState extends ConsumerState<AppShell> {
                 ),
               ),
             ),
-            body: SafeArea(
-              child: Row(
-                children: [
-                  NavigationRail(
-                    selectedIndex: selectedIndex,
-                    onDestinationSelected: (i) =>
-                        ref.read(appShellIndexProvider.notifier).state = i,
-                    labelType: NavigationRailLabelType.all,
-                    destinations: destinations
-                        .map((destination) => NavigationRailDestination(
-                              icon: destination.icon,
-                              selectedIcon: destination.selectedIcon,
-                              label: Text(destination.label),
-                            ))
-                        .toList(),
+            body: Stack(
+              children: [
+                content,
+                // Floating Hamburger menu button for non-map screens
+                if (selectedIndex != 3)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Material(
+                      color: const Color(0xCC0D1117),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: Colors.white12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.menu,
+                            color: Colors.white70, size: 22),
+                        tooltip: 'Hauptmenü',
+                        onPressed: () =>
+                            _scaffoldKey.currentState?.openDrawer(),
+                      ),
+                    ),
                   ),
-                  const VerticalDivider(width: 1),
-                  Expanded(child: content),
-                ],
-              ),
+              ],
             ),
           );
         }
