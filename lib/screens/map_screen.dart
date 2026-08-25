@@ -979,967 +979,1001 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mapState = ref.watch(mapControllerProvider);
-    final controllerState = ref.watch(effectiveControllerProvider);
-    final bmsState = ref.watch(effectiveBmsProvider);
-    final learnedModel = ref.watch(learnedEnergyModelProvider);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mapState = ref.watch(mapControllerProvider);
+        final controllerState = ref.watch(effectiveControllerProvider);
+        final bmsState = ref.watch(effectiveBmsProvider);
+        final learnedModel = ref.watch(learnedEnergyModelProvider);
 
-    final orientation = MediaQuery.of(context).orientation;
-    final isLandscape = orientation == Orientation.landscape ||
-        MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
+        final isLandscape = constraints.maxWidth >= 600 ||
+            MediaQuery.of(context).orientation == Orientation.landscape ||
+            constraints.maxWidth > constraints.maxHeight;
 
-    final double currentSoc = mapState.planningStartSocOverride ??
-        (bmsState?.socPercent?.toDouble() ??
-            (controllerState.battCapPercent > 0
-                ? controllerState.battCapPercent.toDouble()
-                : _customStartSoc));
+        final double currentSoc = mapState.planningStartSocOverride ??
+            (bmsState?.socPercent?.toDouble() ??
+                (controllerState.battCapPercent > 0
+                    ? controllerState.battCapPercent.toDouble()
+                    : _customStartSoc));
 
-    final double effectiveSoc = currentSoc > 0 ? currentSoc : 85.0;
+        final double effectiveSoc = currentSoc > 0 ? currentSoc : 85.0;
 
-    final double ecoRangeKm =
-        (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
-            (learnedModel.baseWhPerKm * 0.85);
-    final double normalRangeKm =
-        (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
-            learnedModel.baseWhPerKm;
-    final double sportRangeKm =
-        (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
-            (learnedModel.baseWhPerKm * 1.35);
+        final double ecoRangeKm =
+            (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
+                (learnedModel.baseWhPerKm * 0.85);
+        final double normalRangeKm =
+            (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
+                learnedModel.baseWhPerKm;
+        final double sportRangeKm =
+            (learnedModel.learnedCapacityWh * (effectiveSoc / 100.0)) /
+                (learnedModel.baseWhPerKm * 1.35);
 
-    if (!_hasInitialCentered && mapState.origin != null) {
-      _hasInitialCentered = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(
-          ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
-          mapState.userZoom,
-        );
-      });
-    }
+        if (!_hasInitialCentered && mapState.origin != null) {
+          _hasInitialCentered = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _mapController.move(
+              ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
+              mapState.userZoom,
+            );
+          });
+        }
 
-    if (mapState.isNavigating &&
-        mapState.autoFollowUser &&
-        mapState.origin != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(
-          ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
-          mapState.userZoom,
-        );
-      });
-    }
+        if (mapState.isNavigating &&
+            mapState.autoFollowUser &&
+            mapState.origin != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _mapController.move(
+              ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
+              mapState.userZoom,
+            );
+          });
+        }
 
-    final effectiveOrigin = mapState.origin ??
-        const GeoLatLng(latitude: 52.5200, longitude: 13.4050);
+        final effectiveOrigin = mapState.origin ??
+            const GeoLatLng(latitude: 52.5200, longitude: 13.4050);
 
-    final center = mapState.destination != null
-        ? ll.LatLng(
-            mapState.destination!.latitude, mapState.destination!.longitude)
-        : ll.LatLng(effectiveOrigin.latitude, effectiveOrigin.longitude);
-    final selected = mapState.selected;
-    final isNavigating = mapState.isNavigating;
-    final currentManeuver = (selected != null &&
-            selected.route.maneuvers.isNotEmpty &&
-            mapState.currentManeuverIndex < selected.route.maneuvers.length)
-        ? selected.route.maneuvers[mapState.currentManeuverIndex]
-        : null;
+        final center = mapState.destination != null
+            ? ll.LatLng(
+                mapState.destination!.latitude, mapState.destination!.longitude)
+            : ll.LatLng(effectiveOrigin.latitude, effectiveOrigin.longitude);
+        final selected = mapState.selected;
+        final isNavigating = mapState.isNavigating;
+        final currentManeuver = (selected != null &&
+                selected.route.maneuvers.isNotEmpty &&
+                mapState.currentManeuverIndex < selected.route.maneuvers.length)
+            ? selected.route.maneuvers[mapState.currentManeuverIndex]
+            : null;
 
-    final isHeadUp = mapState.perspective == MapPerspective.headUp;
+        final isHeadUp = mapState.perspective == MapPerspective.headUp;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF050608),
-      appBar: isLandscape
-          ? null
-          : AppBar(
-              backgroundColor: const Color(0xFF0D1117),
-              foregroundColor: Colors.white,
-              title: Text(
-                isNavigating ? 'Navigation aktiv' : 'Navigation',
-                style: const TextStyle(fontSize: 16, letterSpacing: 1),
-              ),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    Icons.add_location_alt_outlined,
-                    color: mapState.waypoints.isNotEmpty || mapState.isRoundTrip
-                        ? const Color(0xFF00E5FF)
-                        : Colors.white54,
+        return Scaffold(
+          backgroundColor: const Color(0xFF050608),
+          appBar: isLandscape
+              ? null
+              : AppBar(
+                  backgroundColor: const Color(0xFF0D1117),
+                  foregroundColor: Colors.white,
+                  title: Text(
+                    isNavigating ? 'Navigation aktiv' : 'Navigation',
+                    style: const TextStyle(fontSize: 16, letterSpacing: 1),
                   ),
-                  tooltip: 'Wegpunkte & Optionen',
-                  onPressed: () => _showOptionsSheet(context),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.tune,
-                    color: mapState.planningStartSocOverride != null
-                        ? const Color(0xFF00E5FF)
-                        : Colors.white54,
-                  ),
-                  tooltip: 'Tour-Planer (Start-SOC)',
-                  onPressed: () => _showTourPlannerSheet(context),
-                ),
-                IconButton(
-                  icon: Icon(
-                    isHeadUp ? Icons.explore : Icons.north,
-                    color: isHeadUp ? const Color(0xFF00E5FF) : Colors.white54,
-                  ),
-                  tooltip:
-                      isHeadUp ? 'Fahrtrichtung oben (3D)' : 'Nordausrichtung',
-                  onPressed: () => ref
-                      .read(mapControllerProvider.notifier)
-                      .togglePerspective(),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.ev_station,
-                    color: _showChargingStations
-                        ? const Color(0xFF54E39E)
-                        : Colors.white54,
-                  ),
-                  tooltip: 'Ladesäulen & Steckdosen anzeigen',
-                  onPressed: () {
-                    if (!_showChargingStations) {
-                      _loadNearbyCharging();
-                    } else {
-                      setState(() => _showChargingStations = false);
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: Icon(
-                    _isSatellite
-                        ? Icons.map_outlined
-                        : Icons.satellite_alt_outlined,
-                    color: Colors.white70,
-                  ),
-                  tooltip: _isSatellite ? 'Standardkarte' : 'Satellitenansicht',
-                  onPressed: () => setState(() => _isSatellite = !_isSatellite),
-                ),
-              ],
-            ),
-      body: Stack(children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: center,
-            initialZoom: mapState.userZoom,
-            initialRotation: isHeadUp ? mapState.currentHeadingDeg : 0.0,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-            ),
-            onPositionChanged: (pos, hasGesture) {
-              if (hasGesture) {
-                ref.read(mapControllerProvider.notifier).setUserZoom(pos.zoom);
-              }
-            },
-            onLongPress: (_, pos) =>
-                _onMapLongPress(pos.latitude, pos.longitude),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: _isSatellite
-                  ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'de.neuleo.arcdash',
-              maxNativeZoom: 19,
-            ),
-
-            // 3-Zone Dynamic Range Heatmap Circles
-            if (effectiveOrigin != null)
-              CircleLayer(circles: [
-                CircleMarker(
-                  point: ll.LatLng(
-                      effectiveOrigin.latitude, effectiveOrigin.longitude),
-                  radius: ecoRangeKm * 1000,
-                  useRadiusInMeter: true,
-                  color: const Color(0xFF00C853).withOpacity(0.12),
-                  borderColor: const Color(0xFF00C853),
-                  borderStrokeWidth: 2.5,
-                ),
-                CircleMarker(
-                  point: ll.LatLng(
-                      effectiveOrigin.latitude, effectiveOrigin.longitude),
-                  radius: normalRangeKm * 1000,
-                  useRadiusInMeter: true,
-                  color: const Color(0xFF0091EA).withOpacity(0.15),
-                  borderColor: const Color(0xFF0091EA),
-                  borderStrokeWidth: 3.0,
-                ),
-                CircleMarker(
-                  point: ll.LatLng(
-                      effectiveOrigin.latitude, effectiveOrigin.longitude),
-                  radius: sportRangeKm * 1000,
-                  useRadiusInMeter: true,
-                  color: const Color(0xFFFF6D00).withOpacity(0.15),
-                  borderColor: const Color(0xFFFF6D00),
-                  borderStrokeWidth: 2.5,
-                ),
-              ]),
-
-            // Charging Station POI Markers
-            if (_showChargingStations && _chargingStations.isNotEmpty)
-              MarkerLayer(
-                markers: _chargingStations.map((poi) {
-                  return Marker(
-                    width: 36,
-                    height: 36,
-                    point: ll.LatLng(
-                        poi.location.latitude, poi.location.longitude),
-                    child: GestureDetector(
-                      onTap: () {
-                        ref.read(mapControllerProvider.notifier).setDestination(
-                              poi.location,
-                              label: poi.name,
-                            );
-                        _route();
+                  actions: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.add_location_alt_outlined,
+                        color: mapState.waypoints.isNotEmpty ||
+                                mapState.isRoundTrip
+                            ? const Color(0xFF00E5FF)
+                            : Colors.white54,
+                      ),
+                      tooltip: 'Wegpunkte & Optionen',
+                      onPressed: () => _showOptionsSheet(context),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.tune,
+                        color: mapState.planningStartSocOverride != null
+                            ? const Color(0xFF00E5FF)
+                            : Colors.white54,
+                      ),
+                      tooltip: 'Tour-Planer (Start-SOC)',
+                      onPressed: () => _showTourPlannerSheet(context),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        isHeadUp ? Icons.explore : Icons.north,
+                        color:
+                            isHeadUp ? const Color(0xFF00E5FF) : Colors.white54,
+                      ),
+                      tooltip: isHeadUp
+                          ? 'Fahrtrichtung oben (3D)'
+                          : 'Nordausrichtung',
+                      onPressed: () => ref
+                          .read(mapControllerProvider.notifier)
+                          .togglePerspective(),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.ev_station,
+                        color: _showChargingStations
+                            ? const Color(0xFF54E39E)
+                            : Colors.white54,
+                      ),
+                      tooltip: 'Ladesäulen & Steckdosen anzeigen',
+                      onPressed: () {
+                        if (!_showChargingStations) {
+                          _loadNearbyCharging();
+                        } else {
+                          setState(() => _showChargingStations = false);
+                        }
                       },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: poi.hasSchuko
-                              ? const Color(0xFF54E39E)
-                              : const Color(0xFF00E5FF),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.5),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            )
-                          ],
-                        ),
-                        child: const Icon(Icons.ev_station,
-                            color: Colors.black, size: 20),
-                      ),
                     ),
-                  );
-                }).toList(growable: false),
-              ),
-
-            // User location, Intermediate Waypoints, and Destination Markers
-            if (mapState.destination != null ||
-                mapState.origin != null ||
-                mapState.waypoints.isNotEmpty ||
-                mapState.favorites.isNotEmpty)
-              MarkerLayer(markers: [
-                for (final fav in mapState.favorites)
-                  Marker(
-                    width: 34,
-                    height: 34,
-                    point: ll.LatLng(
-                        fav.location.latitude, fav.location.longitude),
-                    child: GestureDetector(
-                      onTap: () => _showFavoriteManagerSheet(context, fav),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0D1117),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: fav.type == FavoriteType.home
-                                ? const Color(0xFF00E5FF)
-                                : (fav.type == FavoriteType.work
-                                    ? const Color(0xFF54E39E)
-                                    : const Color(0xFFFFB300)),
-                            width: 2,
-                          ),
-                        ),
-                        child: Icon(
-                          fav.type == FavoriteType.home
-                              ? Icons.home
-                              : (fav.type == FavoriteType.work
-                                  ? Icons.work
-                                  : Icons.star),
-                          color: Colors.white,
-                          size: 18,
-                        ),
+                    IconButton(
+                      icon: Icon(
+                        _isSatellite
+                            ? Icons.map_outlined
+                            : Icons.satellite_alt_outlined,
+                        color: Colors.white70,
                       ),
+                      tooltip:
+                          _isSatellite ? 'Standardkarte' : 'Satellitenansicht',
+                      onPressed: () =>
+                          setState(() => _isSatellite = !_isSatellite),
                     ),
-                  ),
-                if (mapState.destination != null)
-                  Marker(
-                    width: 44,
-                    height: 44,
-                    point: ll.LatLng(mapState.destination!.latitude,
-                        mapState.destination!.longitude),
-                    child: GestureDetector(
-                      onTap: () => _showAddOrEditFavoriteSheet(
-                        context,
-                        location: mapState.destination!,
-                      ),
-                      child: const Icon(Icons.location_on,
-                          color: Color(0xFFFF5252), size: 40),
-                    ),
-                  ),
-                for (int i = 0; i < mapState.waypoints.length; i++)
-                  Marker(
-                    width: 32,
-                    height: 32,
-                    point: ll.LatLng(mapState.waypoints[i].latitude,
-                        mapState.waypoints[i].longitude),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFB300),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          )
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${i + 1}',
-                          style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13),
-                        ),
-                      ),
-                    ),
-                  ),
-                if (mapState.origin != null)
-                  Marker(
-                    width: 28,
-                    height: 28,
-                    point: ll.LatLng(
-                        mapState.origin!.latitude, mapState.origin!.longitude),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF2979FF).withOpacity(0.3),
-                          ),
-                        ),
-                        Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF2979FF),
-                            border: Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ]),
-
-            if (selected != null && selected.route.geometry.isNotEmpty)
-              PolylineLayer(polylines: [
-                Polyline(
-                  points: selected.route.geometry
-                      .map((g) => ll.LatLng(g.latitude, g.longitude))
-                      .toList(growable: false),
-                  strokeWidth: isNavigating ? 6 : 5,
-                  color: const Color(0xFF00E5FF),
+                  ],
                 ),
-              ]),
-          ],
-        ),
-
-        // Floating Landscape Top Action Bar (Compact)
-        if (isLandscape && !isNavigating)
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xCC0D1117),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.add_location_alt_outlined,
-                      color:
-                          mapState.waypoints.isNotEmpty || mapState.isRoundTrip
-                              ? const Color(0xFF00E5FF)
-                              : Colors.white70,
-                    ),
-                    tooltip: 'Wegpunkte & Optionen',
-                    onPressed: () => _showOptionsSheet(context),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.tune,
-                      color: mapState.planningStartSocOverride != null
-                          ? const Color(0xFF00E5FF)
-                          : Colors.white70,
-                    ),
-                    tooltip: 'Tour-Planer',
-                    onPressed: () => _showTourPlannerSheet(context),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      isHeadUp ? Icons.explore : Icons.north,
-                      color:
-                          isHeadUp ? const Color(0xFF00E5FF) : Colors.white70,
-                    ),
-                    tooltip: isHeadUp ? 'Head-Up' : 'Nord',
-                    onPressed: () => ref
+          body: Stack(children: [
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: mapState.userZoom,
+                initialRotation: isHeadUp ? mapState.currentHeadingDeg : 0.0,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                ),
+                onPositionChanged: (pos, hasGesture) {
+                  if (hasGesture) {
+                    ref
                         .read(mapControllerProvider.notifier)
-                        .togglePerspective(),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.ev_station,
-                      color: _showChargingStations
-                          ? const Color(0xFF54E39E)
-                          : Colors.white70,
-                    ),
-                    tooltip: 'Ladesäulen',
-                    onPressed: () {
-                      if (!_showChargingStations) {
-                        _loadNearbyCharging();
-                      } else {
-                        setState(() => _showChargingStations = false);
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      _isSatellite
-                          ? Icons.map_outlined
-                          : Icons.satellite_alt_outlined,
-                      color: Colors.white70,
-                    ),
-                    tooltip: 'Satellit',
-                    onPressed: () =>
-                        setState(() => _isSatellite = !_isSatellite),
-                  ),
-                ],
+                        .setUserZoom(pos.zoom);
+                  }
+                },
+                onLongPress: (_, pos) =>
+                    _onMapLongPress(pos.latitude, pos.longitude),
               ),
-            ),
-          ),
-
-        // Live E-Moto HUD Cockpit Overlay on Map (Positioned cleanly)
-        Positioned(
-          top: isNavigating
-              ? (isLandscape ? null : 90)
-              : (isLandscape ? null : 120),
-          bottom: isLandscape ? (selected != null ? 140 : 20) : null,
-          left: isLandscape ? (selected != null ? 390 : 12) : 14,
-          child: MapCockpitHud(
-            speedKph: controllerState.speedKph,
-            socPercent: currentSoc.round(),
-            powerKw: controllerState.powerKw,
-            motorTempC: controllerState.motorTempC,
-          ),
-        ),
-
-        // Search bar & Favorites Quick Row (in Landscape docked neatly on the left at 360px)
-        if (!isNavigating)
-          Positioned(
-            top: 10,
-            left: 12,
-            width: isLandscape ? 360 : null,
-            right: isLandscape ? null : 12,
-            child: Column(children: [
-              TextField(
-                controller: _searchCtrl,
-                focusNode: _searchFocusNode,
-                onChanged: _onSearchChanged,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Ziel suchen (oder Karte halten)…',
-                  hintStyle:
-                      const TextStyle(color: Colors.white38, fontSize: 13),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
-                  suffixIcon: _searching
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2)))
-                      : (_searchCtrl.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.clear,
-                                  color: Colors.white38),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                setState(() => _results = []);
-                              })),
-                  filled: true,
-                  fillColor: const Color(0xE6111518),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none),
+              children: [
+                TileLayer(
+                  urlTemplate: _isSatellite
+                      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'de.neuleo.arcdash',
+                  maxNativeZoom: 19,
                 ),
-              ),
 
-              // Favorites Quick Filter Chips
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ActionChip(
-                          backgroundColor: const Color(0xF00D1117),
-                          avatar: const Icon(Icons.add_location_alt_outlined,
-                              color: Color(0xFF00E5FF), size: 16),
-                          label: const Text('+ Wegpunkt',
-                              style: TextStyle(
-                                  color: Color(0xFF00E5FF),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                          onPressed: () => _showOptionsSheet(context),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ActionChip(
-                          backgroundColor: const Color(0xF00D1117),
-                          avatar: const Icon(Icons.star_border,
-                              color: Color(0xFFFFB300), size: 16),
-                          label: const Text('+ Favorit',
-                              style: TextStyle(
-                                  color: Color(0xFFFFB300),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold)),
-                          onPressed: () {
-                            final currentCenter = _mapController.camera.center;
-                            _showAddOrEditFavoriteSheet(
-                              context,
-                              location: GeoLatLng(
-                                latitude: currentCenter.latitude,
-                                longitude: currentCenter.longitude,
-                              ),
-                            );
+                // 3-Zone Dynamic Range Heatmap Circles
+                if (effectiveOrigin != null)
+                  CircleLayer(circles: [
+                    CircleMarker(
+                      point: ll.LatLng(
+                          effectiveOrigin.latitude, effectiveOrigin.longitude),
+                      radius: ecoRangeKm * 1000,
+                      useRadiusInMeter: true,
+                      color: const Color(0xFF00C853).withOpacity(0.12),
+                      borderColor: const Color(0xFF00C853),
+                      borderStrokeWidth: 2.5,
+                    ),
+                    CircleMarker(
+                      point: ll.LatLng(
+                          effectiveOrigin.latitude, effectiveOrigin.longitude),
+                      radius: normalRangeKm * 1000,
+                      useRadiusInMeter: true,
+                      color: const Color(0xFF0091EA).withOpacity(0.15),
+                      borderColor: const Color(0xFF0091EA),
+                      borderStrokeWidth: 3.0,
+                    ),
+                    CircleMarker(
+                      point: ll.LatLng(
+                          effectiveOrigin.latitude, effectiveOrigin.longitude),
+                      radius: sportRangeKm * 1000,
+                      useRadiusInMeter: true,
+                      color: const Color(0xFFFF6D00).withOpacity(0.15),
+                      borderColor: const Color(0xFFFF6D00),
+                      borderStrokeWidth: 2.5,
+                    ),
+                  ]),
+
+                // Charging Station POI Markers
+                if (_showChargingStations && _chargingStations.isNotEmpty)
+                  MarkerLayer(
+                    markers: _chargingStations.map((poi) {
+                      return Marker(
+                        width: 36,
+                        height: 36,
+                        point: ll.LatLng(
+                            poi.location.latitude, poi.location.longitude),
+                        child: GestureDetector(
+                          onTap: () {
+                            ref
+                                .read(mapControllerProvider.notifier)
+                                .setDestination(
+                                  poi.location,
+                                  label: poi.name,
+                                );
+                            _route();
                           },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: poi.hasSchuko
+                                  ? const Color(0xFF54E39E)
+                                  : const Color(0xFF00E5FF),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.5),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ],
+                            ),
+                            child: const Icon(Icons.ev_station,
+                                color: Colors.black, size: 20),
+                          ),
                         ),
-                      ),
-                      for (final fav in mapState.favorites)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: GestureDetector(
-                            onLongPress: () =>
-                                _showFavoriteManagerSheet(context, fav),
-                            child: ActionChip(
-                              backgroundColor: const Color(0xE6111518),
-                              avatar: Icon(
-                                fav.type == FavoriteType.home
-                                    ? Icons.home
-                                    : (fav.type == FavoriteType.work
-                                        ? Icons.work
-                                        : Icons.star),
+                      );
+                    }).toList(growable: false),
+                  ),
+
+                // User location, Intermediate Waypoints, and Destination Markers
+                if (mapState.destination != null ||
+                    mapState.origin != null ||
+                    mapState.waypoints.isNotEmpty ||
+                    mapState.favorites.isNotEmpty)
+                  MarkerLayer(markers: [
+                    for (final fav in mapState.favorites)
+                      Marker(
+                        width: 34,
+                        height: 34,
+                        point: ll.LatLng(
+                            fav.location.latitude, fav.location.longitude),
+                        child: GestureDetector(
+                          onTap: () => _showFavoriteManagerSheet(context, fav),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D1117),
+                              shape: BoxShape.circle,
+                              border: Border.all(
                                 color: fav.type == FavoriteType.home
                                     ? const Color(0xFF00E5FF)
                                     : (fav.type == FavoriteType.work
                                         ? const Color(0xFF54E39E)
                                         : const Color(0xFFFFB300)),
-                                size: 16,
+                                width: 2,
                               ),
-                              label: Text(fav.title,
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 12)),
+                            ),
+                            child: Icon(
+                              fav.type == FavoriteType.home
+                                  ? Icons.home
+                                  : (fav.type == FavoriteType.work
+                                      ? Icons.work
+                                      : Icons.star),
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (mapState.destination != null)
+                      Marker(
+                        width: 44,
+                        height: 44,
+                        point: ll.LatLng(mapState.destination!.latitude,
+                            mapState.destination!.longitude),
+                        child: GestureDetector(
+                          onTap: () => _showAddOrEditFavoriteSheet(
+                            context,
+                            location: mapState.destination!,
+                          ),
+                          child: const Icon(Icons.location_on,
+                              color: Color(0xFFFF5252), size: 40),
+                        ),
+                      ),
+                    for (int i = 0; i < mapState.waypoints.length; i++)
+                      Marker(
+                        width: 32,
+                        height: 32,
+                        point: ll.LatLng(mapState.waypoints[i].latitude,
+                            mapState.waypoints[i].longitude),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFB300),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.4),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${i + 1}',
+                              style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (mapState.origin != null)
+                      Marker(
+                        width: 28,
+                        height: 28,
+                        point: ll.LatLng(mapState.origin!.latitude,
+                            mapState.origin!.longitude),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF2979FF).withOpacity(0.3),
+                              ),
+                            ),
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF2979FF),
+                                border:
+                                    Border.all(color: Colors.white, width: 2.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ]),
+
+                if (selected != null && selected.route.geometry.isNotEmpty)
+                  PolylineLayer(polylines: [
+                    Polyline(
+                      points: selected.route.geometry
+                          .map((g) => ll.LatLng(g.latitude, g.longitude))
+                          .toList(growable: false),
+                      strokeWidth: isNavigating ? 6 : 5,
+                      color: const Color(0xFF00E5FF),
+                    ),
+                  ]),
+              ],
+            ),
+
+            // Floating Landscape Top Action Bar (Compact)
+            if (isLandscape && !isNavigating)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xCC0D1117),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.add_location_alt_outlined,
+                          color: mapState.waypoints.isNotEmpty ||
+                                  mapState.isRoundTrip
+                              ? const Color(0xFF00E5FF)
+                              : Colors.white70,
+                        ),
+                        tooltip: 'Wegpunkte & Optionen',
+                        onPressed: () => _showOptionsSheet(context),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.tune,
+                          color: mapState.planningStartSocOverride != null
+                              ? const Color(0xFF00E5FF)
+                              : Colors.white70,
+                        ),
+                        tooltip: 'Tour-Planer',
+                        onPressed: () => _showTourPlannerSheet(context),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          isHeadUp ? Icons.explore : Icons.north,
+                          color: isHeadUp
+                              ? const Color(0xFF00E5FF)
+                              : Colors.white70,
+                        ),
+                        tooltip: isHeadUp ? 'Head-Up' : 'Nord',
+                        onPressed: () => ref
+                            .read(mapControllerProvider.notifier)
+                            .togglePerspective(),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.ev_station,
+                          color: _showChargingStations
+                              ? const Color(0xFF54E39E)
+                              : Colors.white70,
+                        ),
+                        tooltip: 'Ladesäulen',
+                        onPressed: () {
+                          if (!_showChargingStations) {
+                            _loadNearbyCharging();
+                          } else {
+                            setState(() => _showChargingStations = false);
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          _isSatellite
+                              ? Icons.map_outlined
+                              : Icons.satellite_alt_outlined,
+                          color: Colors.white70,
+                        ),
+                        tooltip: 'Satellit',
+                        onPressed: () =>
+                            setState(() => _isSatellite = !_isSatellite),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Live E-Moto HUD Cockpit Overlay on Map (Positioned cleanly)
+            Positioned(
+              top: isNavigating
+                  ? (isLandscape ? null : 90)
+                  : (isLandscape ? null : 120),
+              bottom: isLandscape ? (selected != null ? 140 : 20) : null,
+              left: isLandscape ? (selected != null ? 390 : 12) : 14,
+              child: MapCockpitHud(
+                speedKph: controllerState.speedKph,
+                socPercent: currentSoc.round(),
+                powerKw: controllerState.powerKw,
+                motorTempC: controllerState.motorTempC,
+              ),
+            ),
+
+            // Search bar & Favorites Quick Row (in Landscape docked neatly on the left at 360px)
+            if (!isNavigating)
+              Positioned(
+                top: 10,
+                left: 12,
+                width: isLandscape ? 360 : null,
+                right: isLandscape ? null : 12,
+                child: Column(children: [
+                  TextField(
+                    controller: _searchCtrl,
+                    focusNode: _searchFocusNode,
+                    onChanged: _onSearchChanged,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Ziel suchen (oder Karte halten)…',
+                      hintStyle:
+                          const TextStyle(color: Colors.white38, fontSize: 13),
+                      prefixIcon:
+                          const Icon(Icons.search, color: Colors.white54),
+                      suffixIcon: _searching
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2)))
+                          : (_searchCtrl.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.clear,
+                                      color: Colors.white38),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    setState(() => _results = []);
+                                  })),
+                      filled: true,
+                      fillColor: const Color(0xE6111518),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none),
+                    ),
+                  ),
+
+                  // Favorites Quick Filter Chips
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              backgroundColor: const Color(0xF00D1117),
+                              avatar: const Icon(
+                                  Icons.add_location_alt_outlined,
+                                  color: Color(0xFF00E5FF),
+                                  size: 16),
+                              label: const Text('+ Wegpunkt',
+                                  style: TextStyle(
+                                      color: Color(0xFF00E5FF),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
+                              onPressed: () => _showOptionsSheet(context),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              backgroundColor: const Color(0xF00D1117),
+                              avatar: const Icon(Icons.star_border,
+                                  color: Color(0xFFFFB300), size: 16),
+                              label: const Text('+ Favorit',
+                                  style: TextStyle(
+                                      color: Color(0xFFFFB300),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold)),
                               onPressed: () {
-                                ref
-                                    .read(mapControllerProvider.notifier)
-                                    .setDestination(
-                                      fav.location,
-                                      label: fav.title,
-                                    );
-                                _route();
+                                final currentCenter =
+                                    _mapController.camera.center;
+                                _showAddOrEditFavoriteSheet(
+                                  context,
+                                  location: GeoLatLng(
+                                    latitude: currentCenter.latitude,
+                                    longitude: currentCenter.longitude,
+                                  ),
+                                );
                               },
                             ),
                           ),
-                        ),
-                      for (final rec in mapState.recents.take(3))
-                        Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ActionChip(
-                            backgroundColor: const Color(0xCC111518),
-                            avatar: const Icon(Icons.history,
-                                color: Colors.white38, size: 16),
-                            label: Text(rec.title,
-                                style: const TextStyle(
-                                    color: Colors.white70, fontSize: 12)),
-                            onPressed: () {
-                              ref
-                                  .read(mapControllerProvider.notifier)
-                                  .setDestination(
-                                    rec.location,
-                                    label: rec.title,
-                                  );
-                              _route();
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-
-              if (_results.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 260),
-                  decoration: BoxDecoration(
-                    color: const Color(0xF2111518),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _results.length,
-                    itemBuilder: (_, i) {
-                      final r = _results[i];
-                      return ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.place,
-                            color: Color(0xFF00E5FF), size: 22),
-                        title: Text(r.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 14)),
-                        subtitle: r.detail.isEmpty
-                            ? null
-                            : Text(r.detail,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color: Colors.white38, fontSize: 11)),
-                        onTap: () => _pickDestination(r),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ]),
-          ),
-
-        if (isNavigating && currentManeuver != null)
-          Positioned(
-            top: 10,
-            left: isLandscape ? 70 : 12,
-            right: isLandscape ? 70 : 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xF50D1117),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF00E5FF), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    switch (currentManeuver.modifier) {
-                      'left' || 'sharp left' => Icons.turn_left,
-                      'right' || 'sharp right' => Icons.turn_right,
-                      'slight left' => Icons.turn_slight_left,
-                      'slight right' => Icons.turn_slight_right,
-                      _ => Icons.straight,
-                    },
-                    color: const Color(0xFF00E5FF),
-                    size: 36,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          currentManeuver.instruction,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        if (currentManeuver.distanceMeters > 0)
-                          Text(
-                            'in ${(currentManeuver.distanceMeters >= 1000 ? "${(currentManeuver.distanceMeters / 1000).toStringAsFixed(1)} km" : "${currentManeuver.distanceMeters.round()} m")}',
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 12),
-                          ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon:
-                        const Icon(Icons.arrow_forward, color: Colors.white54),
-                    tooltip: 'Nächster Schritt',
-                    onPressed: () =>
-                        ref.read(mapControllerProvider.notifier).nextManeuver(),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.redAccent),
-                    tooltip: 'Navigation beenden',
-                    onPressed: () => ref
-                        .read(mapControllerProvider.notifier)
-                        .stopNavigation(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        if (mapState.pointOfNoReturnTriggered &&
-            mapState.pointOfNoReturnEnabled)
-          Positioned(
-            top: isNavigating ? 90 : (isLandscape ? 60 : 70),
-            left: isLandscape ? 70 : 12,
-            right: isLandscape ? 70 : 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xF5331505),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.orangeAccent, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  )
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded,
-                      color: Colors.orangeAccent, size: 28),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'POINT OF NO RETURN ERREICHT',
-                          style: TextStyle(
-                              color: Colors.orangeAccent,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              letterSpacing: 1),
-                        ),
-                        Text(
-                          'Rest-Akku (${currentSoc.round()} %) reicht nur noch für den Heimweg (~${mapState.neededReturnSocPercent.round()} % nötig). Jetzt umkehren oder Zwischenladung einplanen!',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        Positioned(
-          right: 16,
-          bottom: 20,
-          child: FloatingActionButton.small(
-            heroTag: 'my_location_btn',
-            backgroundColor: const Color(0xF2111518),
-            foregroundColor: const Color(0xFF2979FF),
-            tooltip: 'Zu meinem Standort',
-            onPressed: () async {
-              await ref
-                  .read(mapControllerProvider.notifier)
-                  .useCurrentLocationAsOrigin();
-              final pos = ref.read(mapControllerProvider).origin;
-              if (pos != null) {
-                _mapController.move(
-                  ll.LatLng(pos.latitude, pos.longitude),
-                  ref.read(mapControllerProvider).userZoom,
-                );
-              }
-            },
-            child: const Icon(Icons.my_location),
-          ),
-        ),
-
-        // Route Summary & Action Card (Landscape: 360px on Bottom-Left; Portrait: Bottom Bar)
-        if (selected != null)
-          Positioned(
-            bottom: 12,
-            left: 12,
-            right: isLandscape ? null : 12,
-            width: isLandscape ? 360 : null,
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xF5111518),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                    color: const Color(0xFF00E5FF).withOpacity(.4), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  )
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text('${selected.label} · ${selected.provider}',
-                                  style: const TextStyle(
-                                      color: Color(0xFF00E5FF),
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13)),
-                              if (selected.socEstimationText.isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF54E39E)
-                                        .withOpacity(.15),
-                                    borderRadius: BorderRadius.circular(6),
+                          for (final fav in mapState.favorites)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: GestureDetector(
+                                onLongPress: () =>
+                                    _showFavoriteManagerSheet(context, fav),
+                                child: ActionChip(
+                                  backgroundColor: const Color(0xE6111518),
+                                  avatar: Icon(
+                                    fav.type == FavoriteType.home
+                                        ? Icons.home
+                                        : (fav.type == FavoriteType.work
+                                            ? Icons.work
+                                            : Icons.star),
+                                    color: fav.type == FavoriteType.home
+                                        ? const Color(0xFF00E5FF)
+                                        : (fav.type == FavoriteType.work
+                                            ? const Color(0xFF54E39E)
+                                            : const Color(0xFFFFB300)),
+                                    size: 16,
                                   ),
-                                  child: Text(
-                                    selected.socEstimationText,
-                                    style: const TextStyle(
-                                        color: Color(0xFF54E39E),
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold),
-                                  ),
+                                  label: Text(fav.title,
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 12)),
+                                  onPressed: () {
+                                    ref
+                                        .read(mapControllerProvider.notifier)
+                                        .setDestination(
+                                          fav.location,
+                                          label: fav.title,
+                                        );
+                                    _route();
+                                  },
                                 ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${selected.distanceText} · ${selected.durationText}'
-                            '${selected.elevationText.isEmpty ? "" : " · ${selected.elevationText}"}',
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 13),
-                          ),
+                              ),
+                            ),
+                          for (final rec in mapState.recents.take(3))
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: ActionChip(
+                                backgroundColor: const Color(0xCC111518),
+                                avatar: const Icon(Icons.history,
+                                    color: Colors.white38, size: 16),
+                                label: Text(rec.title,
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 12)),
+                                onPressed: () {
+                                  ref
+                                      .read(mapControllerProvider.notifier)
+                                      .setDestination(
+                                        rec.location,
+                                        label: rec.title,
+                                      );
+                                  _route();
+                                },
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.alt_route, color: Colors.white70),
-                      tooltip: 'Alternative Routen & Höhenprofil',
-                      onPressed: () =>
-                          _showAlternativesSheet(mapState.alternatives),
+                  ),
+
+                  if (_results.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 260),
+                      decoration: BoxDecoration(
+                        color: const Color(0xF2111518),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _results.length,
+                        itemBuilder: (_, i) {
+                          final r = _results[i];
+                          return ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.place,
+                                color: Color(0xFF00E5FF), size: 22),
+                            title: Text(r.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 14)),
+                            subtitle: r.detail.isEmpty
+                                ? null
+                                : Text(r.detail,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: Colors.white38, fontSize: 11)),
+                            onTap: () => _pickDestination(r),
+                          );
+                        },
+                      ),
                     ),
-                  ]),
-                  const SizedBox(height: 10),
-                  Row(
+                  ],
+                ]),
+              ),
+
+            if (isNavigating && currentManeuver != null)
+              Positioned(
+                top: 10,
+                left: isLandscape ? 70 : 12,
+                right: isLandscape ? 70 : 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xF50D1117),
+                    borderRadius: BorderRadius.circular(16),
+                    border:
+                        Border.all(color: const Color(0xFF00E5FF), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: Row(
                     children: [
+                      Icon(
+                        switch (currentManeuver.modifier) {
+                          'left' || 'sharp left' => Icons.turn_left,
+                          'right' || 'sharp right' => Icons.turn_right,
+                          'slight left' => Icons.turn_slight_left,
+                          'slight right' => Icons.turn_slight_right,
+                          _ => Icons.straight,
+                        },
+                        color: const Color(0xFF00E5FF),
+                        size: 36,
+                      ),
+                      const SizedBox(width: 14),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isNavigating
-                                ? Colors.redAccent.withOpacity(0.8)
-                                : const Color(0xFF00E5FF),
-                            foregroundColor:
-                                isNavigating ? Colors.white : Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              currentManeuver.instruction,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          icon: Icon(
-                              isNavigating ? Icons.stop : Icons.navigation),
-                          label: Text(
-                            isNavigating
-                                ? 'NAVIGATION BEENDEN'
-                                : 'NAVIGATION STARTEN',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                                fontSize: 13),
-                          ),
-                          onPressed: () {
-                            if (isNavigating) {
-                              ref
-                                  .read(mapControllerProvider.notifier)
-                                  .stopNavigation();
-                            } else {
-                              ref
-                                  .read(mapControllerProvider.notifier)
-                                  .startNavigation();
-                              if (mapState.origin != null) {
-                                _mapController.move(
-                                  ll.LatLng(mapState.origin!.latitude,
-                                      mapState.origin!.longitude),
-                                  16.0,
-                                );
-                              }
-                            }
-                          },
+                            if (currentManeuver.distanceMeters > 0)
+                              Text(
+                                'in ${(currentManeuver.distanceMeters >= 1000 ? "${(currentManeuver.distanceMeters / 1000).toStringAsFixed(1)} km" : "${currentManeuver.distanceMeters.round()} m")}',
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 12),
+                              ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
                       IconButton(
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(Icons.clear, color: Colors.white54),
-                        tooltip: 'Route löschen',
-                        onPressed: () {
-                          ref.read(mapControllerProvider.notifier).clearRoute();
-                        },
+                        icon: const Icon(Icons.arrow_forward,
+                            color: Colors.white54),
+                        tooltip: 'Nächster Schritt',
+                        onPressed: () => ref
+                            .read(mapControllerProvider.notifier)
+                            .nextManeuver(),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.redAccent),
+                        tooltip: 'Navigation beenden',
+                        onPressed: () => ref
+                            .read(mapControllerProvider.notifier)
+                            .stopNavigation(),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-
-        if (_routing || _loadingPois)
-          Positioned.fill(
-            child: ColoredBox(
-              color: Colors.black38,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 12),
-                    Text(
-                      _loadingPois
-                          ? 'Suche Ladesäulen in der Nähe…'
-                          : 'Berechne Routen & Akkubedarf…',
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ],
                 ),
               ),
+
+            if (mapState.pointOfNoReturnTriggered &&
+                mapState.pointOfNoReturnEnabled)
+              Positioned(
+                top: isNavigating ? 90 : (isLandscape ? 60 : 70),
+                left: isLandscape ? 70 : 12,
+                right: isLandscape ? 70 : 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xF5331505),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.orangeAccent, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
+                          color: Colors.orangeAccent, size: 28),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'POINT OF NO RETURN ERREICHT',
+                              style: TextStyle(
+                                  color: Colors.orangeAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  letterSpacing: 1),
+                            ),
+                            Text(
+                              'Rest-Akku (${currentSoc.round()} %) reicht nur noch für den Heimweg (~${mapState.neededReturnSocPercent.round()} % nötig). Jetzt umkehren oder Zwischenladung einplanen!',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            Positioned(
+              right: 16,
+              bottom: 20,
+              child: FloatingActionButton.small(
+                heroTag: 'my_location_btn',
+                backgroundColor: const Color(0xF2111518),
+                foregroundColor: const Color(0xFF2979FF),
+                tooltip: 'Zu meinem Standort',
+                onPressed: () async {
+                  await ref
+                      .read(mapControllerProvider.notifier)
+                      .useCurrentLocationAsOrigin();
+                  final pos = ref.read(mapControllerProvider).origin;
+                  if (pos != null) {
+                    _mapController.move(
+                      ll.LatLng(pos.latitude, pos.longitude),
+                      ref.read(mapControllerProvider).userZoom,
+                    );
+                  }
+                },
+                child: const Icon(Icons.my_location),
+              ),
             ),
-          ),
-      ]),
+
+            // Route Summary & Action Card (Landscape: 360px on Bottom-Left; Portrait: Bottom Bar)
+            if (selected != null)
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: isLandscape ? null : 12,
+                width: isLandscape ? 360 : null,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xF5111518),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: const Color(0xFF00E5FF).withOpacity(.4),
+                        width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                      '${selected.label} · ${selected.provider}',
+                                      style: const TextStyle(
+                                          color: Color(0xFF00E5FF),
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13)),
+                                  if (selected
+                                      .socEstimationText.isNotEmpty) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF54E39E)
+                                            .withOpacity(.15),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        selected.socEstimationText,
+                                        style: const TextStyle(
+                                            color: Color(0xFF54E39E),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${selected.distanceText} · ${selected.durationText}'
+                                '${selected.elevationText.isEmpty ? "" : " · ${selected.elevationText}"}',
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.alt_route,
+                              color: Colors.white70),
+                          tooltip: 'Alternative Routen & Höhenprofil',
+                          onPressed: () =>
+                              _showAlternativesSheet(mapState.alternatives),
+                        ),
+                      ]),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isNavigating
+                                    ? Colors.redAccent.withOpacity(0.8)
+                                    : const Color(0xFF00E5FF),
+                                foregroundColor:
+                                    isNavigating ? Colors.white : Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              icon: Icon(
+                                  isNavigating ? Icons.stop : Icons.navigation),
+                              label: Text(
+                                isNavigating
+                                    ? 'NAVIGATION BEENDEN'
+                                    : 'NAVIGATION STARTEN',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                    fontSize: 13),
+                              ),
+                              onPressed: () {
+                                if (isNavigating) {
+                                  ref
+                                      .read(mapControllerProvider.notifier)
+                                      .stopNavigation();
+                                } else {
+                                  ref
+                                      .read(mapControllerProvider.notifier)
+                                      .startNavigation();
+                                  if (mapState.origin != null) {
+                                    _mapController.move(
+                                      ll.LatLng(mapState.origin!.latitude,
+                                          mapState.origin!.longitude),
+                                      16.0,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.white10,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            icon:
+                                const Icon(Icons.clear, color: Colors.white54),
+                            tooltip: 'Route löschen',
+                            onPressed: () {
+                              ref
+                                  .read(mapControllerProvider.notifier)
+                                  .clearRoute();
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            if (_routing || _loadingPois)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black38,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 12),
+                        Text(
+                          _loadingPois
+                              ? 'Suche Ladesäulen in der Nähe…'
+                              : 'Berechne Routen & Akkubedarf…',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ]),
+        );
+      },
     );
   }
 }
