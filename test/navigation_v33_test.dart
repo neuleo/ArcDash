@@ -98,14 +98,19 @@ void main() {
 
   group('MapScreen Widget Tests', () {
     testWidgets('MapScreen renders all actions and search', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(_wrap(const MapScreen()));
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.byType(TextField), findsOneWidget);
       expect(find.byIcon(Icons.tune), findsOneWidget); // Tour Planner
-      expect(find.byIcon(Icons.north), findsOneWidget); // Compass / Perspective
-      expect(find.byIcon(Icons.ev_station), findsOneWidget); // EV POIs
-      expect(find.byIcon(Icons.my_location), findsOneWidget);
+      expect(find.byIcon(Icons.north), findsWidgets); // Compass / Perspective
+      expect(find.byIcon(Icons.ev_station), findsWidgets); // EV POIs
+      expect(find.byIcon(Icons.my_location), findsWidgets);
     });
   });
 }

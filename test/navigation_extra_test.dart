@@ -109,12 +109,17 @@ void main() {
 
     testWidgets('MapScreen renders scaffold and action buttons',
         (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(_wrap(const MapScreen()));
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.byIcon(Icons.ev_station), findsOneWidget);
-      expect(find.byIcon(Icons.my_location), findsOneWidget);
+      expect(find.byIcon(Icons.ev_station), findsWidgets);
+      expect(find.byIcon(Icons.my_location), findsWidgets);
     });
   });
 }

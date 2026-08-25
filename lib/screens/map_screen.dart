@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:intl/intl.dart';
 
 import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
 import 'package:arcdash/models/map_favorite.dart';
@@ -15,21 +16,17 @@ import 'package:arcdash/services/geocoding/geocoding_service.dart';
 import 'package:arcdash/services/navigation/charging_station_service.dart';
 import 'package:arcdash/services/navigation/learned_energy_model.dart';
 import 'package:arcdash/services/routing/multi_routing_service.dart';
-import 'package:arcdash/widgets/map_cockpit_hud.dart';
 import 'package:arcdash/widgets/route_elevation_chart.dart';
 
 final chargingStationServiceProvider =
     Provider<ChargingStationService>((ref) => ChargingStationService());
 
-/// Comprehensive E-Moto Navigation & Trip Planning Screen:
-/// - Full Landscape Ergonomics (No bulky top bar, 360px left dock, 70%+ unobstructed map)
-/// - Clean Non-Overlapping BottomSheets for Tour Planner & Options
-/// - Full Favorites Management (Home, Work, Custom) with Long-Press CRUD
-/// - High-Contrast Range Heatmap Circles (Eco, Normal, Sport)
-/// - Multi-Stop Waypoint & Roundtrip Planning
-/// - Turn-by-Turn Navigation Banner
-/// - Live Cockpit HUD Overlay on Map
-/// - Strict Motorway Avoidance for E-Motorcycles
+/// Google Maps-Style Turn-by-Turn & 3D Navigation Screen:
+/// - Green Turn-by-Turn Banner (Top-Left) with next step indicator
+/// - Compact White/Dark Trip Summary Panel (Bottom-Left) with ETA, Remaining Distance & Arrival Time
+/// - Circular Cockpit Speedometer Puck above Trip Panel
+/// - Vertical Right-Side Action Bar (Mute, Search, Compass/3D, Center)
+/// - Auto-Follow 3D Camera tracking user position and heading
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -50,6 +47,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _isSatellite = false;
   bool _hasInitialCentered = false;
   bool _showChargingStations = false;
+  bool _isMuted = false;
   double _customStartSoc = 100.0;
 
   @override
@@ -1018,13 +1016,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           });
         }
 
+        // Smooth Auto-Follow 3D Camera update during Active Navigation
         if (mapState.isNavigating &&
             mapState.autoFollowUser &&
             mapState.origin != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _mapController.move(
               ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
-              mapState.userZoom,
+              mapState.userZoom < 16.0 ? 17.0 : mapState.userZoom,
             );
           });
         }
@@ -1044,7 +1043,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ? selected.route.maneuvers[mapState.currentManeuverIndex]
             : null;
 
+        final nextManeuver = (selected != null &&
+                selected.route.maneuvers.isNotEmpty &&
+                (mapState.currentManeuverIndex + 1) <
+                    selected.route.maneuvers.length)
+            ? selected.route.maneuvers[mapState.currentManeuverIndex + 1]
+            : null;
+
         final isHeadUp = mapState.perspective == MapPerspective.headUp;
+
+        // Arrival Time computation for Trip Summary Card
+        final remainingDurationMinutes = selected != null
+            ? (selected.route.durationSeconds / 60.0).round()
+            : 0;
+        final arrivalTime =
+            DateTime.now().add(Duration(minutes: remainingDurationMinutes));
+        final arrivalTimeString = DateFormat('HH:mm').format(arrivalTime);
 
         return Scaffold(
           backgroundColor: const Color(0xFF050608),
@@ -1152,7 +1166,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ),
 
                 // 3-Zone Dynamic Range Heatmap Circles
-                if (effectiveOrigin != null)
+                if (effectiveOrigin != null && !isNavigating)
                   CircleLayer(circles: [
                     CircleMarker(
                       point: ll.LatLng(
@@ -1263,6 +1277,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           ),
                         ),
                       ),
+
                     if (mapState.destination != null)
                       Marker(
                         width: 44,
@@ -1278,6 +1293,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               color: Color(0xFFFF5252), size: 40),
                         ),
                       ),
+
                     for (int i = 0; i < mapState.waypoints.length; i++)
                       Marker(
                         width: 32,
@@ -1308,35 +1324,37 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           ),
                         ),
                       ),
+
+                    // User Location Puck with Directional Cone
                     if (mapState.origin != null)
                       Marker(
-                        width: 28,
-                        height: 28,
+                        width: 48,
+                        height: 48,
                         point: ll.LatLng(mapState.origin!.latitude,
                             mapState.origin!.longitude),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
                             Container(
-                              width: 26,
-                              height: 26,
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFF2979FF).withOpacity(0.3),
+                                color: const Color(0xFF2979FF).withOpacity(0.2),
                               ),
                             ),
                             Container(
-                              width: 16,
-                              height: 16,
+                              width: 20,
+                              height: 20,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: const Color(0xFF2979FF),
                                 border:
-                                    Border.all(color: Colors.white, width: 2.5),
+                                    Border.all(color: Colors.white, width: 3.0),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
-                                    blurRadius: 4,
+                                    color: Colors.black.withOpacity(0.4),
+                                    blurRadius: 6,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
@@ -1353,106 +1371,133 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       points: selected.route.geometry
                           .map((g) => ll.LatLng(g.latitude, g.longitude))
                           .toList(growable: false),
-                      strokeWidth: isNavigating ? 6 : 5,
-                      color: const Color(0xFF00E5FF),
+                      strokeWidth: isNavigating ? 7 : 5,
+                      color: const Color(0xFF3872FF),
                     ),
                   ]),
               ],
             ),
 
-            // Floating Landscape Top Action Bar (Compact)
-            if (isLandscape && !isNavigating)
+            // Google Maps-Style Turn-by-Turn Banner (Top-Left)
+            if (isNavigating && currentManeuver != null)
               Positioned(
                 top: 12,
-                right: 12,
+                left: 12,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  width: isLandscape ? 380 : (constraints.maxWidth - 24),
                   decoration: BoxDecoration(
-                    color: const Color(0xCC0D1117),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white12),
+                    color: const Color(
+                        0xFF005944), // Google Maps Navigation Dark Green
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
                   ),
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.add_location_alt_outlined,
-                          color: mapState.waypoints.isNotEmpty ||
-                                  mapState.isRoundTrip
-                              ? const Color(0xFF00E5FF)
-                              : Colors.white70,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        child: Row(
+                          children: [
+                            Icon(
+                              switch (currentManeuver.modifier) {
+                                'left' || 'sharp left' => Icons.turn_left,
+                                'right' || 'sharp right' => Icons.turn_right,
+                                'slight left' => Icons.turn_slight_left,
+                                'slight right' => Icons.turn_slight_right,
+                                _ => Icons.straight,
+                              },
+                              color: Colors.white,
+                              size: 40,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    currentManeuver.instruction,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  if (currentManeuver.distanceMeters > 0)
+                                    Text(
+                                      'in ${(currentManeuver.distanceMeters >= 1000 ? "${(currentManeuver.distanceMeters / 1000).toStringAsFixed(1)} km" : "${currentManeuver.distanceMeters.round()} m")}',
+                                      style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 13),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.arrow_forward,
+                                  color: Colors.white70),
+                              tooltip: 'Nächster Schritt',
+                              onPressed: () => ref
+                                  .read(mapControllerProvider.notifier)
+                                  .nextManeuver(),
+                            ),
+                          ],
                         ),
-                        tooltip: 'Wegpunkte & Optionen',
-                        onPressed: () => _showOptionsSheet(context),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.tune,
-                          color: mapState.planningStartSocOverride != null
-                              ? const Color(0xFF00E5FF)
-                              : Colors.white70,
+                      if (nextManeuver != null)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 6),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF004434),
+                            borderRadius: BorderRadius.vertical(
+                                bottom: Radius.circular(16)),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Dann: ',
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 12),
+                              ),
+                              Icon(
+                                switch (nextManeuver.modifier) {
+                                  'left' || 'sharp left' => Icons.turn_left,
+                                  'right' || 'sharp right' => Icons.turn_right,
+                                  'slight left' => Icons.turn_slight_left,
+                                  'slight right' => Icons.turn_slight_right,
+                                  _ => Icons.straight,
+                                },
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  nextManeuver.instruction,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        tooltip: 'Tour-Planer',
-                        onPressed: () => _showTourPlannerSheet(context),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          isHeadUp ? Icons.explore : Icons.north,
-                          color: isHeadUp
-                              ? const Color(0xFF00E5FF)
-                              : Colors.white70,
-                        ),
-                        tooltip: isHeadUp ? 'Head-Up' : 'Nord',
-                        onPressed: () => ref
-                            .read(mapControllerProvider.notifier)
-                            .togglePerspective(),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.ev_station,
-                          color: _showChargingStations
-                              ? const Color(0xFF54E39E)
-                              : Colors.white70,
-                        ),
-                        tooltip: 'Ladesäulen',
-                        onPressed: () {
-                          if (!_showChargingStations) {
-                            _loadNearbyCharging();
-                          } else {
-                            setState(() => _showChargingStations = false);
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _isSatellite
-                              ? Icons.map_outlined
-                              : Icons.satellite_alt_outlined,
-                          color: Colors.white70,
-                        ),
-                        tooltip: 'Satellit',
-                        onPressed: () =>
-                            setState(() => _isSatellite = !_isSatellite),
-                      ),
                     ],
                   ),
                 ),
               ),
 
-            // Live E-Moto HUD Cockpit Overlay on Map
-            Positioned(
-              top: isLandscape ? 12 : (isNavigating ? 90 : 120),
-              left: isLandscape ? 400 : 14,
-              child: MapCockpitHud(
-                speedKph: controllerState.speedKph,
-                socPercent: currentSoc.round(),
-                powerKw: controllerState.powerKw,
-                motorTempC: controllerState.motorTempC,
-              ),
-            ),
-
-            // Search bar & Favorites Quick Row (in Landscape docked neatly on the left at 360px)
+            // Search bar & Favorites Quick Row (when not navigating)
             if (!isNavigating)
               Positioned(
                 top: 10,
@@ -1495,8 +1540,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           borderSide: BorderSide.none),
                     ),
                   ),
-
-                  // Favorites Quick Filter Chips
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: SingleChildScrollView(
@@ -1604,7 +1647,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       ),
                     ),
                   ),
-
                   if (_results.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Container(
@@ -1643,19 +1685,61 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 ]),
               ),
 
-            if (isNavigating && currentManeuver != null)
+            // Circular Speedometer Puck (Google Maps Style above Trip Panel)
+            if (isNavigating)
               Positioned(
-                top: 10,
-                left: isLandscape ? 70 : 12,
-                right: isLandscape ? 70 : 12,
+                bottom: 96,
+                left: 16,
+                child: Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E232B),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white24, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        controllerState.speedKph > 0
+                            ? controllerState.speedKph.toStringAsFixed(0)
+                            : '--',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      const Text(
+                        'km/h',
+                        style: TextStyle(color: Colors.white54, fontSize: 9),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Google Maps-Style Trip Summary Card (Bottom-Left during Navigation)
+            if (isNavigating && selected != null)
+              Positioned(
+                bottom: 14,
+                left: 12,
+                width: isLandscape ? 380 : (constraints.maxWidth - 24),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xF50D1117),
-                    borderRadius: BorderRadius.circular(16),
-                    border:
-                        Border.all(color: const Color(0xFF00E5FF), width: 1.5),
+                    color: const Color(
+                        0xFF1E232B), // Google Maps Navigation Dark Slate Card
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white12),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.5),
@@ -1666,137 +1750,77 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        switch (currentManeuver.modifier) {
-                          'left' || 'sharp left' => Icons.turn_left,
-                          'right' || 'sharp right' => Icons.turn_right,
-                          'slight left' => Icons.turn_slight_left,
-                          'slight right' => Icons.turn_slight_right,
-                          _ => Icons.straight,
-                        },
-                        color: const Color(0xFF00E5FF),
-                        size: 36,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              currentManeuver.instruction,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            if (currentManeuver.distanceMeters > 0)
-                              Text(
-                                'in ${(currentManeuver.distanceMeters >= 1000 ? "${(currentManeuver.distanceMeters / 1000).toStringAsFixed(1)} km" : "${currentManeuver.distanceMeters.round()} m")}',
-                                style: const TextStyle(
-                                    color: Colors.white70, fontSize: 12),
-                              ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_forward,
-                            color: Colors.white54),
-                        tooltip: 'Nächster Schritt',
-                        onPressed: () => ref
-                            .read(mapControllerProvider.notifier)
-                            .nextManeuver(),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.redAccent),
-                        tooltip: 'Navigation beenden',
-                        onPressed: () => ref
+                      // Exit Navigation Button
+                      InkWell(
+                        onTap: () => ref
                             .read(mapControllerProvider.notifier)
                             .stopNavigation(),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white10,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close,
+                              color: Colors.white70, size: 20),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-
-            if (mapState.pointOfNoReturnTriggered &&
-                mapState.pointOfNoReturnEnabled)
-              Positioned(
-                top: isNavigating ? 90 : (isLandscape ? 60 : 70),
-                left: isLandscape ? 70 : 12,
-                right: isLandscape ? 70 : 12,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xF5331505),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.orangeAccent, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.warning_amber_rounded,
-                          color: Colors.orangeAccent, size: 28),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 14),
+                      // Trip Stats: Duration in Large Green, Distance & ETA Time below
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
-                              'POINT OF NO RETURN ERREICHT',
-                              style: TextStyle(
-                                  color: Colors.orangeAccent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  letterSpacing: 1),
+                            Row(
+                              children: [
+                                Text(
+                                  selected.durationText,
+                                  style: const TextStyle(
+                                    color:
+                                        Color(0xFF54E39E), // Google Maps Green
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                if (selected.socEstimationText.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '· ${selected.socEstimationText}',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
+                            const SizedBox(height: 2),
                             Text(
-                              'Rest-Akku (${currentSoc.round()} %) reicht nur noch für den Heimweg (~${mapState.neededReturnSocPercent.round()} % nötig). Jetzt umkehren oder Zwischenladung einplanen!',
+                              '${selected.distanceText} • $arrivalTimeString Uhr',
                               style: const TextStyle(
-                                  color: Colors.white, fontSize: 11),
+                                  color: Colors.white60, fontSize: 13),
                             ),
                           ],
                         ),
+                      ),
+                      // Reroute / Alternatives icon
+                      IconButton(
+                        icon:
+                            const Icon(Icons.alt_route, color: Colors.white70),
+                        tooltip: 'Alternativen & Höhenprofil',
+                        onPressed: () =>
+                            _showAlternativesSheet(mapState.alternatives),
                       ),
                     ],
                   ),
                 ),
               ),
 
-            Positioned(
-              right: 16,
-              bottom: 20,
-              child: FloatingActionButton.small(
-                heroTag: 'my_location_btn',
-                backgroundColor: const Color(0xF2111518),
-                foregroundColor: const Color(0xFF2979FF),
-                tooltip: 'Zu meinem Standort',
-                onPressed: () async {
-                  await ref
-                      .read(mapControllerProvider.notifier)
-                      .useCurrentLocationAsOrigin();
-                  final pos = ref.read(mapControllerProvider).origin;
-                  if (pos != null) {
-                    _mapController.move(
-                      ll.LatLng(pos.latitude, pos.longitude),
-                      ref.read(mapControllerProvider).userZoom,
-                    );
-                  }
-                },
-                child: const Icon(Icons.my_location),
-              ),
-            ),
-
-            // Route Summary & Action Card (Landscape: 360px on Bottom-Left; Portrait: Bottom Bar)
-            if (selected != null)
+            // Pre-Trip Selection Card (Before Navigation Starts)
+            if (!isNavigating && selected != null)
               Positioned(
                 bottom: 12,
                 left: 12,
@@ -1880,44 +1904,32 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           Expanded(
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: isNavigating
-                                    ? Colors.redAccent.withOpacity(0.8)
-                                    : const Color(0xFF00E5FF),
-                                foregroundColor:
-                                    isNavigating ? Colors.white : Colors.black,
+                                backgroundColor: const Color(0xFF00E5FF),
+                                foregroundColor: Colors.black,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
                               ),
-                              icon: Icon(
-                                  isNavigating ? Icons.stop : Icons.navigation),
-                              label: Text(
-                                isNavigating
-                                    ? 'NAVIGATION BEENDEN'
-                                    : 'NAVIGATION STARTEN',
-                                style: const TextStyle(
+                              icon: const Icon(Icons.navigation),
+                              label: const Text(
+                                'NAVIGATION STARTEN',
+                                style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1,
                                     fontSize: 13),
                               ),
                               onPressed: () {
-                                if (isNavigating) {
-                                  ref
-                                      .read(mapControllerProvider.notifier)
-                                      .stopNavigation();
-                                } else {
-                                  ref
-                                      .read(mapControllerProvider.notifier)
-                                      .startNavigation();
-                                  if (mapState.origin != null) {
-                                    _mapController.move(
-                                      ll.LatLng(mapState.origin!.latitude,
-                                          mapState.origin!.longitude),
-                                      16.0,
-                                    );
-                                  }
+                                ref
+                                    .read(mapControllerProvider.notifier)
+                                    .startNavigation();
+                                if (mapState.origin != null) {
+                                  _mapController.move(
+                                    ll.LatLng(mapState.origin!.latitude,
+                                        mapState.origin!.longitude),
+                                    17.0,
+                                  );
                                 }
                               },
                             ),
@@ -1945,6 +1957,97 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                 ),
               ),
+
+            // Google Maps-Style Right-Side Vertical Action Stack
+            Positioned(
+              right: 14,
+              top: 14,
+              child: Column(
+                children: [
+                  // Compass / 3D Head-Up Toggle
+                  FloatingActionButton.small(
+                    heroTag: 'compass_btn',
+                    backgroundColor: const Color(0xFF1E232B),
+                    foregroundColor:
+                        isHeadUp ? const Color(0xFF00E5FF) : Colors.white70,
+                    tooltip: isHeadUp ? '3D Fahrtrichtung' : 'Nordausrichtung',
+                    onPressed: () => ref
+                        .read(mapControllerProvider.notifier)
+                        .togglePerspective(),
+                    child:
+                        Icon(isHeadUp ? Icons.explore : Icons.north, size: 20),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Search Along Route / POIs
+                  FloatingActionButton.small(
+                    heroTag: 'search_poi_btn',
+                    backgroundColor: const Color(0xFF1E232B),
+                    foregroundColor: _showChargingStations
+                        ? const Color(0xFF54E39E)
+                        : Colors.white70,
+                    tooltip: 'Ladesäulen suchen',
+                    onPressed: () {
+                      if (!_showChargingStations) {
+                        _loadNearbyCharging();
+                      } else {
+                        setState(() => _showChargingStations = false);
+                      }
+                    },
+                    child: Icon(
+                        _showChargingStations ? Icons.ev_station : Icons.search,
+                        size: 20),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Voice Audio / Mute Toggle
+                  FloatingActionButton.small(
+                    heroTag: 'audio_mute_btn',
+                    backgroundColor: const Color(0xFF1E232B),
+                    foregroundColor: _isMuted ? Colors.white38 : Colors.white70,
+                    tooltip:
+                        _isMuted ? 'Stummgeschaltet' : 'Sprachführung aktiv',
+                    onPressed: () => setState(() => _isMuted = !_isMuted),
+                    child: Icon(_isMuted ? Icons.volume_off : Icons.volume_up,
+                        size: 20),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Options / Tour Planner
+                  FloatingActionButton.small(
+                    heroTag: 'options_modal_btn',
+                    backgroundColor: const Color(0xFF1E232B),
+                    foregroundColor: Colors.white70,
+                    tooltip: 'Routen-Optionen & Tour-Planer',
+                    onPressed: () => _showOptionsSheet(context),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Re-Center / My Location Button
+                  FloatingActionButton.small(
+                    heroTag: 'recenter_btn',
+                    backgroundColor: const Color(0xFF1E232B),
+                    foregroundColor: const Color(0xFF2979FF),
+                    tooltip: 'Zu meinem Standort',
+                    onPressed: () async {
+                      await ref
+                          .read(mapControllerProvider.notifier)
+                          .useCurrentLocationAsOrigin();
+                      final pos = ref.read(mapControllerProvider).origin;
+                      if (pos != null) {
+                        _mapController.move(
+                          ll.LatLng(pos.latitude, pos.longitude),
+                          isNavigating
+                              ? 17.0
+                              : ref.read(mapControllerProvider).userZoom,
+                        );
+                      }
+                    },
+                    child: const Icon(Icons.my_location, size: 20),
+                  ),
+                ],
+              ),
+            ),
 
             if (_routing || _loadingPois)
               Positioned.fill(
