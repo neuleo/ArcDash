@@ -984,6 +984,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         final bmsState = ref.watch(effectiveBmsProvider);
         final learnedModel = ref.watch(learnedEnergyModelProvider);
 
+        final isHeadUp = mapState.perspective == MapPerspective.headUp;
         final isLandscape = constraints.maxWidth >= 600 ||
             MediaQuery.of(context).orientation == Orientation.landscape ||
             constraints.maxWidth > constraints.maxHeight;
@@ -1021,9 +1022,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             mapState.autoFollowUser &&
             mapState.origin != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _mapController.move(
+            final targetZoom =
+                mapState.userZoom < 16.5 ? 17.5 : mapState.userZoom;
+            final targetRot = isHeadUp ? mapState.currentHeadingDeg : 0.0;
+            _mapController.moveAndRotate(
               ll.LatLng(mapState.origin!.latitude, mapState.origin!.longitude),
-              mapState.userZoom < 16.0 ? 17.0 : mapState.userZoom,
+              targetZoom,
+              targetRot,
             );
           });
         }
@@ -1049,8 +1054,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     selected.route.maneuvers.length)
             ? selected.route.maneuvers[mapState.currentManeuverIndex + 1]
             : null;
-
-        final isHeadUp = mapState.perspective == MapPerspective.headUp;
 
         // Arrival Time computation for Trip Summary Card
         final remainingDurationMinutes = selected != null
@@ -1137,245 +1140,257 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ],
                 ),
           body: Stack(children: [
-            FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: center,
-                initialZoom: mapState.userZoom,
-                initialRotation: isHeadUp ? mapState.currentHeadingDeg : 0.0,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            // When in 3D Head-Up navigation, apply 3D camera tilt (pitch)
+            Transform(
+              alignment: Alignment.bottomCenter,
+              transform: isNavigating && isHeadUp
+                  ? (Matrix4.identity()
+                    ..setEntry(3, 2, 0.0015) // Perspective depth
+                    ..rotateX(0.70) // ~40° 3D forward pitch tilt
+                    ..scale(1.15, 1.15))
+                  : Matrix4.identity(),
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: center,
+                  initialZoom: mapState.userZoom,
+                  initialRotation: isHeadUp ? mapState.currentHeadingDeg : 0.0,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  ),
+                  onPositionChanged: (pos, hasGesture) {
+                    if (hasGesture) {
+                      ref
+                          .read(mapControllerProvider.notifier)
+                          .setUserZoom(pos.zoom);
+                    }
+                  },
+                  onLongPress: (_, pos) =>
+                      _onMapLongPress(pos.latitude, pos.longitude),
                 ),
-                onPositionChanged: (pos, hasGesture) {
-                  if (hasGesture) {
-                    ref
-                        .read(mapControllerProvider.notifier)
-                        .setUserZoom(pos.zoom);
-                  }
-                },
-                onLongPress: (_, pos) =>
-                    _onMapLongPress(pos.latitude, pos.longitude),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: _isSatellite
-                      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'de.neuleo.arcdash',
-                  maxNativeZoom: 19,
-                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: _isSatellite
+                        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'de.neuleo.arcdash',
+                    maxNativeZoom: 19,
+                  ),
 
-                // 3-Zone Dynamic Range Heatmap Circles
-                if (effectiveOrigin != null && !isNavigating)
-                  CircleLayer(circles: [
-                    CircleMarker(
-                      point: ll.LatLng(
-                          effectiveOrigin.latitude, effectiveOrigin.longitude),
-                      radius: ecoRangeKm * 1000,
-                      useRadiusInMeter: true,
-                      color: const Color(0xFF00C853).withOpacity(0.12),
-                      borderColor: const Color(0xFF00C853),
-                      borderStrokeWidth: 2.5,
-                    ),
-                    CircleMarker(
-                      point: ll.LatLng(
-                          effectiveOrigin.latitude, effectiveOrigin.longitude),
-                      radius: normalRangeKm * 1000,
-                      useRadiusInMeter: true,
-                      color: const Color(0xFF0091EA).withOpacity(0.15),
-                      borderColor: const Color(0xFF0091EA),
-                      borderStrokeWidth: 3.0,
-                    ),
-                    CircleMarker(
-                      point: ll.LatLng(
-                          effectiveOrigin.latitude, effectiveOrigin.longitude),
-                      radius: sportRangeKm * 1000,
-                      useRadiusInMeter: true,
-                      color: const Color(0xFFFF6D00).withOpacity(0.15),
-                      borderColor: const Color(0xFFFF6D00),
-                      borderStrokeWidth: 2.5,
-                    ),
-                  ]),
+                  // 3-Zone Dynamic Range Heatmap Circles
+                  if (effectiveOrigin != null && !isNavigating)
+                    CircleLayer(circles: [
+                      CircleMarker(
+                        point: ll.LatLng(effectiveOrigin.latitude,
+                            effectiveOrigin.longitude),
+                        radius: ecoRangeKm * 1000,
+                        useRadiusInMeter: true,
+                        color: const Color(0xFF00C853).withOpacity(0.12),
+                        borderColor: const Color(0xFF00C853),
+                        borderStrokeWidth: 2.5,
+                      ),
+                      CircleMarker(
+                        point: ll.LatLng(effectiveOrigin.latitude,
+                            effectiveOrigin.longitude),
+                        radius: normalRangeKm * 1000,
+                        useRadiusInMeter: true,
+                        color: const Color(0xFF0091EA).withOpacity(0.15),
+                        borderColor: const Color(0xFF0091EA),
+                        borderStrokeWidth: 3.0,
+                      ),
+                      CircleMarker(
+                        point: ll.LatLng(effectiveOrigin.latitude,
+                            effectiveOrigin.longitude),
+                        radius: sportRangeKm * 1000,
+                        useRadiusInMeter: true,
+                        color: const Color(0xFFFF6D00).withOpacity(0.15),
+                        borderColor: const Color(0xFFFF6D00),
+                        borderStrokeWidth: 2.5,
+                      ),
+                    ]),
 
-                // Charging Station POI Markers
-                if (_showChargingStations && _chargingStations.isNotEmpty)
-                  MarkerLayer(
-                    markers: _chargingStations.map((poi) {
-                      return Marker(
-                        width: 36,
-                        height: 36,
-                        point: ll.LatLng(
-                            poi.location.latitude, poi.location.longitude),
-                        child: GestureDetector(
-                          onTap: () {
-                            ref
-                                .read(mapControllerProvider.notifier)
-                                .setDestination(
-                                  poi.location,
-                                  label: poi.name,
-                                );
-                            _route();
-                          },
+                  // Charging Station POI Markers
+                  if (_showChargingStations && _chargingStations.isNotEmpty)
+                    MarkerLayer(
+                      markers: _chargingStations.map((poi) {
+                        return Marker(
+                          width: 36,
+                          height: 36,
+                          point: ll.LatLng(
+                              poi.location.latitude, poi.location.longitude),
+                          child: GestureDetector(
+                            onTap: () {
+                              ref
+                                  .read(mapControllerProvider.notifier)
+                                  .setDestination(
+                                    poi.location,
+                                    label: poi.name,
+                                  );
+                              _route();
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: poi.hasSchuko
+                                    ? const Color(0xFF54E39E)
+                                    : const Color(0xFF00E5FF),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ],
+                              ),
+                              child: const Icon(Icons.ev_station,
+                                  color: Colors.black, size: 20),
+                            ),
+                          ),
+                        );
+                      }).toList(growable: false),
+                    ),
+
+                  // User location, Intermediate Waypoints, and Destination Markers
+                  if (mapState.destination != null ||
+                      mapState.origin != null ||
+                      mapState.waypoints.isNotEmpty ||
+                      mapState.favorites.isNotEmpty)
+                    MarkerLayer(markers: [
+                      for (final fav in mapState.favorites)
+                        Marker(
+                          width: 34,
+                          height: 34,
+                          point: ll.LatLng(
+                              fav.location.latitude, fav.location.longitude),
+                          child: GestureDetector(
+                            onTap: () =>
+                                _showFavoriteManagerSheet(context, fav),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0D1117),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: fav.type == FavoriteType.home
+                                      ? const Color(0xFF00E5FF)
+                                      : (fav.type == FavoriteType.work
+                                          ? const Color(0xFF54E39E)
+                                          : const Color(0xFFFFB300)),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                fav.type == FavoriteType.home
+                                    ? Icons.home
+                                    : (fav.type == FavoriteType.work
+                                        ? Icons.work
+                                        : Icons.star),
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      if (mapState.destination != null)
+                        Marker(
+                          width: 44,
+                          height: 44,
+                          point: ll.LatLng(mapState.destination!.latitude,
+                              mapState.destination!.longitude),
+                          child: GestureDetector(
+                            onTap: () => _showAddOrEditFavoriteSheet(
+                              context,
+                              location: mapState.destination!,
+                            ),
+                            child: const Icon(Icons.location_on,
+                                color: Color(0xFFFF5252), size: 40),
+                          ),
+                        ),
+
+                      for (int i = 0; i < mapState.waypoints.length; i++)
+                        Marker(
+                          width: 32,
+                          height: 32,
+                          point: ll.LatLng(mapState.waypoints[i].latitude,
+                              mapState.waypoints[i].longitude),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: poi.hasSchuko
-                                  ? const Color(0xFF54E39E)
-                                  : const Color(0xFF00E5FF),
+                              color: const Color(0xFFFFB300),
                               shape: BoxShape.circle,
+                              border: Border.all(color: Colors.black, width: 2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withOpacity(0.4),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 )
                               ],
                             ),
-                            child: const Icon(Icons.ev_station,
-                                color: Colors.black, size: 20),
-                          ),
-                        ),
-                      );
-                    }).toList(growable: false),
-                  ),
-
-                // User location, Intermediate Waypoints, and Destination Markers
-                if (mapState.destination != null ||
-                    mapState.origin != null ||
-                    mapState.waypoints.isNotEmpty ||
-                    mapState.favorites.isNotEmpty)
-                  MarkerLayer(markers: [
-                    for (final fav in mapState.favorites)
-                      Marker(
-                        width: 34,
-                        height: 34,
-                        point: ll.LatLng(
-                            fav.location.latitude, fav.location.longitude),
-                        child: GestureDetector(
-                          onTap: () => _showFavoriteManagerSheet(context, fav),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0D1117),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: fav.type == FavoriteType.home
-                                    ? const Color(0xFF00E5FF)
-                                    : (fav.type == FavoriteType.work
-                                        ? const Color(0xFF54E39E)
-                                        : const Color(0xFFFFB300)),
-                                width: 2,
+                            child: Center(
+                              child: Text(
+                                '${i + 1}',
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13),
                               ),
                             ),
-                            child: Icon(
-                              fav.type == FavoriteType.home
-                                  ? Icons.home
-                                  : (fav.type == FavoriteType.work
-                                      ? Icons.work
-                                      : Icons.star),
-                              color: Colors.white,
-                              size: 18,
-                            ),
                           ),
                         ),
-                      ),
 
-                    if (mapState.destination != null)
-                      Marker(
-                        width: 44,
-                        height: 44,
-                        point: ll.LatLng(mapState.destination!.latitude,
-                            mapState.destination!.longitude),
-                        child: GestureDetector(
-                          onTap: () => _showAddOrEditFavoriteSheet(
-                            context,
-                            location: mapState.destination!,
-                          ),
-                          child: const Icon(Icons.location_on,
-                              color: Color(0xFFFF5252), size: 40),
-                        ),
-                      ),
-
-                    for (int i = 0; i < mapState.waypoints.length; i++)
-                      Marker(
-                        width: 32,
-                        height: 32,
-                        point: ll.LatLng(mapState.waypoints[i].latitude,
-                            mapState.waypoints[i].longitude),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFB300),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.4),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
+                      // User Location Puck with Directional Cone
+                      if (mapState.origin != null)
+                        Marker(
+                          width: 48,
+                          height: 48,
+                          point: ll.LatLng(mapState.origin!.latitude,
+                              mapState.origin!.longitude),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color:
+                                      const Color(0xFF2979FF).withOpacity(0.2),
+                                ),
+                              ),
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFF2979FF),
+                                  border: Border.all(
+                                      color: Colors.white, width: 3.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.4),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                          child: Center(
-                            child: Text(
-                              '${i + 1}',
-                              style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 13),
-                            ),
-                          ),
                         ),
-                      ),
+                    ]),
 
-                    // User Location Puck with Directional Cone
-                    if (mapState.origin != null)
-                      Marker(
-                        width: 48,
-                        height: 48,
-                        point: ll.LatLng(mapState.origin!.latitude,
-                            mapState.origin!.longitude),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFF2979FF).withOpacity(0.2),
-                              ),
-                            ),
-                            Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFF2979FF),
-                                border:
-                                    Border.all(color: Colors.white, width: 3.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.4),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                  if (selected != null && selected.route.geometry.isNotEmpty)
+                    PolylineLayer(polylines: [
+                      Polyline(
+                        points: selected.route.geometry
+                            .map((g) => ll.LatLng(g.latitude, g.longitude))
+                            .toList(growable: false),
+                        strokeWidth: isNavigating ? 7 : 5,
+                        color: const Color(0xFF3872FF),
                       ),
-                  ]),
-
-                if (selected != null && selected.route.geometry.isNotEmpty)
-                  PolylineLayer(polylines: [
-                    Polyline(
-                      points: selected.route.geometry
-                          .map((g) => ll.LatLng(g.latitude, g.longitude))
-                          .toList(growable: false),
-                      strokeWidth: isNavigating ? 7 : 5,
-                      color: const Color(0xFF3872FF),
-                    ),
-                  ]),
-              ],
+                    ]),
+                ],
+              ),
             ),
 
             // Google Maps-Style Turn-by-Turn Banner (Top-Left)
