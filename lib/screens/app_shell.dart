@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:arcdash/providers/map_provider.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
 import 'package:arcdash/screens/map_screen.dart';
 import 'package:arcdash/screens/settings_screen.dart';
@@ -55,9 +56,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final useLandscape = constraints.maxWidth >= 600 ||
+        final useLandscape =
             MediaQuery.of(context).orientation == Orientation.landscape ||
-            constraints.maxWidth > constraints.maxHeight;
+                constraints.maxWidth > constraints.maxHeight;
 
         if (useLandscape) {
           return Scaffold(
@@ -161,14 +162,19 @@ class _AppShellState extends ConsumerState<AppShell> {
           );
         }
 
+        final mapState = ref.watch(mapControllerProvider);
+        final hideBottomBar = selectedIndex == 3 && mapState.isNavigating;
+
         return Scaffold(
           body: content,
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (i) =>
-                ref.read(appShellIndexProvider.notifier).state = i,
-            destinations: destinations,
-          ),
+          bottomNavigationBar: hideBottomBar
+              ? null
+              : NavigationBar(
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (i) =>
+                      ref.read(appShellIndexProvider.notifier).state = i,
+                  destinations: destinations,
+                ),
         );
       },
     );
