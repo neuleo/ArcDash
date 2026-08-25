@@ -327,13 +327,22 @@ class MapStateNotifier extends StateNotifier<MapState> {
   }
 
   void addRecent(MapFavorite recent) {
+    // Never duplicate an existing favorite in recents
+    final isAlreadyFavorite = state.favorites.any((f) =>
+        f.title.toLowerCase() == recent.title.toLowerCase() ||
+        (f.location.latitude == recent.location.latitude &&
+            f.location.longitude == recent.location.longitude));
+    if (isAlreadyFavorite) return;
+
     if (_ref != null) {
       final repo = _ref.read(mapFavoritesRepositoryProvider);
       repo.addRecent(recent);
       state = state.copyWith(recents: repo.loadRecents());
     } else {
-      final recs = List<MapFavorite>.from(state.recents)..insert(0, recent);
-      state = state.copyWith(recents: recs);
+      final recs = List<MapFavorite>.from(state.recents)
+        ..removeWhere((r) => r.title == recent.title)
+        ..insert(0, recent);
+      state = state.copyWith(recents: recs.take(5).toList());
     }
   }
 

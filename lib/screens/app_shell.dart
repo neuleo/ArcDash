@@ -15,7 +15,6 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   static const _screens = [
     DashboardScreen(),
@@ -46,15 +45,13 @@ class _AppShellState extends State<AppShell> {
                 icon: const Icon(Icons.settings_outlined),
                 label: strings.text(AppText.settings)),
           ];
-          final isLandscape = constraints.maxWidth >= 700;
+          final useRail = constraints.maxWidth >= 700;
           final content = IndexedStack(
             index: _selectedIndex,
             children: _screens,
           );
-
-          if (isLandscape) {
+          if (useRail) {
             return Scaffold(
-              key: _scaffoldKey,
               body: SafeArea(
                 child: Row(
                   children: [
@@ -77,7 +74,6 @@ class _AppShellState extends State<AppShell> {
               ),
             );
           }
-
           return Scaffold(
             body: content,
             bottomNavigationBar: NavigationBar(
