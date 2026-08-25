@@ -1142,12 +1142,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           body: Stack(children: [
             // When in 3D Head-Up navigation, apply 3D camera tilt (pitch)
             Transform(
-              alignment: Alignment.bottomCenter,
-              transform: isNavigating && isHeadUp
+              alignment: FractionalOffset.center,
+              transform: isHeadUp
                   ? (Matrix4.identity()
-                    ..setEntry(3, 2, 0.0015) // Perspective depth
-                    ..rotateX(0.70) // ~40° 3D forward pitch tilt
-                    ..scale(1.15, 1.15))
+                    ..setEntry(3, 2, 0.002) // Perspective depth
+                    ..rotateX(0.75) // ~43° forward pitch tilt
+                    ..scale(1.25, 1.25))
                   : Matrix4.identity(),
               child: FlutterMap(
                 mapController: _mapController,
