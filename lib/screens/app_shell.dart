@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/providers/map_provider.dart';
 import 'package:arcdash/screens/dashboard_screen.dart';
+import 'package:arcdash/screens/fast_map_screen.dart';
 import 'package:arcdash/screens/map_screen.dart';
 import 'package:arcdash/screens/settings_screen.dart';
 import 'package:arcdash/screens/stats_screen.dart';
@@ -22,6 +23,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   static const _screens = [
     DashboardScreen(),
+    FastMapScreen(),
     TuningScreen(),
     StatsScreen(),
     MapScreen(),
@@ -36,6 +38,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     final destinations = [
       NavigationDestination(
           icon: const Icon(Icons.speed), label: strings.text(AppText.cockpit)),
+      const NavigationDestination(icon: Icon(Icons.bolt), label: 'Fast Map'),
       NavigationDestination(
           icon: const Icon(Icons.tune), label: strings.text(AppText.tuning)),
       NavigationDestination(
@@ -96,39 +99,43 @@ class _AppShellState extends ConsumerState<AppShell> {
                     ),
                     const Divider(color: Colors.white10),
                     for (int i = 0; i < destinations.length; i++)
-                      ListTile(
-                        leading: Icon(
-                          switch (i) {
-                            0 => Icons.speed,
-                            1 => Icons.tune,
-                            2 => Icons.route_outlined,
-                            3 => Icons.map_outlined,
-                            _ => Icons.settings_outlined,
-                          },
-                          color: selectedIndex == i
-                              ? const Color(0xFF00E5FF)
-                              : Colors.white54,
-                        ),
-                        title: Text(
-                          destinations[i].label,
-                          style: TextStyle(
+                      Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          leading: Icon(
+                            switch (i) {
+                              0 => Icons.speed,
+                              1 => Icons.bolt,
+                              2 => Icons.tune,
+                              3 => Icons.route_outlined,
+                              4 => Icons.map_outlined,
+                              _ => Icons.settings_outlined,
+                            },
                             color: selectedIndex == i
                                 ? const Color(0xFF00E5FF)
-                                : Colors.white,
-                            fontWeight: selectedIndex == i
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                                : Colors.white54,
                           ),
+                          title: Text(
+                            destinations[i].label,
+                            style: TextStyle(
+                              color: selectedIndex == i
+                                  ? const Color(0xFF00E5FF)
+                                  : Colors.white,
+                              fontWeight: selectedIndex == i
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          selected: selectedIndex == i,
+                          selectedTileColor:
+                              const Color(0xFF00E5FF).withOpacity(0.1),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          onTap: () {
+                            ref.read(appShellIndexProvider.notifier).state = i;
+                            Navigator.pop(context);
+                          },
                         ),
-                        selected: selectedIndex == i,
-                        selectedTileColor:
-                            const Color(0xFF00E5FF).withOpacity(0.1),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        onTap: () {
-                          ref.read(appShellIndexProvider.notifier).state = i;
-                          Navigator.pop(context);
-                        },
                       ),
                   ],
                 ),
@@ -138,7 +145,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               children: [
                 content,
                 // Floating Hamburger menu button for non-map screens
-                if (selectedIndex != 3)
+                if (selectedIndex != 4)
                   Positioned(
                     top: 12,
                     left: 12,
@@ -163,7 +170,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         }
 
         final mapState = ref.watch(mapControllerProvider);
-        final hideBottomBar = selectedIndex == 3 && mapState.isNavigating;
+        final hideBottomBar = selectedIndex == 4 && mapState.isNavigating;
 
         return Scaffold(
           body: content,

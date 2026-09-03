@@ -36,6 +36,7 @@ class SysCmd {
   static const int nonFollowingStatus = 0x01;
   static const int startSelfLearn = 0x02;
   static const int stopBalance = 0x03;
+  static const int saveParameters = 0x04;
   static const int resetController = 0x05;
   static const int startDataGather = 0x06;
   static const int factoryReset = 0x08;
@@ -100,6 +101,10 @@ class ProtocolService {
   /// Packet to trigger controller reboot/reset.
   static List<int> resetControllerPacket() =>
       buildSysCmd(SysCmd.resetController);
+
+  /// Packet to command the controller to save/commit current parameters into EEPROM/Flash.
+  static List<int> saveParametersToFlashPacket() =>
+      buildSysCmd(SysCmd.saveParameters);
 
   /// Packet to restore factory defaults.
   static List<int> factoryResetPacket() => buildSysCmd(SysCmd.factoryReset);

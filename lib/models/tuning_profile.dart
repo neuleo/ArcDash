@@ -134,6 +134,42 @@ class TuningProfile {
     this.isStock = false,
   });
 
+  // Factory Preset: Arctic Leopard L1E Stock Street Legal (45 km/h, 80A line, 200A phase, StVO-konform, 0 verändert)
+  static TuningProfile stockStreetLegal() => TuningProfile(
+        name: 'Stock Street Legal',
+        description:
+            'Original Werks-Setup Arctic Leopard L1E (45 km/h, 80A/200A, StVO-konform, 0 verändert)',
+        maxSpeedKph: 45.0,
+        maxLineCurrA: 80.0,
+        maxPhaseCurrA: 200.0,
+        regenStrength: 0.35,
+        throttleResponse: 2, // ECO
+        lowSpeedLineCurrPct: 40.0,
+        midSpeedLineCurrPct: 60.0,
+        powerCurve: PowerPoint.smoothCurve(),
+        createdAt: DateTime.now(),
+        isStock: true,
+      );
+
+  // Default Tuned Open Map:
+  static TuningProfile defaultTuned() => TuningProfile(
+        name: 'Tuned (Offen)',
+        description: 'Offenes Fahrprofil (85 km/h, 150A/350A, Sport-Kurve)',
+        maxSpeedKph: 85.0,
+        maxLineCurrA: 150.0,
+        maxPhaseCurrA: 350.0,
+        regenStrength: 0.25,
+        throttleResponse: 1, // Sport
+        powerCurve: PowerPoint.defaultCurve(),
+        createdAt: DateTime.now(),
+        isStock: false,
+      );
+
+  /// L1E baseline presets: only Stock Street Legal is the factory baseline
+  static List<TuningProfile> l1ePresets() => [
+        stockStreetLegal(),
+      ];
+
   // Factory Preset: Stock Offroad (Arctic Leopard Xe Pro S baseline)
   static TuningProfile stockOffroad() => TuningProfile(
         name: 'Stock Offroad',

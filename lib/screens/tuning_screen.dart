@@ -106,35 +106,81 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
               const SizedBox(height: 20),
 
               // Presets Section
-              _SectionHeader(title: 'PRESETS & FAHRMODI'),
+              _SectionHeader(
+                  title: 'PROFIL-VERWALTUNG (L1E WERKS-BASIS & USER-MAPS)'),
               const SizedBox(height: 10),
               _PresetGrid(
-                factoryPresets: TuningProfile.factoryPresets(),
+                factoryPresets: TuningProfile.l1ePresets(),
                 customPresets: tuningState.savedProfiles,
                 selectedName: profile.name,
                 onSelect: (p) => notifier.loadPreset(p),
                 onDelete: (name) => _confirmDeletePreset(context, ref, name),
               ),
-              const SizedBox(height: 10),
-              Row(
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        notifier.syncFromController(controllerState,
-                            force: true);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Aktuelle Werte vom Controller eingelesen!'),
-                            backgroundColor: Color(0xFF123328),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.download_for_offline_outlined,
-                          size: 16),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      notifier.syncFromController(controllerState, force: true);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Aktuelle Werte vom Controller eingelesen!'),
+                          backgroundColor: Color(0xFF123328),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.download_for_offline_outlined,
+                        size: 16),
+                    label: const Text(
+                      'VOM CONTROLLER LESEN',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        fontSize: 11,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF54E39E),
+                      side: const BorderSide(color: Color(0xFF123328)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        _showCloneProfileDialog(context, ref, profile),
+                    icon: const Icon(Icons.copy, size: 15),
+                    label: const Text(
+                      'PROFIL KLONEN',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        fontSize: 11,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF00E5FF),
+                      side: const BorderSide(color: Color(0xFF2A3548)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  if (!profile.isStock)
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _showRenameProfileDialog(context, ref, profile.name),
+                      icon: const Icon(Icons.edit, size: 15),
                       label: const Text(
-                        'VOM CONTROLLER LESEN',
+                        'UMBENENNEN',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.8,
@@ -142,35 +188,33 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF54E39E),
-                        side: const BorderSide(color: Color(0xFF123328)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        foregroundColor: Colors.white70,
+                        side: const BorderSide(color: Color(0xFF2A3548)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showSavePresetDialog(context, ref),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text(
-                        '+ PRESET SPEICHERN',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          fontSize: 11,
-                        ),
+                  OutlinedButton.icon(
+                    onPressed: () => _showSavePresetDialog(context, ref),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      '+ PRESET SPEICHERN',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        fontSize: 11,
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF00E5FF),
-                        side: const BorderSide(color: Color(0xFF2A3548)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF39FF14),
+                      side: const BorderSide(color: Color(0xFF2A3548)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
@@ -412,57 +456,110 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                         color: const Color(0xFF39FF14).withValues(alpha: 0.3)),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.check_circle,
+                    children: [
+                      const Icon(Icons.check_circle,
                           color: Color(0xFF39FF14), size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'PARAMETER ERFOLGREICH GESCHRIEBEN & VERIFIZIERT',
-                        style: TextStyle(
-                            color: Color(0xFF39FF14),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          tuningState.lastAppliedWasFlash
+                              ? 'IN FLASH GESPEICHERT & VERIFIZIERT (DAUERHAFT)'
+                              : 'IN RAM GESCHRIEBEN (TEMPORÄR - RESET BEI BOOT)',
+                          style: const TextStyle(
+                              color: Color(0xFF39FF14),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: safety.allowed && !tuningState.isApplying
-                      ? () => _showDiffDialog(context, notifier, profile)
-                      : null,
-                  icon: tuningState.isApplying
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.black,
-                          ),
-                        )
-                      : const Icon(Icons.send, size: 20),
-                  label: Text(
-                    tuningState.isApplying
-                        ? 'SCHREIBE & VERIFIZIERE...'
-                        : 'AUF CONTROLLER SCHREIBEN',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.5,
+              // The 2 Distinct Write Buttons: RAM vs Flash
+              Row(
+                children: [
+                  // Button 1: Auf RAM schreiben (Sofort aktiv, flüchtig)
+                  Expanded(
+                    flex: 3,
+                    child: ElevatedButton.icon(
+                      onPressed: safety.allowed && !tuningState.isApplying
+                          ? () => _applyToRamImmediately(context, notifier)
+                          : null,
+                      icon:
+                          tuningState.isApplying && !tuningState.isSavingToFlash
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.black,
+                                  ),
+                                )
+                              : const Icon(Icons.memory, size: 20),
+                      label: Text(
+                        tuningState.isApplying && !tuningState.isSavingToFlash
+                            ? 'SCHREIBE IN RAM...'
+                            : 'AUF RAM SCHREIBEN',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                          fontSize: 12,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00E5FF),
+                        foregroundColor: Colors.black,
+                        disabledBackgroundColor: const Color(0xFF1E293B),
+                        disabledForegroundColor: const Color(0xFF475569),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF39FF14),
-                    foregroundColor: Colors.black,
-                    disabledBackgroundColor: const Color(0xFF1E293B),
-                    disabledForegroundColor: const Color(0xFF475569),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 10),
+
+                  // Button 2: Save to Flash (Mit Bestätigungsdialog, dauerhaft)
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: safety.allowed && !tuningState.isApplying
+                          ? () =>
+                              _confirmSaveToFlash(context, notifier, profile)
+                          : null,
+                      icon:
+                          tuningState.isApplying && tuningState.isSavingToFlash
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFFFFB300),
+                                  ),
+                                )
+                              : const Icon(Icons.save, size: 18),
+                      label: Text(
+                        tuningState.isApplying && tuningState.isSavingToFlash
+                            ? 'SPEICHERE...'
+                            : 'IN FLASH',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          fontSize: 12,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFFFB300),
+                        side: const BorderSide(color: Color(0xFFFFB300)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 12),
 
@@ -491,6 +588,145 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _applyToRamImmediately(BuildContext context, TuningNotifier notifier) {
+    HapticFeedback.selectionClick();
+    notifier.applyProfile(saveToFlash: false);
+  }
+
+  void _confirmSaveToFlash(
+      BuildContext context, TuningNotifier notifier, TuningProfile profile) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: Row(
+          children: const [
+            Icon(Icons.save, color: Color(0xFFFFB300)),
+            SizedBox(width: 8),
+            Text('IN FLASH SPEICHERN?',
+                style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'Möchtest du das Profil "${profile.name}" wirklich DAUERHAFT in den internen Festspeicher (Flash/EEPROM) des FarDriver Controllers brennen?\n\n'
+          '⚠️ ACHTUNG: Das Bike startet nach dem Aus- und Einschalten dann standardmäßig immer mit diesen Werten.\n\n'
+          'Empfehlung: Als Standard-Flash das ungedrosselte/gedrosselte Profil festlegen und Tuning-Maps nur bei Bedarf in den RAM schreiben.',
+          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('ABBRECHEN', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              notifier.applyProfile(saveToFlash: true);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFB300)),
+            child: const Text('JA, IN FLASH SPEICHERN',
+                style: TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCloneProfileDialog(
+      BuildContext context, WidgetRef ref, TuningProfile source) {
+    final controller = TextEditingController(text: '${source.name} (Kopie)');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: const Text('PROFIL KLONEN',
+            style: TextStyle(color: Colors.white, fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Neuer Profil-Name',
+            hintStyle: TextStyle(color: Color(0xFF64748B)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('ABBRECHEN', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                ref.read(tuningProvider.notifier).cloneProfile(source, name);
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Profil "$name" erfolgreich geklont!'),
+                    backgroundColor: const Color(0xFF123328),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00E5FF)),
+            child: const Text('KLONEN',
+                style: TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRenameProfileDialog(
+      BuildContext context, WidgetRef ref, String oldName) {
+    final controller = TextEditingController(text: oldName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        title: const Text('PROFIL UMBENENNEN',
+            style: TextStyle(color: Colors.white, fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Neuer Profil-Name',
+            hintStyle: TextStyle(color: Color(0xFF64748B)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child:
+                const Text('ABBRECHEN', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                ref.read(tuningProvider.notifier).renameProfile(oldName, name);
+                Navigator.pop(ctx);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00E5FF)),
+            child: const Text('UMBENENNEN',
+                style: TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

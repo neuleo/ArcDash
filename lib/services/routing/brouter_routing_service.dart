@@ -81,6 +81,27 @@ class BRouterRoutingService implements RoutingService {
         ? totalTimeSec
         : trackLengthM / 4.5; // ~16 km/h average offroad fallback
 
+    // Synthesize turn-by-turn maneuvers from geometry if not explicitly in voice hints
+    final maneuvers = <RouteManeuver>[];
+    if (geometry.isNotEmpty) {
+      maneuvers.add(RouteManeuver(
+        instruction: 'Dem Streckenverlauf folgen',
+        type: 'depart',
+        modifier: 'straight',
+        distanceMeters: trackLengthM,
+        location: geometry.first,
+      ));
+      if (geometry.length > 1) {
+        maneuvers.add(RouteManeuver(
+          instruction: 'Ziel erreicht',
+          type: 'arrive',
+          modifier: 'straight',
+          distanceMeters: 0,
+          location: geometry.last,
+        ));
+      }
+    }
+
     return NavigationRoute(
       segments: [
         RouteSegment(
@@ -95,6 +116,7 @@ class BRouterRoutingService implements RoutingService {
       geometry: geometry,
       durationSeconds: durationS,
       elevationGainMetersTotal: gain,
+      maneuvers: maneuvers,
       providerName: 'BRouter',
     );
   }

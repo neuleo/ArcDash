@@ -39,38 +39,50 @@ class TuningState {
   final TuningProfile pendingProfile;
   final bool isApplying;
   final bool isRestoring;
+  final bool isSavingToFlash;
   final String? lastError;
   final bool appliedSuccessfully;
+  final bool lastAppliedWasFlash;
   final List<TuningProfile> savedProfiles;
   final bool expertModeEnabled;
+  final String activeRamMap;
 
   const TuningState({
     required this.pendingProfile,
     this.isApplying = false,
     this.isRestoring = false,
+    this.isSavingToFlash = false,
     this.lastError,
     this.appliedSuccessfully = false,
+    this.lastAppliedWasFlash = false,
     this.savedProfiles = const [],
     this.expertModeEnabled = false,
+    this.activeRamMap = 'Stock Street Legal',
   });
 
   TuningState copyWith({
     TuningProfile? pendingProfile,
     bool? isApplying,
     bool? isRestoring,
+    bool? isSavingToFlash,
     String? lastError,
     bool? appliedSuccessfully,
+    bool? lastAppliedWasFlash,
     List<TuningProfile>? savedProfiles,
     bool? expertModeEnabled,
+    String? activeRamMap,
   }) =>
       TuningState(
         pendingProfile: pendingProfile ?? this.pendingProfile,
         isApplying: isApplying ?? this.isApplying,
         isRestoring: isRestoring ?? this.isRestoring,
+        isSavingToFlash: isSavingToFlash ?? this.isSavingToFlash,
         lastError: lastError,
         appliedSuccessfully: appliedSuccessfully ?? this.appliedSuccessfully,
+        lastAppliedWasFlash: lastAppliedWasFlash ?? this.lastAppliedWasFlash,
         savedProfiles: savedProfiles ?? this.savedProfiles,
         expertModeEnabled: expertModeEnabled ?? this.expertModeEnabled,
+        activeRamMap: activeRamMap ?? this.activeRamMap,
       );
 }
 
@@ -79,7 +91,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   bool _hasUserModified = false;
 
   TuningNotifier(this._ref)
-      : super(TuningState(pendingProfile: TuningProfile.custom())) {
+      : super(TuningState(pendingProfile: TuningProfile.stockStreetLegal())) {
     _loadProfiles();
     final initialController = _ref.read(controllerProvider);
     syncFromController(initialController);
@@ -315,12 +327,16 @@ class TuningNotifier extends StateNotifier<TuningState> {
   }
 
   /// Applies all pending profile parameters to the controller.
-  Future<bool> applyProfile() async {
+  /// If [saveToFlash] is false (default), parameters are written directly to RAM
+  /// and will cleanly revert to stock upon power cycling the bike.
+  /// If [saveToFlash] is true, parameters are permanently committed into Flash/EEPROM.
+  Future<bool> applyProfile({bool saveToFlash = false}) async {
     if (state.isApplying) return false;
     final decision = _ref.read(writeSafetyDecisionProvider);
     if (!decision.allowed) {
       state = state.copyWith(
         isApplying: false,
+        isSavingToFlash: false,
         appliedSuccessfully: false,
         lastError: describeSafety(decision),
       );
@@ -343,7 +359,11 @@ class TuningNotifier extends StateNotifier<TuningState> {
       ),
     ];
 
-    state = state.copyWith(isApplying: true, lastError: null);
+    state = state.copyWith(
+      isApplying: true,
+      isSavingToFlash: saveToFlash,
+      lastError: null,
+    );
 
     final transport = _ref.read(bluetoothServiceProvider);
     for (final (address, value) in writes) {
@@ -352,6 +372,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
       if (!written) {
         state = state.copyWith(
           isApplying: false,
+          isSavingToFlash: false,
           appliedSuccessfully: false,
           lastError: 'Write to 0x${address.toRadixString(16).padLeft(2, '0')} '
               'was not acknowledged.',
@@ -360,12 +381,54 @@ class TuningNotifier extends StateNotifier<TuningState> {
       }
     }
 
+    if (saveToFlash) {
+      // Commit parameters to persistent Flash memory
+      await transport.write(ProtocolService.saveParametersToFlashPacket());
+    }
+
     _hasUserModified = false;
     state = state.copyWith(
       isApplying: false,
+      isSavingToFlash: false,
       appliedSuccessfully: true,
+      lastAppliedWasFlash: saveToFlash,
+      activeRamMap: profile.name,
       lastError: null,
     );
+    return true;
+  }
+
+  /// Clones the [source] profile into a new custom profile with [newName].
+  Future<bool> cloneProfile(TuningProfile source, String newName) async {
+    final cleanName = newName.trim();
+    if (cleanName.isEmpty) return false;
+    final storage = _ref.read(storageServiceProvider);
+    final clone = source.copyWith(
+      name: cleanName,
+      createdAt: DateTime.now(),
+      isStock: false,
+    );
+    await storage.saveProfile(clone);
+    _loadProfiles();
+    state = state.copyWith(pendingProfile: clone, appliedSuccessfully: false);
+    return true;
+  }
+
+  /// Renames an existing custom profile. Stock baseline cannot be renamed.
+  Future<bool> renameProfile(String oldName, String newName) async {
+    final cleanName = newName.trim();
+    if (cleanName.isEmpty || oldName == 'Stock Street Legal') return false;
+    final storage = _ref.read(storageServiceProvider);
+    final profiles = storage.loadProfiles();
+    final idx = profiles.indexWhere((p) => p.name == oldName);
+    if (idx < 0) return false;
+    final updated = profiles[idx].copyWith(name: cleanName);
+    await storage.deleteProfile(oldName);
+    await storage.saveProfile(updated);
+    _loadProfiles();
+    if (state.pendingProfile.name == oldName) {
+      state = state.copyWith(pendingProfile: updated);
+    }
     return true;
   }
 

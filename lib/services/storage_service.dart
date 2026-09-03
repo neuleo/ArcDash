@@ -174,6 +174,40 @@ class StorageService {
     );
   }
 
+  // --- Fast Map Configuration ---
+  static const _prefKeyFastMapTunedProfile = 'fast_map_tuned_profile';
+  static const _prefKeyFastMapStockProfile = 'fast_map_stock_profile';
+  static const _prefKeyFastMapAutoApply = 'fast_map_auto_apply';
+
+  Future<void> saveFastMapConfig({
+    String? tunedProfile,
+    String? stockProfile,
+    bool? autoApplyOnConnect,
+  }) async {
+    if (!_initialized) return;
+    if (tunedProfile != null) {
+      await _prefs.setString(_prefKeyFastMapTunedProfile, tunedProfile);
+    }
+    if (stockProfile != null) {
+      await _prefs.setString(_prefKeyFastMapStockProfile, stockProfile);
+    }
+    if (autoApplyOnConnect != null) {
+      await _prefs.setBool(_prefKeyFastMapAutoApply, autoApplyOnConnect);
+    }
+  }
+
+  String loadFastMapTunedProfile() => _initialized
+      ? (_prefs.getString(_prefKeyFastMapTunedProfile) ?? 'Tuned (Offen)')
+      : 'Tuned (Offen)';
+
+  String loadFastMapStockProfile() => _initialized
+      ? (_prefs.getString(_prefKeyFastMapStockProfile) ?? 'Stock Street Legal')
+      : 'Stock Street Legal';
+
+  bool loadFastMapAutoApply() => _initialized
+      ? (_prefs.getBool(_prefKeyFastMapAutoApply) ?? false)
+      : false;
+
   // --- Ride sessions ---
   Future<void> saveRideSession(RideSession session) async {
     if (!_initialized) return;

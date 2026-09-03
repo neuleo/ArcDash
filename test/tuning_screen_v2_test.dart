@@ -68,9 +68,7 @@ void main() {
       await tester.pumpWidget(widget);
       await _settleConnect(tester, dongle);
 
-      expect(find.text('Stock Offroad'), findsOneWidget);
-      expect(find.text('Eco Range'), findsOneWidget);
-      expect(find.text('Custom'), findsOneWidget);
+      expect(find.text('Stock Street Legal'), findsOneWidget);
       expect(find.text('My Trail'), findsOneWidget);
       expect(find.text('+ PRESET SPEICHERN'), findsOneWidget);
       expect(find.text('WERKSEINSTELLUNGEN WIEDERHERSTELLEN (.HEB BASEMAP)'),
@@ -99,8 +97,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('My Trail'), findsOneWidget);
-      expect(storage.profiles, hasLength(1));
-      expect(storage.profiles.first.name, 'My Trail');
+      expect(storage.profiles.any((p) => p.name == 'My Trail'), isTrue);
     });
 
     testWidgets('restore confirmation dialog can be confirmed/cancelled',
@@ -147,16 +144,14 @@ void main() {
       await tester.pumpWidget(widget);
       await _settleConnect(tester, dongle);
 
-      await tester.ensureVisible(find.text('AUF CONTROLLER SCHREIBEN'));
+      await tester.ensureVisible(find.text('AUF RAM SCHREIBEN'));
       await tester.pump();
-      await tester.tap(find.text('AUF CONTROLLER SCHREIBEN'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('VERIFIZIERT SCHREIBEN'));
+      await tester.tap(find.text('AUF RAM SCHREIBEN'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(container.read(tuningProvider).appliedSuccessfully, isTrue);
-      expect(find.text('PARAMETER ERFOLGREICH GESCHRIEBEN & VERIFIZIERT'),
+      expect(find.text('IN RAM GESCHRIEBEN (TEMPORÄR - RESET BEI BOOT)'),
           findsOneWidget);
     });
   });
