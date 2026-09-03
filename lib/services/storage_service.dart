@@ -196,9 +196,8 @@ class StorageService {
     }
   }
 
-  String loadFastMapTunedProfile() => _initialized
-      ? (_prefs.getString(_prefKeyFastMapTunedProfile) ?? 'Tuned (Offen)')
-      : 'Tuned (Offen)';
+  String? loadFastMapTunedProfile() =>
+      _initialized ? _prefs.getString(_prefKeyFastMapTunedProfile) : null;
 
   String loadFastMapStockProfile() => _initialized
       ? (_prefs.getString(_prefKeyFastMapStockProfile) ?? 'Stock Street Legal')

@@ -113,15 +113,15 @@ void main() {
       addTearDown(container.dispose);
 
       final fastNotifier = container.read(fastMapProvider.notifier);
-      fastNotifier.setTunedProfileName('Tuned (Offen)');
+      fastNotifier.setTunedProfileName('Stock Street Legal');
       fastNotifier.setAutoApplyOnConnect(true);
 
       expect(fastNotifier.state.autoApplyOnConnect, isTrue);
-      expect(fastNotifier.state.tunedProfileName, 'Tuned (Offen)');
+      expect(fastNotifier.state.tunedProfileName, 'Stock Street Legal');
 
       final ok = await fastNotifier.applyTunedProfile();
       expect(ok, isTrue);
-      expect(fastNotifier.state.activeRamMap, 'Tuned (Offen)');
+      expect(fastNotifier.state.activeRamMap, 'Stock Street Legal');
 
       final okStock = await fastNotifier.applyStockProfile();
       expect(okStock, isTrue);

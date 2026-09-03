@@ -9,7 +9,7 @@ import 'package:arcdash/services/bluetooth_service.dart'
 
 class FastMapState {
   final String activeRamMap;
-  final String tunedProfileName;
+  final String? tunedProfileName;
   final String stockProfileName;
   final bool autoApplyOnConnect;
   final bool isApplying;
@@ -18,7 +18,7 @@ class FastMapState {
 
   const FastMapState({
     this.activeRamMap = 'Stock Street Legal',
-    this.tunedProfileName = 'Tuned (Offen)',
+    this.tunedProfileName,
     this.stockProfileName = 'Stock Street Legal',
     this.autoApplyOnConnect = false,
     this.isApplying = false,
@@ -142,14 +142,25 @@ class FastMapNotifier extends StateNotifier<FastMapState> {
     final tuningNotifier = _ref.read(tuningProvider.notifier);
     final tuningState = _ref.read(tuningProvider);
 
+    // Profile must be explicitly present in savedProfiles or factory L1E preset
     TuningProfile? profile;
-    for (final p in tuningState.savedProfiles) {
-      if (p.name == state.tunedProfileName) {
-        profile = p;
-        break;
+    final allAvailable = [
+      ...TuningProfile.l1ePresets(),
+      ...tuningState.savedProfiles,
+    ];
+
+    if (state.tunedProfileName != null) {
+      for (final p in allAvailable) {
+        if (p.name == state.tunedProfileName) {
+          profile = p;
+          break;
+        }
       }
     }
-    profile ??= TuningProfile.defaultTuned();
+
+    // Fallback: first non-stock custom profile, or first available
+    profile ??= tuningState.savedProfiles.firstOrNull ??
+        TuningProfile.l1ePresets().first;
 
     tuningNotifier.loadPreset(profile);
     final success = await tuningNotifier.applyProfile(saveToFlash: false);
@@ -158,7 +169,7 @@ class FastMapNotifier extends StateNotifier<FastMapState> {
       state = state.copyWith(
         isApplying: false,
         activeRamMap: profile.name,
-        statusMessage: '${profile.name} im RAM aktiv (Offen)!',
+        statusMessage: '${profile.name} im RAM aktiv!',
         lastError: null,
       );
       return true;

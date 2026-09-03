@@ -27,6 +27,20 @@ class FastMapScreen extends ConsumerWidget {
         fastMapState.activeRamMap.toLowerCase().contains('stock') ||
             fastMapState.activeRamMap.toLowerCase().contains('legal');
 
+    // Mirrored directly and exclusively from the tuning screen (L1E preset + user-saved profiles)
+    final availableProfiles = [
+      ...TuningProfile.l1ePresets(),
+      ...tuningState.savedProfiles,
+    ];
+
+    final effectiveTunedName = fastMapState.tunedProfileName != null &&
+            availableProfiles
+                .any((p) => p.name == fastMapState.tunedProfileName)
+        ? fastMapState.tunedProfileName!
+        : (tuningState.savedProfiles.isNotEmpty
+            ? tuningState.savedProfiles.first.name
+            : availableProfiles.first.name);
+
     return Scaffold(
       backgroundColor: const Color(0xFF080B0E),
       appBar: AppBar(
@@ -233,8 +247,7 @@ class FastMapScreen extends ConsumerWidget {
                         Expanded(
                           child: _buildQuickButton(
                             title: 'TUNED (OFFEN)',
-                            subtitle:
-                                'Volle Leistung · ${fastMapState.tunedProfileName}',
+                            subtitle: 'Volle Leistung · $effectiveTunedName',
                             icon: Icons.bolt,
                             accentColor: const Color(0xFF00E5FF),
                             isLoading: fastMapState.isApplying,
@@ -264,8 +277,7 @@ class FastMapScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         _buildQuickButton(
                           title: 'TUNED (OFFEN)',
-                          subtitle:
-                              'Volle Leistung · ${fastMapState.tunedProfileName}',
+                          subtitle: 'Volle Leistung · $effectiveTunedName',
                           icon: Icons.bolt,
                           accentColor: const Color(0xFF00E5FF),
                           isLoading: fastMapState.isApplying,
@@ -308,7 +320,7 @@ class FastMapScreen extends ConsumerWidget {
                     ),
                     const Divider(color: Colors.white10, height: 24),
 
-                    // Tuned Profile Dropdown Selector
+                    // Tuned Profile Dropdown Selector (mirrored exclusively from Tuning screen)
                     Text(
                       'Zugeordnetes Profil für "TUNED":',
                       style: TextStyle(
@@ -324,29 +336,18 @@ class FastMapScreen extends ConsumerWidget {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: tuningState.savedProfiles.any((p) =>
-                                  p.name == fastMapState.tunedProfileName)
-                              ? fastMapState.tunedProfileName
-                              : (tuningState.savedProfiles.isNotEmpty
-                                  ? tuningState.savedProfiles.first.name
-                                  : 'Tuned (Offen)'),
+                          value: effectiveTunedName,
                           isExpanded: true,
                           dropdownColor: const Color(0xFF161B22),
                           style: const TextStyle(
                               color: Colors.white, fontSize: 14),
                           items: [
-                            DropdownMenuItem(
-                              value: 'Tuned (Offen)',
-                              child:
-                                  const Text('Tuned (Offen) [85 km/h, Sport]'),
-                            ),
-                            for (final p in tuningState.savedProfiles)
-                              if (p.name != 'Tuned (Offen)')
-                                DropdownMenuItem(
-                                  value: p.name,
-                                  child: Text(
-                                      '${p.name} (${p.maxSpeedKph.round()} km/h)'),
-                                ),
+                            for (final p in availableProfiles)
+                              DropdownMenuItem(
+                                value: p.name,
+                                child: Text(
+                                    '${p.name} (${p.maxSpeedKph.round()} km/h)${p.isStock ? " [Werk]" : ""}'),
+                              ),
                           ],
                           onChanged: (val) {
                             if (val != null) {
