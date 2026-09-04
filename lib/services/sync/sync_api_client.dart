@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
+const String defaultArcDashServerUrl = 'https://arcdash.neuleo.de';
+
 class SyncServerConfig {
   final String serverUrl;
   final String? token;
@@ -9,7 +11,7 @@ class SyncServerConfig {
   final String? username;
 
   const SyncServerConfig({
-    required this.serverUrl,
+    this.serverUrl = defaultArcDashServerUrl,
     this.token,
     this.userId,
     this.username,
@@ -41,7 +43,7 @@ class SyncServerConfig {
 
   factory SyncServerConfig.fromJson(Map<String, dynamic> json) {
     return SyncServerConfig(
-      serverUrl: json['serverUrl'] as String? ?? 'http://172.24.1.1:8080',
+      serverUrl: json['serverUrl'] as String? ?? defaultArcDashServerUrl,
       token: json['token'] as String?,
       userId: json['userId'] as String?,
       username: json['username'] as String?,

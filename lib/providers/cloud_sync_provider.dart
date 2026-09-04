@@ -50,7 +50,7 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
   CloudSyncNotifier(this._ref, {SyncApiClient? client})
       : _client = client ?? SyncApiClient(),
         super(const CloudSyncState(
-          config: SyncServerConfig(serverUrl: 'http://172.24.1.1:8080'),
+          config: SyncServerConfig(serverUrl: defaultArcDashServerUrl),
         )) {
     _loadConfig();
   }
@@ -58,8 +58,8 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
   void _loadConfig() {
     try {
       final storage = _ref.read(storageServiceProvider);
-      // Load stored server URL, token, user
-      final savedUrl = storage.loadSyncServerUrl() ?? 'http://172.24.1.1:8080';
+      // Hardcoded & transparent default server URL
+      final savedUrl = storage.loadSyncServerUrl() ?? defaultArcDashServerUrl;
       final savedToken = storage.loadSyncToken();
       final savedUser = storage.loadSyncUsername();
       final savedUserId = storage.loadSyncUserId();

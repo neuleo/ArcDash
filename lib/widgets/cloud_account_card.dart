@@ -92,23 +92,11 @@ class CloudAccountCard extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        syncState.lastSyncTime != null
-                            ? 'Zuletzt: ${syncState.lastSyncTime!.hour.toString().padLeft(2, "0")}:${syncState.lastSyncTime!.minute.toString().padLeft(2, "0")} Uhr'
-                            : 'Noch nicht synchronisiert',
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 12),
-                      ),
-                      Text(
-                        'Server: ${syncState.config.serverUrl}',
-                        style: const TextStyle(
-                            color: Colors.white38, fontSize: 10),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  child: Text(
+                    syncState.lastSyncTime != null
+                        ? 'Zuletzt synchronisiert: ${syncState.lastSyncTime!.hour.toString().padLeft(2, "0")}:${syncState.lastSyncTime!.minute.toString().padLeft(2, "0")} Uhr'
+                        : 'Noch nicht synchronisiert',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ),
                 ElevatedButton.icon(
@@ -223,7 +211,6 @@ class _AuthModalState extends ConsumerState<_AuthModal> {
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
-  final _serverUrlCtrl = TextEditingController(text: 'http://172.24.1.1:8080');
 
   @override
   void initState() {
@@ -236,7 +223,6 @@ class _AuthModalState extends ConsumerState<_AuthModal> {
     _userCtrl.dispose();
     _passCtrl.dispose();
     _emailCtrl.dispose();
-    _serverUrlCtrl.dispose();
     super.dispose();
   }
 
@@ -322,20 +308,7 @@ class _AuthModalState extends ConsumerState<_AuthModal> {
             ),
             const SizedBox(height: 10),
           ],
-          TextField(
-            controller: _serverUrlCtrl,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
-            decoration: InputDecoration(
-              labelText: 'Server-URL (Standard: Docker Host)',
-              labelStyle: const TextStyle(color: Colors.white54, fontSize: 11),
-              filled: true,
-              fillColor: const Color(0xFF161B22),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none),
-            ),
-          ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 8),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00E5FF),
@@ -349,7 +322,6 @@ class _AuthModalState extends ConsumerState<_AuthModal> {
                 : () async {
                     final u = _userCtrl.text.trim();
                     final p = _passCtrl.text.trim();
-                    final s = _serverUrlCtrl.text.trim();
                     final em = _emailCtrl.text.trim();
 
                     if (u.isEmpty || p.isEmpty) return;
@@ -360,13 +332,11 @@ class _AuthModalState extends ConsumerState<_AuthModal> {
                         username: u,
                         password: p,
                         email: em.isNotEmpty ? em : null,
-                        serverUrl: s.isNotEmpty ? s : null,
                       );
                     } else {
                       ok = await syncNotifier.login(
                         username: u,
                         password: p,
-                        serverUrl: s.isNotEmpty ? s : null,
                       );
                     }
 
