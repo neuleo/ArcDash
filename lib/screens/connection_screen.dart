@@ -137,227 +137,223 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF080B0E),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              // Logo / header
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00E5FF).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFF00E5FF).withOpacity(0.3),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.electric_bolt,
-                      color: Color(0xFF00E5FF),
-                      size: 22,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          children: [
+            // Logo / header
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00E5FF).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFF00E5FF).withOpacity(0.3),
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'ARCDASH',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 3,
-                        ),
-                      ),
-                      Text(
-                        AppStrings.of(context).text(AppText.controllerConnect),
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
-                          fontSize: 12,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.electric_bolt,
+                    color: Color(0xFF00E5FF),
+                    size: 20,
                   ),
-                ],
-              ),
-              const SizedBox(height: 40),
-              // Status
-              ConnectionStatusBar(
-                state: connectionState,
-                deviceName: null,
-              ),
-              const SizedBox(height: 10),
-              ConnectionStatusBar(
-                state: bmsState,
-                deviceName: bmsName,
-              ),
-              const SizedBox(height: 24),
-              // Bike Selector & Quick-Pairing
-              const BikeSelectorCard(),
-              const SizedBox(height: 28),
-              // Scan controls
-              Row(
-                children: [
-                  Text(
-                    AppStrings.of(context).text(AppText.nearbyDongles),
-                    style: const TextStyle(
-                      color: Color(0xFF4A5568),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const Spacer(),
-                  TextButton.icon(
-                    onPressed: _isScanning ? null : _startScan,
-                    icon: _isScanning
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFF00E5FF),
-                            ),
-                          )
-                        : const Icon(Icons.refresh, size: 16),
-                    label: Text(AppStrings.of(context).text(
-                        _isScanning ? AppText.searching : AppText.search)),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF00E5FF),
-                      textStyle: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Filter toggle
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111518),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF2A3548)),
                 ),
-                child: Row(
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      _showAllDevices ? Icons.devices : Icons.bike_scooter,
-                      color: const Color(0xFF00E5FF),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _showAllDevices
-                            ? 'Alle Geräte anzeigen'
-                            : 'Nur Bike-Hardware anzeigen',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const Text(
+                      'ARCDASH',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2.5,
                       ),
                     ),
-                    Switch(
-                      value: _showAllDevices,
-                      onChanged: _toggleShowAllDevices,
-                      activeColor: const Color(0xFF00E5FF),
-                      activeTrackColor:
-                          const Color(0xFF00E5FF).withOpacity(0.3),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Device list
-              Expanded(
-                child: scanResults.isEmpty
-                    ? _EmptyState(isScanning: _isScanning)
-                    : ListView.separated(
-                        itemCount: scanResults.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (_, i) {
-                          final dongle = scanResults[i];
-                          final isConnecting =
-                              _connectingId == dongle.device.remoteId.str;
-                          return _DongleCard(
-                            dongle: dongle,
-                            isConnecting: isConnecting,
-                            onConnectAsController: () => _connect(dongle),
-                            onConnectAsBms: () =>
-                                _connect(dongle, forceBms: true),
-                          );
-                        },
-                      ),
-              ),
-              // Info footer
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A2030).withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF2A3548),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF4A5568),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _showAllDevices
-                            ? 'Zeigt alle Bluetooth-Geräte in deiner Umgebung an (manuelle Suche).'
-                            : 'Zeigt nur Bike-Hardware an: FarDriver-Tuner-Dongles und ANT-BMS.',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
-                          fontSize: 12,
-                          height: 1.5,
-                        ),
+                    Text(
+                      AppStrings.of(context).text(AppText.controllerConnect),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.4),
+                        fontSize: 11,
+                        letterSpacing: 0.8,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              // Diagnostic Log Share Button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    final diagnostics = ref.read(diagnosticsLogProvider);
-                    DiagnosticLogExporter.shareOrCopy(context, diagnostics);
-                  },
-                  icon: const Icon(Icons.share, size: 18),
-                  label: const Text('Diagnose-Log teilen'),
-                  style: OutlinedButton.styleFrom(
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Status bars
+            Row(
+              children: [
+                Expanded(
+                  child: ConnectionStatusBar(
+                    state: connectionState,
+                    deviceName: null,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ConnectionStatusBar(
+                    state: bmsState,
+                    deviceName: bmsName,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Bike Selector & Quick-Pairing
+            const BikeSelectorCard(),
+            const SizedBox(height: 20),
+            // Scan controls
+            Row(
+              children: [
+                Text(
+                  AppStrings.of(context).text(AppText.nearbyDongles),
+                  style: const TextStyle(
+                    color: Color(0xFF4A5568),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: _isScanning ? null : _startScan,
+                  icon: _isScanning
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF00E5FF),
+                          ),
+                        )
+                      : const Icon(Icons.refresh, size: 16),
+                  label: Text(AppStrings.of(context)
+                      .text(_isScanning ? AppText.searching : AppText.search)),
+                  style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF00E5FF),
-                    side: const BorderSide(color: Color(0xFF00E5FF)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
                     ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Filter toggle
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111518),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2A3548)),
               ),
-            ],
-          ),
+              child: Row(
+                children: [
+                  Icon(
+                    _showAllDevices ? Icons.devices : Icons.bike_scooter,
+                    color: const Color(0xFF00E5FF),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _showAllDevices
+                          ? 'Alle Geräte anzeigen'
+                          : 'Nur Bike-Hardware anzeigen',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: _showAllDevices,
+                    onChanged: _toggleShowAllDevices,
+                    activeColor: const Color(0xFF00E5FF),
+                    activeTrackColor: const Color(0xFF00E5FF).withOpacity(0.3),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Device list
+            if (scanResults.isEmpty)
+              _EmptyState(isScanning: _isScanning)
+            else
+              for (final dongle in scanResults) ...[
+                _DongleCard(
+                  dongle: dongle,
+                  isConnecting: _connectingId == dongle.device.remoteId.str,
+                  onConnectAsController: () => _connect(dongle),
+                  onConnectAsBms: () => _connect(dongle, forceBms: true),
+                ),
+                const SizedBox(height: 8),
+              ],
+            const SizedBox(height: 12),
+            // Info footer
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A2030).withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF2A3548),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF4A5568),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _showAllDevices
+                          ? 'Zeigt alle Bluetooth-Geräte in deiner Umgebung an (manuelle Suche).'
+                          : 'Zeigt nur Bike-Hardware an: FarDriver-Tuner-Dongles und ANT-BMS.',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.4),
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Diagnostic Log Share Button
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF00E5FF),
+                side: const BorderSide(color: Color(0xFF00E5FF)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                final diagnostics = ref.read(diagnosticsLogProvider);
+                DiagnosticLogExporter.shareOrCopy(context, diagnostics);
+              },
+              icon: const Icon(Icons.share, size: 18),
+              label: const Text(
+                'Diagnose-Log teilen',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
