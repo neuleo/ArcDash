@@ -20,6 +20,11 @@ const _prefKeyLastBmsId = 'last_bms_id';
 const _prefKeyBikes = 'saved_bikes';
 const _prefKeySelectedBikeId = 'selected_bike_id';
 const _prefKeyAutoConnectBikeId = 'auto_connect_bike_id';
+const _prefKeySyncServerUrl = 'sync_server_url';
+const _prefKeySyncToken = 'sync_token';
+const _prefKeySyncUserId = 'sync_user_id';
+const _prefKeySyncUsername = 'sync_username';
+const _prefKeyLastSyncTime = 'last_sync_time';
 
 class StorageService {
   late SharedPreferences _prefs;
@@ -207,6 +212,51 @@ class StorageService {
 
   String? loadAutoConnectBikeId() =>
       _initialized ? _prefs.getString(_prefKeyAutoConnectBikeId) : null;
+
+  // --- Cloud Sync Config Persistence ---
+  Future<void> saveSyncConfig({
+    required String serverUrl,
+    required String token,
+    required String userId,
+    required String username,
+  }) async {
+    if (!_initialized) return;
+    await _prefs.setString(_prefKeySyncServerUrl, serverUrl);
+    await _prefs.setString(_prefKeySyncToken, token);
+    await _prefs.setString(_prefKeySyncUserId, userId);
+    await _prefs.setString(_prefKeySyncUsername, username);
+  }
+
+  Future<void> clearSyncConfig() async {
+    if (!_initialized) return;
+    await _prefs.remove(_prefKeySyncToken);
+    await _prefs.remove(_prefKeySyncUserId);
+    await _prefs.remove(_prefKeySyncUsername);
+    await _prefs.remove(_prefKeyLastSyncTime);
+  }
+
+  String? loadSyncServerUrl() =>
+      _initialized ? _prefs.getString(_prefKeySyncServerUrl) : null;
+
+  String? loadSyncToken() =>
+      _initialized ? _prefs.getString(_prefKeySyncToken) : null;
+
+  String? loadSyncUserId() =>
+      _initialized ? _prefs.getString(_prefKeySyncUserId) : null;
+
+  String? loadSyncUsername() =>
+      _initialized ? _prefs.getString(_prefKeySyncUsername) : null;
+
+  Future<void> saveLastSyncTime(DateTime time) async {
+    if (!_initialized) return;
+    await _prefs.setString(_prefKeyLastSyncTime, time.toIso8601String());
+  }
+
+  DateTime? loadLastSyncTime() {
+    if (!_initialized) return null;
+    final s = _prefs.getString(_prefKeyLastSyncTime);
+    return s != null ? DateTime.tryParse(s) : null;
+  }
 
   // --- Tuning profiles ---
   Future<void> saveProfile(TuningProfile profile) async {

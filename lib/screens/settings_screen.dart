@@ -6,6 +6,7 @@ import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/ant_bms_provider.dart';
 import 'package:arcdash/widgets/bike_selector_card.dart';
 import 'package:arcdash/widgets/bms_cell_monitor.dart';
+import 'package:arcdash/widgets/cloud_account_card.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 import 'package:arcdash/services/diagnostic_log_exporter.dart';
 import 'package:arcdash/services/profile_exporter.dart';
@@ -31,6 +32,10 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           children: [
+            _SectionTitle('CLOUD-SYNCHRONISIERUNG & ACCOUNT'),
+            const SizedBox(height: 8),
+            const CloudAccountCard(),
+            const SizedBox(height: 24),
             _SectionTitle(strings.text(AppText.display)),
             const SizedBox(height: 20),
             _SectionTitle('MEINE BIKES & GERÄTE-ZUORDNUNG'),

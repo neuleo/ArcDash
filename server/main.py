@@ -1,0 +1,363 @@
+import uuid
+from datetime import datetime
+from typing import Optional
+from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from models import init_db, User, Bike, TuningProfileModel, RideModel
+from auth import (
+    get_db,
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    get_current_user,
+)
+from schemas import (
+    UserRegister,
+    UserLogin,
+    TokenResponse,
+    UserOut,
+    SyncPushRequest,
+    SyncPushResponse,
+    SyncPullResponse,
+    BikeSyncItem,
+    TuningProfileSyncItem,
+    RideSyncItem,
+)
+
+init_db()
+
+app = FastAPI(
+    title="ArcDash Cloud Sync API",
+    version="1.0.0",
+    description="Offline-First Cloud Sync Backend for ArcDash E-Moto Telemetry & Tuning",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "server_time": datetime.utcnow().isoformat()}
+
+
+# ==========================================
+# AUTH ENDPOINTS
+# ==========================================
+@app.post("/api/v1/auth/register", response_model=TokenResponse)
+def register(req: UserRegister, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.username == req.username).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Benutzername bereits vergeben",
+        )
+
+    if req.email:
+        existing_email = db.query(User).filter(User.email == req.email).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="E-Mail-Adresse bereits registriert",
+            )
+
+    user = User(
+        id=str(uuid.uuid4()),
+        username=req.username,
+        email=req.email,
+        password_hash=get_password_hash(req.password),
+        created_at=datetime.utcnow(),
+        last_login=datetime.utcnow(),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token(data={"sub": user.id, "username": user.username})
+    return TokenResponse(
+        access_token=token,
+        user_id=user.id,
+        username=user.username,
+    )
+
+
+@app.post("/api/v1/auth/login", response_model=TokenResponse)
+def login(req: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == req.username).first()
+    if not user or not verify_password(req.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Ungültiger Benutzername oder Passwort",
+        )
+
+    user.last_login = datetime.utcnow()
+    db.commit()
+
+    token = create_access_token(data={"sub": user.id, "username": user.username})
+    return TokenResponse(
+        access_token=token,
+        user_id=user.id,
+        username=user.username,
+    )
+
+
+@app.get("/api/v1/auth/me", response_model=UserOut)
+def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+# ==========================================
+# SYNC ENDPOINTS (Delta Sync & Last-Write-Wins)
+# ==========================================
+@app.post("/api/v1/sync/push", response_model=SyncPushResponse)
+def sync_push(
+    payload: SyncPushRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    server_time = datetime.utcnow()
+
+    # 1. Process Bikes
+    bikes_count = 0
+    for b in payload.bikes:
+        existing = (
+            db.query(Bike)
+            .filter(Bike.id == b.id, Bike.user_id == current_user.id)
+            .first()
+        )
+        if existing:
+            # Last-Write-Wins: only update if incoming is newer or equal
+            if b.updated_at >= existing.updated_at:
+                existing.name = b.name
+                existing.controller_id = b.controller_id
+                existing.controller_name = b.controller_name
+                existing.bms_id = b.bms_id
+                existing.bms_name = b.bms_name
+                existing.is_auto_connect = b.is_auto_connect
+                existing.updated_at = b.updated_at
+                existing.deleted_at = b.deleted_at
+                bikes_count += 1
+        else:
+            new_bike = Bike(
+                id=b.id,
+                user_id=current_user.id,
+                name=b.name,
+                controller_id=b.controller_id,
+                controller_name=b.controller_name,
+                bms_id=b.bms_id,
+                bms_name=b.bms_name,
+                is_auto_connect=b.is_auto_connect,
+                created_at=b.created_at,
+                updated_at=b.updated_at,
+                deleted_at=b.deleted_at,
+            )
+            db.add(new_bike)
+            bikes_count += 1
+
+    # 2. Process Tuning Profiles
+    profiles_count = 0
+    for p in payload.tuning_profiles:
+        existing = (
+            db.query(TuningProfileModel)
+            .filter(
+                TuningProfileModel.id == p.id,
+                TuningProfileModel.user_id == current_user.id,
+            )
+            .first()
+        )
+        if existing:
+            if p.updated_at >= existing.updated_at:
+                existing.name = p.name
+                existing.is_stock = p.is_stock
+                existing.max_speed_kph = p.max_speed_kph
+                existing.max_line_curr_a = p.max_line_curr_a
+                existing.max_phase_curr_a = p.max_phase_curr_a
+                existing.throttle_response = p.throttle_response
+                existing.boost_seconds = p.boost_seconds
+                existing.power_curve_json = p.power_curve_json
+                existing.regen_curve_json = p.regen_curve_json
+                existing.pin_mapping_json = p.pin_mapping_json
+                existing.is_public = p.is_public
+                existing.version = p.version
+                existing.description = p.description
+                existing.updated_at = p.updated_at
+                existing.deleted_at = p.deleted_at
+                profiles_count += 1
+        else:
+            new_profile = TuningProfileModel(
+                id=p.id,
+                user_id=current_user.id,
+                name=p.name,
+                is_stock=p.is_stock,
+                max_speed_kph=p.max_speed_kph,
+                max_line_curr_a=p.max_line_curr_a,
+                max_phase_curr_a=p.max_phase_curr_a,
+                throttle_response=p.throttle_response,
+                boost_seconds=p.boost_seconds,
+                power_curve_json=p.power_curve_json,
+                regen_curve_json=p.regen_curve_json,
+                pin_mapping_json=p.pin_mapping_json,
+                is_public=p.is_public,
+                version=p.version,
+                description=p.description,
+                created_at=p.created_at,
+                updated_at=p.updated_at,
+                deleted_at=p.deleted_at,
+            )
+            db.add(new_profile)
+            profiles_count += 1
+
+    # 3. Process Rides
+    rides_count = 0
+    for r in payload.rides:
+        existing = (
+            db.query(RideModel)
+            .filter(RideModel.id == r.id, RideModel.user_id == current_user.id)
+            .first()
+        )
+        if existing:
+            if r.updated_at >= existing.updated_at:
+                existing.bike_id = r.bike_id
+                existing.start_time = r.start_time
+                existing.end_time = r.end_time
+                existing.duration_sec = r.duration_sec
+                existing.distance_km = r.distance_km
+                existing.avg_speed_kph = r.avg_speed_kph
+                existing.max_speed_kph = r.max_speed_kph
+                existing.energy_used_wh = r.energy_used_wh
+                existing.efficiency_wh_per_km = r.efficiency_wh_per_km
+                existing.max_motor_temp_c = r.max_motor_temp_c
+                existing.max_controller_temp_c = r.max_controller_temp_c
+                existing.telemetry_blob = r.telemetry_blob
+                existing.updated_at = r.updated_at
+                existing.deleted_at = r.deleted_at
+                rides_count += 1
+        else:
+            new_ride = RideModel(
+                id=r.id,
+                user_id=current_user.id,
+                bike_id=r.bike_id,
+                start_time=r.start_time,
+                end_time=r.end_time,
+                duration_sec=r.duration_sec,
+                distance_km=r.distance_km,
+                avg_speed_kph=r.avg_speed_kph,
+                max_speed_kph=r.max_speed_kph,
+                energy_used_wh=r.energy_used_wh,
+                efficiency_wh_per_km=r.efficiency_wh_per_km,
+                max_motor_temp_c=r.max_motor_temp_c,
+                max_controller_temp_c=r.max_controller_temp_c,
+                telemetry_blob=r.telemetry_blob,
+                created_at=r.created_at,
+                updated_at=r.updated_at,
+                deleted_at=r.deleted_at,
+            )
+            db.add(new_ride)
+            rides_count += 1
+
+    db.commit()
+
+    return SyncPushResponse(
+        success=True,
+        server_time=server_time,
+        bikes_processed=bikes_count,
+        tuning_profiles_processed=profiles_count,
+        rides_processed=rides_count,
+    )
+
+
+@app.get("/api/v1/sync/pull", response_model=SyncPullResponse)
+def sync_pull(
+    since: Optional[datetime] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    server_time = datetime.utcnow()
+
+    # Query bikes
+    bike_query = db.query(Bike).filter(Bike.user_id == current_user.id)
+    if since:
+        bike_query = bike_query.filter(Bike.updated_at > since)
+    bikes = bike_query.all()
+
+    # Query profiles
+    profile_query = db.query(TuningProfileModel).filter(
+        TuningProfileModel.user_id == current_user.id
+    )
+    if since:
+        profile_query = profile_query.filter(TuningProfileModel.updated_at > since)
+    profiles = profile_query.all()
+
+    # Query rides
+    ride_query = db.query(RideModel).filter(RideModel.user_id == current_user.id)
+    if since:
+        ride_query = ride_query.filter(RideModel.updated_at > since)
+    rides = ride_query.all()
+
+    return SyncPullResponse(
+        server_time=server_time,
+        bikes=[
+            BikeSyncItem(
+                id=b.id,
+                name=b.name,
+                controller_id=b.controller_id,
+                controller_name=b.controller_name,
+                bms_id=b.bms_id,
+                bms_name=b.bms_name,
+                is_auto_connect=b.is_auto_connect,
+                created_at=b.created_at,
+                updated_at=b.updated_at,
+                deleted_at=b.deleted_at,
+            )
+            for b in bikes
+        ],
+        tuning_profiles=[
+            TuningProfileSyncItem(
+                id=p.id,
+                name=p.name,
+                is_stock=p.is_stock,
+                max_speed_kph=p.max_speed_kph,
+                max_line_curr_a=p.max_line_curr_a,
+                max_phase_curr_a=p.max_phase_curr_a,
+                throttle_response=p.throttle_response,
+                boost_seconds=p.boost_seconds,
+                power_curve_json=p.power_curve_json,
+                regen_curve_json=p.regen_curve_json,
+                pin_mapping_json=p.pin_mapping_json,
+                is_public=p.is_public,
+                version=p.version,
+                description=p.description,
+                created_at=p.created_at,
+                updated_at=p.updated_at,
+                deleted_at=p.deleted_at,
+            )
+            for p in profiles
+        ],
+        rides=[
+            RideSyncItem(
+                id=r.id,
+                bike_id=r.bike_id,
+                start_time=r.start_time,
+                end_time=r.end_time,
+                duration_sec=r.duration_sec,
+                distance_km=r.distance_km,
+                avg_speed_kph=r.avg_speed_kph,
+                max_speed_kph=r.max_speed_kph,
+                energy_used_wh=r.energy_used_wh,
+                efficiency_wh_per_km=r.efficiency_wh_per_km,
+                max_motor_temp_c=r.max_motor_temp_c,
+                max_controller_temp_c=r.max_controller_temp_c,
+                telemetry_blob=r.telemetry_blob,
+                created_at=r.created_at,
+                updated_at=r.updated_at,
+                deleted_at=r.deleted_at,
+            )
+            for r in rides
+        ],
+    )
