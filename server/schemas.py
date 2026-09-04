@@ -103,11 +103,11 @@ class MapFavoriteSyncItem(BaseModel):
 # --- Range Calibration Sync Schemas ---
 class RangeCalibrationSyncItem(BaseModel):
     controller_id: str
-    learned_capacity_wh: float = 1800.0
-    soc_confidence: float = 0.5
-    consumption_history_json: str = "[]"
-    min_voltage_v: float = 60.0
-    max_voltage_v: float = 84.0
+    learned_capacity_wh: Optional[float] = 1800.0
+    soc_confidence: Optional[float] = 0.5
+    consumption_history_json: Optional[str] = "[]"
+    min_voltage_v: Optional[float] = 60.0
+    max_voltage_v: Optional[float] = 84.0
     updated_at: Optional[datetime] = None
 
 

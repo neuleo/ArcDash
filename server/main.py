@@ -333,6 +333,12 @@ def sync_push(
     calibrations_count = 0
     for c in payload.range_calibrations:
         c_updated = c.updated_at or server_time
+        cap_wh = c.learned_capacity_wh if c.learned_capacity_wh is not None else 1800.0
+        soc_conf = c.soc_confidence if c.soc_confidence is not None else 0.5
+        min_v = c.min_voltage_v if c.min_voltage_v is not None else 60.0
+        max_v = c.max_voltage_v if c.max_voltage_v is not None else 84.0
+        hist_json = c.consumption_history_json or "[]"
+
         existing = (
             db.query(RangeCalibrationModel)
             .filter(
@@ -343,22 +349,22 @@ def sync_push(
         )
         if existing:
             if c_updated >= existing.updated_at:
-                existing.learned_capacity_wh = c.learned_capacity_wh
-                existing.soc_confidence = c.soc_confidence
-                existing.consumption_history_json = c.consumption_history_json
-                existing.min_voltage_v = c.min_voltage_v
-                existing.max_voltage_v = c.max_voltage_v
+                existing.learned_capacity_wh = cap_wh
+                existing.soc_confidence = soc_conf
+                existing.consumption_history_json = hist_json
+                existing.min_voltage_v = min_v
+                existing.max_voltage_v = max_v
                 existing.updated_at = c_updated
                 calibrations_count += 1
         else:
             new_cal = RangeCalibrationModel(
                 controller_id=c.controller_id,
                 user_id=current_user.id,
-                learned_capacity_wh=c.learned_capacity_wh,
-                soc_confidence=c.soc_confidence,
-                consumption_history_json=c.consumption_history_json,
-                min_voltage_v=c.min_voltage_v,
-                max_voltage_v=c.max_voltage_v,
+                learned_capacity_wh=cap_wh,
+                soc_confidence=soc_conf,
+                consumption_history_json=hist_json,
+                min_voltage_v=min_v,
+                max_voltage_v=max_v,
                 updated_at=c_updated,
             )
             db.add(new_cal)

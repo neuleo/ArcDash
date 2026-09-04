@@ -341,12 +341,12 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
                   'controller_id': rangeState.controllerId.isNotEmpty
                       ? rangeState.controllerId
                       : (currentCtrlId.isNotEmpty ? currentCtrlId : 'default'),
-                  'learned_capacity_wh': rangeState.learnedCapacityWh,
-                  'soc_confidence': rangeState.socConfidence,
+                  'learned_capacity_wh': rangeState.learnedCapacityWh ?? 1800.0,
+                  'soc_confidence': rangeState.socConfidence ?? 0.5,
                   'consumption_history_json':
                       jsonEncode(rangeState.consumptionHistoryWhPerKm),
-                  'min_voltage_v': rangeState.minVoltageV,
-                  'max_voltage_v': rangeState.maxVoltageV,
+                  'min_voltage_v': rangeState.minVoltageV ?? 60.0,
+                  'max_voltage_v': rangeState.maxVoltageV ?? 84.0,
                   'updated_at': DateTime.now().toIso8601String(),
                 }
               ]
