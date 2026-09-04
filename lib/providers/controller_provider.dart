@@ -35,6 +35,12 @@ class RangePredictionNotifier extends StateNotifier<RangePredictionState?> {
 
   /// Automatically learns a live voltage reading into the calibration range
   /// and persists it when the range is expanded.
+  void refreshFromStorage() {
+    state = _repository.loadState(controllerId: _controllerId);
+  }
+
+  /// Automatically learns a live voltage reading into the calibration range
+  /// and persists it when the range is expanded.
   void learnVoltage(double voltageV) {
     final current = state ?? RangePredictionState(controllerId: _controllerId);
     final updated = current.learnVoltage(voltageV);

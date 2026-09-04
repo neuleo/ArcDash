@@ -146,6 +146,10 @@ class MapStateNotifier extends StateNotifier<MapState> {
   final Ref? _ref;
   StreamSubscription<GpsFix>? _gpsSub;
 
+  void refreshFromStorage() {
+    _loadFavoritesAndRecents();
+  }
+
   void _loadFavoritesAndRecents() {
     if (_ref == null) return;
     try {

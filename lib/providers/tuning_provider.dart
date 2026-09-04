@@ -136,6 +136,10 @@ class TuningNotifier extends StateNotifier<TuningState> {
     }
   }
 
+  void refreshFromStorage() {
+    _loadProfiles();
+  }
+
   void _loadProfiles() {
     final storage = _ref.read(storageServiceProvider);
     final profiles = storage.loadProfiles();

@@ -1,10 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:arcdash/domain/navigation/navigation_interfaces.dart';
 import 'package:arcdash/models/bike_profile.dart';
+import 'package:arcdash/models/map_favorite.dart';
+import 'package:arcdash/models/range_prediction_state.dart';
 import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/providers/bike_selector_provider.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/providers/map_provider.dart';
+import 'package:arcdash/providers/stats_provider.dart';
 import 'package:arcdash/providers/tuning_provider.dart';
+import 'package:arcdash/services/navigation/map_favorites_repository.dart';
 import 'package:arcdash/services/storage_service.dart';
 import 'package:arcdash/services/sync/sync_api_client.dart';
 
@@ -213,6 +221,19 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
       // 1. Prepare local Bikes & Tuning Profiles for Push
       final localBikes = storage.loadBikes();
       final localProfiles = storage.loadProfiles();
+      final localRides = storage.loadRideSessions();
+
+      // Map Favorites & Recents
+      final favRepo = _ref.read(mapFavoritesRepositoryProvider);
+      final localFavs = favRepo.loadFavorites();
+      final localRecents = favRepo.loadRecents();
+
+      // Range Calibration State
+      final rangeRepo = _ref.read(rangePredictionRepositoryProvider);
+      final currentCtrlId = _ref.read(connectedDeviceIdProvider) ??
+          storage.loadLastControllerId() ??
+          '';
+      final rangeState = rangeRepo.loadState(controllerId: currentCtrlId);
 
       final pushPayload = {
         'bikes': localBikes
@@ -231,7 +252,7 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
             .toList(),
         'tuning_profiles': localProfiles
             .map((p) => {
-                  'id': p.name, // Profile name serves as key
+                  'id': p.name,
                   'name': p.name,
                   'is_stock': p.isStock,
                   'max_speed_kph': p.maxSpeedKph,
@@ -249,7 +270,73 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
                   'deleted_at': null,
                 })
             .toList(),
-        'rides': [],
+        'rides': localRides
+            .map((r) => {
+                  'id': r['id']?.toString() ??
+                      DateTime.now().millisecondsSinceEpoch.toString(),
+                  'bike_id': storage.loadSelectedBikeId(),
+                  'start_time':
+                      r['startTime'] ?? DateTime.now().toIso8601String(),
+                  'end_time': r['endTime'] ?? DateTime.now().toIso8601String(),
+                  'duration_sec': (r['durationSec'] as num?)?.toInt() ?? 0,
+                  'distance_km': (r['distanceKm'] as num?)?.toDouble() ?? 0.0,
+                  'avg_speed_kph':
+                      (r['avgSpeedKph'] as num?)?.toDouble() ?? 0.0,
+                  'max_speed_kph':
+                      (r['maxSpeedKph'] as num?)?.toDouble() ?? 0.0,
+                  'energy_used_wh':
+                      (r['totalWhUsed'] as num?)?.toDouble() ?? 0.0,
+                  'efficiency_wh_per_km':
+                      (r['efficiencyWhPerKm'] as num?)?.toDouble() ?? 0.0,
+                  'max_motor_temp_c': 0.0,
+                  'max_controller_temp_c': 0.0,
+                  'telemetry_blob': jsonEncode(r),
+                  'created_at':
+                      r['startTime'] ?? DateTime.now().toIso8601String(),
+                  'updated_at': DateTime.now().toIso8601String(),
+                  'deleted_at': null,
+                })
+            .toList(),
+        'map_favorites': [
+          ...localFavs.map((f) => {
+                'id': f.id,
+                'title': f.title,
+                'subtitle': f.subtitle,
+                'lat': f.location.latitude,
+                'lon': f.location.longitude,
+                'type': f.type.name,
+                'created_at': f.createdAt.toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+                'deleted_at': null,
+              }),
+          ...localRecents.map((f) => {
+                'id': f.id,
+                'title': f.title,
+                'subtitle': f.subtitle,
+                'lat': f.location.latitude,
+                'lon': f.location.longitude,
+                'type': 'recent',
+                'created_at': f.createdAt.toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+                'deleted_at': null,
+              }),
+        ],
+        'range_calibrations': rangeState != null
+            ? [
+                {
+                  'controller_id': rangeState.controllerId.isNotEmpty
+                      ? rangeState.controllerId
+                      : (currentCtrlId.isNotEmpty ? currentCtrlId : 'default'),
+                  'learned_capacity_wh': rangeState.learnedCapacityWh,
+                  'soc_confidence': rangeState.socConfidence,
+                  'consumption_history_json':
+                      jsonEncode(rangeState.consumptionHistoryWhPerKm),
+                  'min_voltage_v': rangeState.minVoltageV,
+                  'max_voltage_v': rangeState.maxVoltageV,
+                  'updated_at': DateTime.now().toIso8601String(),
+                }
+              ]
+            : [],
       };
 
       // Push to server
@@ -318,12 +405,132 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
         }
       }
 
+      // Ingest remote rides
+      final remoteRides = (pullData['rides'] as List? ?? [])
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+      for (final rr in remoteRides) {
+        final id = rr['id'] as String;
+        final deletedAt = rr['deleted_at'];
+        if (deletedAt == null) {
+          final existingSessions = storage.loadRideSessions();
+          final exists = existingSessions.any((s) => s['id']?.toString() == id);
+          if (!exists) {
+            Map<String, dynamic>? sessionData;
+            if (rr['telemetry_blob'] != null &&
+                rr['telemetry_blob'].isNotEmpty) {
+              try {
+                sessionData =
+                    jsonDecode(rr['telemetry_blob']) as Map<String, dynamic>;
+              } catch (_) {}
+            }
+            sessionData ??= {
+              'id': id,
+              'startTime': rr['start_time'],
+              'endTime': rr['end_time'],
+              'durationSec': rr['duration_sec'],
+              'distanceKm': rr['distance_km'],
+              'avgSpeedKph': rr['avg_speed_kph'],
+              'maxSpeedKph': rr['max_speed_kph'],
+              'totalWhUsed': rr['energy_used_wh'],
+              'efficiencyWhPerKm': rr['efficiency_wh_per_km'],
+              'speedHistory': [],
+            };
+            // Append and save
+            existingSessions.add(sessionData);
+            // Save through storage service
+            await storage.saveRawSessionList(existingSessions);
+          }
+        }
+      }
+
+      // Ingest remote map favorites & recents
+      final remoteFavorites = (pullData['map_favorites'] as List? ?? [])
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+      for (final rf in remoteFavorites) {
+        final id = rf['id'] as String;
+        final deletedAt = rf['deleted_at'];
+        final favTypeStr = (rf['type'] as String? ?? 'custom').toLowerCase();
+
+        if (favTypeStr == 'recent') {
+          if (deletedAt == null) {
+            final recent = MapFavorite(
+              id: id,
+              title: rf['title'] as String,
+              subtitle: rf['subtitle'] as String? ?? '',
+              location: GeoLatLng(
+                latitude: (rf['lat'] as num).toDouble(),
+                longitude: (rf['lon'] as num).toDouble(),
+              ),
+              type: FavoriteType.recent,
+              createdAt: DateTime.parse(rf['created_at'] as String),
+            );
+            favRepo.addRecent(recent);
+          }
+        } else {
+          final curFavs = favRepo.loadFavorites();
+          if (deletedAt != null) {
+            curFavs.removeWhere((f) => f.id == id);
+            favRepo.saveFavorites(curFavs);
+          } else {
+            final fType = switch (favTypeStr) {
+              'home' => FavoriteType.home,
+              'work' => FavoriteType.work,
+              _ => FavoriteType.custom,
+            };
+            final fav = MapFavorite(
+              id: id,
+              title: rf['title'] as String,
+              subtitle: rf['subtitle'] as String? ?? '',
+              location: GeoLatLng(
+                latitude: (rf['lat'] as num).toDouble(),
+                longitude: (rf['lon'] as num).toDouble(),
+              ),
+              type: fType,
+              createdAt: DateTime.parse(rf['created_at'] as String),
+            );
+            curFavs.removeWhere((f) => f.id == id);
+            curFavs.add(fav);
+            favRepo.saveFavorites(curFavs);
+          }
+        }
+      }
+
+      // Ingest remote range calibrations
+      final remoteCalibrations = (pullData['range_calibrations'] as List? ?? [])
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
+      for (final rc in remoteCalibrations) {
+        final ctrlId = rc['controller_id'] as String;
+        List<double> history = [];
+        try {
+          final rawHist = jsonDecode(rc['consumption_history_json'] ?? '[]');
+          if (rawHist is List) {
+            history = rawHist.map((v) => (v as num).toDouble()).toList();
+          }
+        } catch (_) {}
+
+        final calState = RangePredictionState(
+          controllerId: ctrlId,
+          learnedCapacityWh: (rc['learned_capacity_wh'] as num).toDouble(),
+          socConfidence: (rc['soc_confidence'] as num).toDouble(),
+          consumptionHistoryWhPerKm: history,
+          minVoltageV: (rc['min_voltage_v'] as num).toDouble(),
+          maxVoltageV: (rc['max_voltage_v'] as num).toDouble(),
+        );
+        rangeRepo.saveState(calState);
+      }
+
       // Update Last Sync Time
       await storage.saveLastSyncTime(serverTime);
 
-      // Refresh providers so UI updates immediately
-      _ref.read(bikeSelectorProvider.notifier);
-      _ref.read(tuningProvider.notifier);
+      // Refresh providers so UI updates immediately across all screens!
+      _ref.read(bikeSelectorProvider.notifier).refreshFromStorage();
+      _ref.read(tuningProvider.notifier).refreshFromStorage();
+      _ref.read(statsProvider.notifier).refreshFromStorage();
+      _ref.read(mapControllerProvider.notifier).refreshFromStorage();
+      _ref.read(rangePredictionStateProvider.notifier)?.refreshFromStorage();
 
       state = state.copyWith(
         isSyncing: false,

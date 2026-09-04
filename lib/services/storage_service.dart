@@ -331,6 +331,14 @@ class StorageService {
       : false;
 
   // --- Ride sessions ---
+  Future<void> saveRawSessionList(List<Map<String, dynamic>> sessions) async {
+    if (!_initialized) return;
+    final trimmed = sessions.length > 50
+        ? sessions.sublist(sessions.length - 50)
+        : sessions;
+    await _prefs.setString(_prefKeyRideSessions, jsonEncode(trimmed));
+  }
+
   Future<void> saveRideSession(RideSession session) async {
     if (!_initialized) return;
     final sessions = _loadSessionJsonList();

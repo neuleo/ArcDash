@@ -76,6 +76,10 @@ class BikeSelectorNotifier extends StateNotifier<BikeSelectorState> {
     _loadBikes();
   }
 
+  void refreshFromStorage() {
+    _loadBikes();
+  }
+
   void _loadBikes() {
     try {
       final storage = _ref.read(storageServiceProvider);

@@ -141,6 +141,10 @@ class StatsNotifier extends StateNotifier<StatsState> {
     );
   }
 
+  void refreshFromStorage() {
+    _loadPastSessions();
+  }
+
   Future<void> resetCurrentSession() async {
     await _finalizeSession();
     _lastSampleTime = DateTime.now();

@@ -87,11 +87,37 @@ class RideSyncItem(BaseModel):
     deleted_at: Optional[datetime] = None
 
 
+# --- Map Favorites Sync Schemas ---
+class MapFavoriteSyncItem(BaseModel):
+    id: str
+    title: str
+    subtitle: str = ""
+    lat: float
+    lon: float
+    type: str = "custom"  # home, work, custom, recent
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime] = None
+
+
+# --- Range Calibration Sync Schemas ---
+class RangeCalibrationSyncItem(BaseModel):
+    controller_id: str
+    learned_capacity_wh: float = 1800.0
+    soc_confidence: float = 0.5
+    consumption_history_json: str = "[]"
+    min_voltage_v: float = 60.0
+    max_voltage_v: float = 84.0
+    updated_at: datetime
+
+
 # --- Bidirectional Sync Payload Schemas ---
 class SyncPushRequest(BaseModel):
     bikes: List[BikeSyncItem] = []
     tuning_profiles: List[TuningProfileSyncItem] = []
     rides: List[RideSyncItem] = []
+    map_favorites: List[MapFavoriteSyncItem] = []
+    range_calibrations: List[RangeCalibrationSyncItem] = []
 
 
 class SyncPushResponse(BaseModel):
@@ -100,6 +126,8 @@ class SyncPushResponse(BaseModel):
     bikes_processed: int
     tuning_profiles_processed: int
     rides_processed: int
+    map_favorites_processed: int
+    range_calibrations_processed: int
 
 
 class SyncPullResponse(BaseModel):
@@ -107,3 +135,5 @@ class SyncPullResponse(BaseModel):
     bikes: List[BikeSyncItem]
     tuning_profiles: List[TuningProfileSyncItem]
     rides: List[RideSyncItem]
+    map_favorites: List[MapFavoriteSyncItem]
+    range_calibrations: List[RangeCalibrationSyncItem]

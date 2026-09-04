@@ -40,6 +40,12 @@ class User(Base):
         "TuningProfileModel", back_populates="user", cascade="all, delete-orphan"
     )
     rides = relationship("RideModel", back_populates="user", cascade="all, delete-orphan")
+    map_favorites = relationship(
+        "MapFavoriteModel", back_populates="user", cascade="all, delete-orphan"
+    )
+    range_calibrations = relationship(
+        "RangeCalibrationModel", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Bike(Base):
@@ -111,6 +117,38 @@ class RideModel(Base):
     deleted_at = Column(DateTime, nullable=True, index=True)
 
     user = relationship("User", back_populates="rides")
+
+
+class MapFavoriteModel(Base):
+    __tablename__ = "map_favorites"
+
+    id = Column(String(64), primary_key=True, index=True)
+    user_id = Column(String(64), ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(128), nullable=False)
+    subtitle = Column(String(255), default="")
+    lat = Column(Float, nullable=False)
+    lon = Column(Float, nullable=False)
+    type = Column(String(32), default="custom")  # home, work, custom, recent
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, index=True)
+    deleted_at = Column(DateTime, nullable=True, index=True)
+
+    user = relationship("User", back_populates="map_favorites")
+
+
+class RangeCalibrationModel(Base):
+    __tablename__ = "range_calibrations"
+
+    controller_id = Column(String(64), primary_key=True, index=True)
+    user_id = Column(String(64), ForeignKey("users.id"), primary_key=True, index=True)
+    learned_capacity_wh = Column(Float, default=1800.0)
+    soc_confidence = Column(Float, default=0.5)
+    consumption_history_json = Column(Text, default="[]")
+    min_voltage_v = Column(Float, default=60.0)
+    max_voltage_v = Column(Float, default=84.0)
+    updated_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    user = relationship("User", back_populates="range_calibrations")
 
 
 def init_db():

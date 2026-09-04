@@ -4,7 +4,15 @@ from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from models import init_db, User, Bike, TuningProfileModel, RideModel
+from models import (
+    init_db,
+    User,
+    Bike,
+    TuningProfileModel,
+    RideModel,
+    MapFavoriteModel,
+    RangeCalibrationModel,
+)
 from auth import (
     get_db,
     get_password_hash,
@@ -23,6 +31,8 @@ from schemas import (
     BikeSyncItem,
     TuningProfileSyncItem,
     RideSyncItem,
+    MapFavoriteSyncItem,
+    RangeCalibrationSyncItem,
 )
 
 init_db()
@@ -261,6 +271,77 @@ def sync_push(
             db.add(new_ride)
             rides_count += 1
 
+    # 4. Process Map Favorites (Home, Work, Custom, Recents)
+    favorites_count = 0
+    for f in payload.map_favorites:
+        existing = (
+            db.query(MapFavoriteModel)
+            .filter(
+                MapFavoriteModel.id == f.id,
+                MapFavoriteModel.user_id == current_user.id,
+            )
+            .first()
+        )
+        if existing:
+            if f.updated_at >= existing.updated_at:
+                existing.title = f.title
+                existing.subtitle = f.subtitle
+                existing.lat = f.lat
+                existing.lon = f.lon
+                existing.type = f.type
+                existing.updated_at = f.updated_at
+                existing.deleted_at = f.deleted_at
+                favorites_count += 1
+        else:
+            new_fav = MapFavoriteModel(
+                id=f.id,
+                user_id=current_user.id,
+                title=f.title,
+                subtitle=f.subtitle,
+                lat=f.lat,
+                lon=f.lon,
+                type=f.type,
+                created_at=f.created_at,
+                updated_at=f.updated_at,
+                deleted_at=f.deleted_at,
+            )
+            db.add(new_fav)
+            favorites_count += 1
+
+    # 5. Process Range Calibrations
+    calibrations_count = 0
+    for c in payload.range_calibrations:
+        existing = (
+            db.query(RangeCalibrationModel)
+            .filter(
+                RangeCalibrationModel.controller_id == c.controller_id,
+                RangeCalibrationModel.user_id == current_user.id,
+            )
+            .first()
+        )
+        if existing:
+            if c.updated_at >= existing.updated_at:
+                existing.learned_capacity_wh = c.learned_capacity_wh
+                existing.soc_confidence = c.soc_confidence
+                existing.consumption_history_json = c.consumption_history_json
+                existing.min_voltage_v = c.min_voltage_v
+                existing.max_voltage_v = c.max_voltage_v
+                existing.updated_at = c.updated_at
+                calibrations_count += 1
+        else:
+            new_cal = RangeCalibrationModel(
+                controller_id=c.controller_id,
+                user_id=current_user.id,
+                learned_capacity_wh=c.learned_capacity_wh,
+                soc_confidence=c.soc_confidence,
+                consumption_history_json=c.consumption_history_json,
+                min_voltage_v=c.min_voltage_v,
+                max_voltage_v=c.max_voltage_v,
+                updated_at=c.updated_at,
+            )
+            db.add(new_cal)
+            calibrations_count += 1
+
     db.commit()
 
     return SyncPushResponse(
@@ -269,6 +350,8 @@ def sync_push(
         bikes_processed=bikes_count,
         tuning_profiles_processed=profiles_count,
         rides_processed=rides_count,
+        map_favorites_processed=favorites_count,
+        range_calibrations_processed=calibrations_count,
     )
 
 
@@ -299,6 +382,22 @@ def sync_pull(
     if since:
         ride_query = ride_query.filter(RideModel.updated_at > since)
     rides = ride_query.all()
+
+    # Query map favorites
+    favorite_query = db.query(MapFavoriteModel).filter(
+        MapFavoriteModel.user_id == current_user.id
+    )
+    if since:
+        favorite_query = favorite_query.filter(MapFavoriteModel.updated_at > since)
+    favorites = favorite_query.all()
+
+    # Query range calibrations
+    cal_query = db.query(RangeCalibrationModel).filter(
+        RangeCalibrationModel.user_id == current_user.id
+    )
+    if since:
+        cal_query = cal_query.filter(RangeCalibrationModel.updated_at > since)
+    calibrations = cal_query.all()
 
     return SyncPullResponse(
         server_time=server_time,
@@ -359,5 +458,31 @@ def sync_pull(
                 deleted_at=r.deleted_at,
             )
             for r in rides
+        ],
+        map_favorites=[
+            MapFavoriteSyncItem(
+                id=f.id,
+                title=f.title,
+                subtitle=f.subtitle,
+                lat=f.lat,
+                lon=f.lon,
+                type=f.type,
+                created_at=f.created_at,
+                updated_at=f.updated_at,
+                deleted_at=f.deleted_at,
+            )
+            for f in favorites
+        ],
+        range_calibrations=[
+            RangeCalibrationSyncItem(
+                controller_id=c.controller_id,
+                learned_capacity_wh=c.learned_capacity_wh,
+                soc_confidence=c.soc_confidence,
+                consumption_history_json=c.consumption_history_json,
+                min_voltage_v=c.min_voltage_v,
+                max_voltage_v=c.max_voltage_v,
+                updated_at=c.updated_at,
+            )
+            for c in calibrations
         ],
     )
