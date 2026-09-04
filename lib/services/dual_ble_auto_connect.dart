@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:arcdash/models/bike_profile.dart';
 import 'package:arcdash/services/ant_bms_service.dart';
 import 'package:arcdash/services/bluetooth_service.dart';
 import 'package:arcdash/services/storage_service.dart';
 
-/// Dual-BLE Auto-Remember: re-establishes the FarDriver controller and the
-/// ANT BMS connections in the background when the app starts.
+/// Dual-BLE Auto-Remember & Bike Selector Coordinator:
+/// If an autoConnectBike is configured, automatically connects both Controller
+/// and BMS assigned to that bike when the app starts.
 class DualBleAutoConnect {
   final StorageService _storage;
   final DongleService _controllerService;
@@ -14,12 +16,44 @@ class DualBleAutoConnect {
 
   DualBleAutoConnect(this._storage, this._controllerService, this._bmsService);
 
-  /// Kicks off background connects for both remembered devices. Safe to call
-  /// multiple times; only the first invocation performs any work.
+  /// Kicks off background connects for the configured bike or remembered devices.
   void start() {
     if (_started) return;
     _started = true;
 
+    final autoBikeId = _storage.loadAutoConnectBikeId();
+    if (autoBikeId != null && autoBikeId.isNotEmpty) {
+      final bikes = _storage.loadBikes();
+      BikeProfile? targetBike;
+      for (final b in bikes) {
+        if (b.id == autoBikeId) {
+          targetBike = b;
+          break;
+        }
+      }
+
+      if (targetBike != null) {
+        if (targetBike.controllerId.isNotEmpty) {
+          unawaited(
+            _controllerService.connectById(
+              targetBike.controllerId,
+              name: targetBike.controllerName,
+            ),
+          );
+        }
+        if (targetBike.bmsId.isNotEmpty) {
+          unawaited(
+            _bmsService.connectById(
+              targetBike.bmsId,
+              name: targetBike.bmsName,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // Fallback: Legacy remembered devices if no explicit bike auto-connect was set
     final controllerId = _storage.loadLastControllerId();
     if (controllerId != null && controllerId.isNotEmpty) {
       unawaited(

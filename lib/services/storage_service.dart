@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:arcdash/models/bike_profile.dart';
 import 'package:arcdash/models/tuning_profile.dart';
 import 'package:arcdash/models/ride_stats.dart';
 import 'package:arcdash/models/dashboard_layout.dart';
@@ -16,6 +17,9 @@ const _prefKeyRideSessions = 'ride_sessions';
 const _prefKeyFirstConnect = 'first_connect_done';
 const _prefKeyLastControllerId = 'last_controller_id';
 const _prefKeyLastBmsId = 'last_bms_id';
+const _prefKeyBikes = 'saved_bikes';
+const _prefKeySelectedBikeId = 'selected_bike_id';
+const _prefKeyAutoConnectBikeId = 'auto_connect_bike_id';
 
 class StorageService {
   late SharedPreferences _prefs;
@@ -134,6 +138,75 @@ class StorageService {
 
   String? loadLastBmsId() =>
       _initialized ? _prefs.getString(_prefKeyLastBmsId) : null;
+
+  // --- Bike Profiles Management ---
+  Future<void> saveBike(BikeProfile bike) async {
+    if (!_initialized) return;
+    final bikes = loadBikes();
+    final idx = bikes.indexWhere((b) => b.id == bike.id);
+    if (idx >= 0) {
+      bikes[idx] = bike;
+    } else {
+      bikes.add(bike);
+    }
+    await _prefs.setString(
+      _prefKeyBikes,
+      jsonEncode(bikes.map((b) => b.toJson()).toList()),
+    );
+  }
+
+  List<BikeProfile> loadBikes() {
+    if (!_initialized) return [];
+    final s = _prefs.getString(_prefKeyBikes);
+    if (s == null) return [];
+    try {
+      final list = jsonDecode(s) as List;
+      return list
+          .map((e) => BikeProfile.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> deleteBike(String id) async {
+    if (!_initialized) return;
+    final bikes = loadBikes()..removeWhere((b) => b.id == id);
+    await _prefs.setString(
+      _prefKeyBikes,
+      jsonEncode(bikes.map((b) => b.toJson()).toList()),
+    );
+    if (loadAutoConnectBikeId() == id) {
+      await saveAutoConnectBikeId(null);
+    }
+    if (loadSelectedBikeId() == id) {
+      await saveSelectedBikeId(bikes.isNotEmpty ? bikes.first.id : null);
+    }
+  }
+
+  Future<void> saveSelectedBikeId(String? bikeId) async {
+    if (!_initialized) return;
+    if (bikeId == null || bikeId.isEmpty) {
+      await _prefs.remove(_prefKeySelectedBikeId);
+    } else {
+      await _prefs.setString(_prefKeySelectedBikeId, bikeId);
+    }
+  }
+
+  String? loadSelectedBikeId() =>
+      _initialized ? _prefs.getString(_prefKeySelectedBikeId) : null;
+
+  Future<void> saveAutoConnectBikeId(String? bikeId) async {
+    if (!_initialized) return;
+    if (bikeId == null || bikeId.isEmpty) {
+      await _prefs.remove(_prefKeyAutoConnectBikeId);
+    } else {
+      await _prefs.setString(_prefKeyAutoConnectBikeId, bikeId);
+    }
+  }
+
+  String? loadAutoConnectBikeId() =>
+      _initialized ? _prefs.getString(_prefKeyAutoConnectBikeId) : null;
 
   // --- Tuning profiles ---
   Future<void> saveProfile(TuningProfile profile) async {
