@@ -228,9 +228,11 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
       final localFavs = favRepo.loadFavorites();
       final localRecents = favRepo.loadRecents();
 
-      // Range Calibration State
+      // Range Calibration State: Upload for current controller, selected bike controller, or last remembered
       final rangeRepo = _ref.read(rangePredictionRepositoryProvider);
+      final bikeState = _ref.read(bikeSelectorProvider);
       final currentCtrlId = _ref.read(connectedDeviceIdProvider) ??
+          bikeState.selectedBike?.controllerId ??
           storage.loadLastControllerId() ??
           '';
       final rangeState = rangeRepo.loadState(controllerId: currentCtrlId);
@@ -544,7 +546,17 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
       _ref.read(tuningProvider.notifier).refreshFromStorage();
       _ref.read(statsProvider.notifier).refreshFromStorage();
       _ref.read(mapControllerProvider.notifier).refreshFromStorage();
-      _ref.read(rangePredictionStateProvider.notifier)?.refreshFromStorage();
+
+      // Find effective controller id to immediately hydrate rangePredictionStateProvider
+      final updatedBikes = storage.loadBikes();
+      final effectiveCtrlId = currentCtrlId.isNotEmpty
+          ? currentCtrlId
+          : (updatedBikes.firstOrNull?.controllerId ??
+              storage.loadLastControllerId() ??
+              '');
+      _ref
+          .read(rangePredictionStateProvider.notifier)
+          .refreshFromStorage(effectiveCtrlId);
 
       state = state.copyWith(
         isSyncing: false,

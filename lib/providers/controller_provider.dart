@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/models/telemetry_quality.dart' as quality;
+import 'package:arcdash/models/range_prediction_state.dart';
+import 'package:arcdash/providers/bike_selector_provider.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/services/bluetooth_service.dart'
     show DongleConnectionState;
@@ -35,8 +37,9 @@ class RangePredictionNotifier extends StateNotifier<RangePredictionState?> {
 
   /// Automatically learns a live voltage reading into the calibration range
   /// and persists it when the range is expanded.
-  void refreshFromStorage() {
-    state = _repository.loadState(controllerId: _controllerId);
+  void refreshFromStorage([String? newControllerId]) {
+    final targetId = newControllerId ?? _controllerId;
+    state = _repository.loadState(controllerId: targetId);
   }
 
   /// Automatically learns a live voltage reading into the calibration range
@@ -99,7 +102,17 @@ final rangePredictionStateProvider =
     StateNotifierProvider<RangePredictionNotifier, RangePredictionState?>(
         (ref) {
   final repository = ref.watch(rangePredictionRepositoryProvider);
-  final deviceId = ref.watch(connectedDeviceIdProvider) ?? 'C0:00:56:C4:00:36';
+  final storage = ref.watch(storageServiceProvider);
+  final bikeState = ref.watch(bikeSelectorProvider);
+
+  // Resolution order for active controller ID:
+  // 1. Live connected device ID
+  // 2. Currently selected bike's controller ID
+  // 3. Last remembered controller ID
+  final deviceId = ref.watch(connectedDeviceIdProvider) ??
+      bikeState.selectedBike?.controllerId ??
+      storage.loadLastControllerId() ??
+      '';
   return RangePredictionNotifier(repository, deviceId);
 });
 
