@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi import FastAPI, Depends, HTTPException, status, Query, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from models import (
@@ -42,6 +44,15 @@ app = FastAPI(
     version="1.0.0",
     description="Offline-First Cloud Sync Backend for ArcDash E-Moto Telemetry & Tuning",
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    import logging
+    logging.error(f"422 Validation Error on {request.url}: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": exc.errors(), "body": str(exc.body)},
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -136,6 +147,8 @@ def sync_push(
     # 1. Process Bikes
     bikes_count = 0
     for b in payload.bikes:
+        b_created = b.created_at or server_time
+        b_updated = b.updated_at or server_time
         existing = (
             db.query(Bike)
             .filter(Bike.id == b.id, Bike.user_id == current_user.id)
@@ -143,14 +156,14 @@ def sync_push(
         )
         if existing:
             # Last-Write-Wins: only update if incoming is newer or equal
-            if b.updated_at >= existing.updated_at:
+            if b_updated >= existing.updated_at:
                 existing.name = b.name
                 existing.controller_id = b.controller_id
                 existing.controller_name = b.controller_name
                 existing.bms_id = b.bms_id
                 existing.bms_name = b.bms_name
                 existing.is_auto_connect = b.is_auto_connect
-                existing.updated_at = b.updated_at
+                existing.updated_at = b_updated
                 existing.deleted_at = b.deleted_at
                 bikes_count += 1
         else:
@@ -163,8 +176,8 @@ def sync_push(
                 bms_id=b.bms_id,
                 bms_name=b.bms_name,
                 is_auto_connect=b.is_auto_connect,
-                created_at=b.created_at,
-                updated_at=b.updated_at,
+                created_at=b_created,
+                updated_at=b_updated,
                 deleted_at=b.deleted_at,
             )
             db.add(new_bike)
@@ -173,6 +186,8 @@ def sync_push(
     # 2. Process Tuning Profiles
     profiles_count = 0
     for p in payload.tuning_profiles:
+        p_created = p.created_at or server_time
+        p_updated = p.updated_at or server_time
         existing = (
             db.query(TuningProfileModel)
             .filter(
@@ -182,7 +197,7 @@ def sync_push(
             .first()
         )
         if existing:
-            if p.updated_at >= existing.updated_at:
+            if p_updated >= existing.updated_at:
                 existing.name = p.name
                 existing.is_stock = p.is_stock
                 existing.max_speed_kph = p.max_speed_kph
@@ -196,7 +211,7 @@ def sync_push(
                 existing.is_public = p.is_public
                 existing.version = p.version
                 existing.description = p.description
-                existing.updated_at = p.updated_at
+                existing.updated_at = p_updated
                 existing.deleted_at = p.deleted_at
                 profiles_count += 1
         else:
@@ -216,8 +231,8 @@ def sync_push(
                 is_public=p.is_public,
                 version=p.version,
                 description=p.description,
-                created_at=p.created_at,
-                updated_at=p.updated_at,
+                created_at=p_created,
+                updated_at=p_updated,
                 deleted_at=p.deleted_at,
             )
             db.add(new_profile)
@@ -226,16 +241,20 @@ def sync_push(
     # 3. Process Rides
     rides_count = 0
     for r in payload.rides:
+        r_start = r.start_time or server_time
+        r_end = r.end_time or server_time
+        r_created = r.created_at or server_time
+        r_updated = r.updated_at or server_time
         existing = (
             db.query(RideModel)
             .filter(RideModel.id == r.id, RideModel.user_id == current_user.id)
             .first()
         )
         if existing:
-            if r.updated_at >= existing.updated_at:
+            if r_updated >= existing.updated_at:
                 existing.bike_id = r.bike_id
-                existing.start_time = r.start_time
-                existing.end_time = r.end_time
+                existing.start_time = r_start
+                existing.end_time = r_end
                 existing.duration_sec = r.duration_sec
                 existing.distance_km = r.distance_km
                 existing.avg_speed_kph = r.avg_speed_kph
@@ -245,7 +264,7 @@ def sync_push(
                 existing.max_motor_temp_c = r.max_motor_temp_c
                 existing.max_controller_temp_c = r.max_controller_temp_c
                 existing.telemetry_blob = r.telemetry_blob
-                existing.updated_at = r.updated_at
+                existing.updated_at = r_updated
                 existing.deleted_at = r.deleted_at
                 rides_count += 1
         else:
@@ -253,8 +272,8 @@ def sync_push(
                 id=r.id,
                 user_id=current_user.id,
                 bike_id=r.bike_id,
-                start_time=r.start_time,
-                end_time=r.end_time,
+                start_time=r_start,
+                end_time=r_end,
                 duration_sec=r.duration_sec,
                 distance_km=r.distance_km,
                 avg_speed_kph=r.avg_speed_kph,
@@ -264,8 +283,8 @@ def sync_push(
                 max_motor_temp_c=r.max_motor_temp_c,
                 max_controller_temp_c=r.max_controller_temp_c,
                 telemetry_blob=r.telemetry_blob,
-                created_at=r.created_at,
-                updated_at=r.updated_at,
+                created_at=r_created,
+                updated_at=r_updated,
                 deleted_at=r.deleted_at,
             )
             db.add(new_ride)
@@ -274,6 +293,8 @@ def sync_push(
     # 4. Process Map Favorites (Home, Work, Custom, Recents)
     favorites_count = 0
     for f in payload.map_favorites:
+        f_created = f.created_at or server_time
+        f_updated = f.updated_at or server_time
         existing = (
             db.query(MapFavoriteModel)
             .filter(
@@ -283,13 +304,13 @@ def sync_push(
             .first()
         )
         if existing:
-            if f.updated_at >= existing.updated_at:
+            if f_updated >= existing.updated_at:
                 existing.title = f.title
                 existing.subtitle = f.subtitle
                 existing.lat = f.lat
                 existing.lon = f.lon
                 existing.type = f.type
-                existing.updated_at = f.updated_at
+                existing.updated_at = f_updated
                 existing.deleted_at = f.deleted_at
                 favorites_count += 1
         else:
@@ -301,8 +322,8 @@ def sync_push(
                 lat=f.lat,
                 lon=f.lon,
                 type=f.type,
-                created_at=f.created_at,
-                updated_at=f.updated_at,
+                created_at=f_created,
+                updated_at=f_updated,
                 deleted_at=f.deleted_at,
             )
             db.add(new_fav)
@@ -311,6 +332,7 @@ def sync_push(
     # 5. Process Range Calibrations
     calibrations_count = 0
     for c in payload.range_calibrations:
+        c_updated = c.updated_at or server_time
         existing = (
             db.query(RangeCalibrationModel)
             .filter(
@@ -320,13 +342,13 @@ def sync_push(
             .first()
         )
         if existing:
-            if c.updated_at >= existing.updated_at:
+            if c_updated >= existing.updated_at:
                 existing.learned_capacity_wh = c.learned_capacity_wh
                 existing.soc_confidence = c.soc_confidence
                 existing.consumption_history_json = c.consumption_history_json
                 existing.min_voltage_v = c.min_voltage_v
                 existing.max_voltage_v = c.max_voltage_v
-                existing.updated_at = c.updated_at
+                existing.updated_at = c_updated
                 calibrations_count += 1
         else:
             new_cal = RangeCalibrationModel(
@@ -337,7 +359,7 @@ def sync_push(
                 consumption_history_json=c.consumption_history_json,
                 min_voltage_v=c.min_voltage_v,
                 max_voltage_v=c.max_voltage_v,
-                updated_at=c.updated_at,
+                updated_at=c_updated,
             )
             db.add(new_cal)
             calibrations_count += 1

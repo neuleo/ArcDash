@@ -41,8 +41,8 @@ class BikeSyncItem(BaseModel):
     bms_id: str = ""
     bms_name: str = "ANT BMS"
     is_auto_connect: bool = False
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
 
 
@@ -62,8 +62,8 @@ class TuningProfileSyncItem(BaseModel):
     is_public: bool = False
     version: int = 1
     description: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
 
 
@@ -71,8 +71,8 @@ class TuningProfileSyncItem(BaseModel):
 class RideSyncItem(BaseModel):
     id: str
     bike_id: Optional[str] = None
-    start_time: datetime
-    end_time: datetime
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     duration_sec: int = 0
     distance_km: float = 0.0
     avg_speed_kph: float = 0.0
@@ -82,8 +82,8 @@ class RideSyncItem(BaseModel):
     max_motor_temp_c: float = 0.0
     max_controller_temp_c: float = 0.0
     telemetry_blob: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
 
 
@@ -95,8 +95,8 @@ class MapFavoriteSyncItem(BaseModel):
     lat: float
     lon: float
     type: str = "custom"  # home, work, custom, recent
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
 
 
@@ -108,7 +108,7 @@ class RangeCalibrationSyncItem(BaseModel):
     consumption_history_json: str = "[]"
     min_voltage_v: float = 60.0
     max_voltage_v: float = 84.0
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
 
 # --- Bidirectional Sync Payload Schemas ---

@@ -270,33 +270,47 @@ class CloudSyncNotifier extends StateNotifier<CloudSyncState> {
                   'deleted_at': null,
                 })
             .toList(),
-        'rides': localRides
-            .map((r) => {
-                  'id': r['id']?.toString() ??
-                      DateTime.now().millisecondsSinceEpoch.toString(),
-                  'bike_id': storage.loadSelectedBikeId(),
-                  'start_time':
-                      r['startTime'] ?? DateTime.now().toIso8601String(),
-                  'end_time': r['endTime'] ?? DateTime.now().toIso8601String(),
-                  'duration_sec': (r['durationSec'] as num?)?.toInt() ?? 0,
-                  'distance_km': (r['distanceKm'] as num?)?.toDouble() ?? 0.0,
-                  'avg_speed_kph':
-                      (r['avgSpeedKph'] as num?)?.toDouble() ?? 0.0,
-                  'max_speed_kph':
-                      (r['maxSpeedKph'] as num?)?.toDouble() ?? 0.0,
-                  'energy_used_wh':
-                      (r['totalWhUsed'] as num?)?.toDouble() ?? 0.0,
-                  'efficiency_wh_per_km':
-                      (r['efficiencyWhPerKm'] as num?)?.toDouble() ?? 0.0,
-                  'max_motor_temp_c': 0.0,
-                  'max_controller_temp_c': 0.0,
-                  'telemetry_blob': jsonEncode(r),
-                  'created_at':
-                      r['startTime'] ?? DateTime.now().toIso8601String(),
-                  'updated_at': DateTime.now().toIso8601String(),
-                  'deleted_at': null,
-                })
-            .toList(),
+        'rides': localRides.map((r) {
+          String? startIso;
+          String? endIso;
+          if (r['startTime'] != null) {
+            try {
+              startIso =
+                  DateTime.parse(r['startTime'].toString()).toIso8601String();
+            } catch (_) {}
+          }
+          if (r['endTime'] != null) {
+            try {
+              endIso =
+                  DateTime.parse(r['endTime'].toString()).toIso8601String();
+            } catch (_) {}
+          }
+          startIso ??= DateTime.now().toIso8601String();
+          endIso ??= startIso;
+
+          return {
+            'id': r['id']?.toString() ??
+                DateTime.now().millisecondsSinceEpoch.toString(),
+            'bike_id': storage.loadSelectedBikeId(),
+            'start_time': startIso,
+            'end_time': endIso,
+            'duration_sec':
+                (r['durationSeconds'] ?? r['durationSec'] as num?)?.toInt() ??
+                    0,
+            'distance_km': (r['distanceKm'] as num?)?.toDouble() ?? 0.0,
+            'avg_speed_kph': (r['avgSpeedKph'] as num?)?.toDouble() ?? 0.0,
+            'max_speed_kph': (r['maxSpeedKph'] as num?)?.toDouble() ?? 0.0,
+            'energy_used_wh': (r['totalWhUsed'] as num?)?.toDouble() ?? 0.0,
+            'efficiency_wh_per_km':
+                (r['efficiencyWhPerKm'] as num?)?.toDouble() ?? 0.0,
+            'max_motor_temp_c': 0.0,
+            'max_controller_temp_c': 0.0,
+            'telemetry_blob': jsonEncode(r),
+            'created_at': startIso,
+            'updated_at': DateTime.now().toIso8601String(),
+            'deleted_at': null,
+          };
+        }).toList(),
         'map_favorites': [
           ...localFavs.map((f) => {
                 'id': f.id,
