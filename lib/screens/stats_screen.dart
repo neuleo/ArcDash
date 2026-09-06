@@ -478,6 +478,18 @@ class _PastSessionCard extends StatelessWidget {
     Map<String, dynamic> sessionJson,
   ) {
     final whPerKm = distKm > 0.05 ? (wh / distKm).toStringAsFixed(1) : '—';
+    final rawSpeed = sessionJson['speedHistory'];
+    List<double> speedCurve = [];
+    if (rawSpeed is List) {
+      for (final item in rawSpeed) {
+        if (item is Map && item['speedKph'] != null) {
+          speedCurve.add((item['speedKph'] as num).toDouble());
+        } else if (item is num) {
+          speedCurve.add(item.toDouble());
+        }
+      }
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -491,24 +503,40 @@ class _PastSessionCard extends StatelessWidget {
           style: const TextStyle(
               color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _DetailRow(
-                label: 'Distanz', value: '${distKm.toStringAsFixed(2)} km'),
-            _DetailRow(label: 'Fahrzeit', value: _fmt(durSec)),
-            _DetailRow(
-                label: 'Max. Geschwindigkeit',
-                value: '${maxSpd.toStringAsFixed(1)} km/h'),
-            _DetailRow(
-                label: 'Durchschnitt',
-                value: '${avgSpd.toStringAsFixed(1)} km/h'),
-            _DetailRow(
-                label: 'Verbrauchte Energie',
-                value: '${wh.toStringAsFixed(1)} Wh'),
-            _DetailRow(label: 'Effizienz / Verbrauch', value: '$whPerKm Wh/km'),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DetailRow(
+                  label: 'Distanz', value: '${distKm.toStringAsFixed(2)} km'),
+              _DetailRow(label: 'Fahrzeit', value: _fmt(durSec)),
+              _DetailRow(
+                  label: 'Max. Geschwindigkeit',
+                  value: '${maxSpd.toStringAsFixed(1)} km/h'),
+              _DetailRow(
+                  label: 'Durchschnitt',
+                  value: '${avgSpd.toStringAsFixed(1)} km/h'),
+              _DetailRow(
+                  label: 'Verbrauchte Energie',
+                  value: '${wh.toStringAsFixed(1)} Wh'),
+              _DetailRow(
+                  label: 'Effizienz / Verbrauch', value: '$whPerKm Wh/km'),
+              if (speedCurve.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                const Text(
+                  'GESCHWINDIGKEITSVERLAUF (km/h):',
+                  style: TextStyle(
+                      color: Color(0xFF00E5FF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1),
+                ),
+                const SizedBox(height: 8),
+                _SpeedChart(samples: speedCurve, unit: 'km/h'),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton.icon(
