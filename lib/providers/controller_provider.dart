@@ -133,7 +133,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   DateTime _lastPacketTime = DateTime.now();
   double _packetRate = 0.0;
 
-  // Throttle state emission to Flutter UI at max 4 Hz (~250ms) to ensure butter-smooth rendering without lag
+  // Throttle state emission to Flutter UI at responsive 10 Hz (100ms) for automotive-smooth speed & power rendering
   DateTime _lastStateEmitTime = DateTime.fromMillisecondsSinceEpoch(0);
   Timer? _pendingEmitTimer;
   ControllerState? _pendingState;
@@ -412,8 +412,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   void _emitThrottled(ControllerState targetState) {
     final now = DateTime.now();
     final elapsedMs = now.difference(_lastStateEmitTime).inMilliseconds;
-    // 4 Hz update rate = 250ms interval between state emissions
-    if (elapsedMs >= 250) {
+    // 10 Hz update rate = 100ms interval between state emissions (instantaneous response, zero lag)
+    if (elapsedMs >= 100) {
       _pendingEmitTimer?.cancel();
       _pendingEmitTimer = null;
       _pendingState = null;
@@ -421,7 +421,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       state = targetState;
     } else {
       _pendingState = targetState;
-      _pendingEmitTimer ??= Timer(Duration(milliseconds: 250 - elapsedMs), () {
+      _pendingEmitTimer ??= Timer(Duration(milliseconds: 100 - elapsedMs), () {
         if (_pendingState != null) {
           _lastStateEmitTime = DateTime.now();
           state = _pendingState!;
