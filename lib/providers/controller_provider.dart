@@ -133,7 +133,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   DateTime _lastPacketTime = DateTime.now();
   double _packetRate = 0.0;
 
-  // Throttle state emission to Flutter UI at max 15 Hz (~66ms) to prevent UI thread lag
+  // Throttle state emission to Flutter UI at max 4 Hz (~250ms) to ensure butter-smooth rendering without lag
   DateTime _lastStateEmitTime = DateTime.fromMillisecondsSinceEpoch(0);
   Timer? _pendingEmitTimer;
   ControllerState? _pendingState;
@@ -149,8 +149,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
   ControllerNotifier(this._bluetooth, this._storage,
       {DiagnosticLog? diagnostics, RangePredictionNotifier? rangePrediction})
-      : _rangePrediction = rangePrediction,
-        _diagnostics = diagnostics ?? DiagnosticLog(),
+      : _diagnostics = diagnostics ?? DiagnosticLog(),
+        _rangePrediction = rangePrediction,
         super(ControllerState.initial()) {
     _connSub = _bluetooth.connectionStateStream.listen(_onConnectionState);
     if (_bluetooth.state == DongleConnectionState.connected) {
@@ -172,17 +172,21 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     } else if (cs == DongleConnectionState.disconnected) {
       _streamInitTimer?.cancel();
       _streamInitTimer = null;
-      _pendingEmitTimer?.cancel();
-      _pendingEmitTimer = null;
       _dataSub?.cancel();
       _dataSub = null;
       _framer.reset();
+      _pendingEmitTimer?.cancel();
+      _pendingEmitTimer = null;
+      _pendingState = null;
+      _smoothedRangeKm = 0.0;
     }
   }
 
   Future<void> _onConnected() async {
-    // Subscribe to incoming data
     _dataSub = _bluetooth.rawDataStream.listen(_onRawData);
+    _packetCount = 0;
+    _lastPacketTime = DateTime.now();
+    _smoothedRangeKm = 0.0;
 
     // Send start-status-stream command periodically until packets arrive
     _streamInitTimer?.cancel();
@@ -221,10 +225,6 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     final hex = PacketParser.toHexString(raw);
     _debugPackets.add(
         '[0x${parsed.address.toRadixString(16).padLeft(2, '0').toUpperCase()}] $hex');
-    _diagnostics.add(
-      DiagnosticEventType.frame,
-      details: {'address': parsed.address, 'length': raw.length, 'hex': hex},
-    );
     if (_debugPackets.length > 50) _debugPackets.removeAt(0);
 
     // Packet rate calculation
@@ -412,7 +412,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   void _emitThrottled(ControllerState targetState) {
     final now = DateTime.now();
     final elapsedMs = now.difference(_lastStateEmitTime).inMilliseconds;
-    if (elapsedMs >= 66) {
+    // 4 Hz update rate = 250ms interval between state emissions
+    if (elapsedMs >= 250) {
       _pendingEmitTimer?.cancel();
       _pendingEmitTimer = null;
       _pendingState = null;
@@ -420,7 +421,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       state = targetState;
     } else {
       _pendingState = targetState;
-      _pendingEmitTimer ??= Timer(Duration(milliseconds: 66 - elapsedMs), () {
+      _pendingEmitTimer ??= Timer(Duration(milliseconds: 250 - elapsedMs), () {
         if (_pendingState != null) {
           _lastStateEmitTime = DateTime.now();
           state = _pendingState!;

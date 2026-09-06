@@ -298,6 +298,8 @@ class DongleService implements BleTransport {
   }
 
   Future<DiscoveredDongle?> _findByScan(String remoteId) async {
+    // Avoid running scan if already scanning
+    if (FlutterBluePlus.isScanningNow) return null;
     DiscoveredDongle? found;
     try {
       final sub = FlutterBluePlus.scanResults.listen((scanResults) {
@@ -314,8 +316,8 @@ class DongleService implements BleTransport {
           }
         }
       });
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 8));
-      await Future.delayed(const Duration(seconds: 8));
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      await Future.delayed(const Duration(seconds: 4));
       await sub.cancel();
       await FlutterBluePlus.stopScan();
     } catch (_) {}
@@ -376,11 +378,6 @@ class DongleService implements BleTransport {
         _notifySubscription = notifyChar.onValueReceived.listen((data) {
           if (data.isNotEmpty) {
             _rawDataController.add(List<int>.from(data));
-            diagnostics?.add(DiagnosticEventType.frame, details: {
-              'action': 'raw_ble_received',
-              'length': data.length,
-              'hex': PacketParser.toHexString(data),
-            });
           }
         });
 
@@ -420,11 +417,6 @@ class DongleService implements BleTransport {
           _notifySubscription = c.onValueReceived.listen((data) {
             if (data.isNotEmpty) {
               _rawDataController.add(List<int>.from(data));
-              diagnostics?.add(DiagnosticEventType.frame, details: {
-                'action': 'raw_ble_received',
-                'length': data.length,
-                'hex': PacketParser.toHexString(data),
-              });
             }
           });
 

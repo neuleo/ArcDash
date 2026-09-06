@@ -45,6 +45,9 @@ class AntBmsNotifier extends StateNotifier<AntBmsState?> {
   StreamSubscription<List<int>>? _dataSub;
   Timer? _pollTimer;
   Timer? _reconnectTimer;
+  DateTime _lastStateEmitTime = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _pendingEmitTimer;
+  AntBmsState? _pendingState;
   int _reconnectAttempts = 0;
   String? _lastConnectedId;
 
@@ -81,6 +84,9 @@ class AntBmsNotifier extends StateNotifier<AntBmsState?> {
       _pollTimer = null;
       _dataSub?.cancel();
       _dataSub = null;
+      _pendingEmitTimer?.cancel();
+      _pendingEmitTimer = null;
+      _pendingState = null;
       _framer.reset();
       state = null;
       _scheduleReconnect();
@@ -119,7 +125,7 @@ class AntBmsNotifier extends StateNotifier<AntBmsState?> {
       if (AntBmsParser.verifyCrc(frame)) {
         final parsed = AntBmsParser.parseStatusFrame(frame);
         if (parsed != null) {
-          state = parsed;
+          _emitThrottled(parsed);
           continue;
         }
       }
@@ -127,6 +133,29 @@ class AntBmsNotifier extends StateNotifier<AntBmsState?> {
         'bms': true,
         'length': frame.length,
         'reason': 'invalid_bms_frame',
+      });
+    }
+  }
+
+  void _emitThrottled(AntBmsState targetState) {
+    final now = DateTime.now();
+    final elapsedMs = now.difference(_lastStateEmitTime).inMilliseconds;
+    // Throttle BMS UI rebuilds to max 2 Hz (500ms) - battery cells change slowly
+    if (elapsedMs >= 500) {
+      _pendingEmitTimer?.cancel();
+      _pendingEmitTimer = null;
+      _pendingState = null;
+      _lastStateEmitTime = now;
+      state = targetState;
+    } else {
+      _pendingState = targetState;
+      _pendingEmitTimer ??= Timer(Duration(milliseconds: 500 - elapsedMs), () {
+        if (_pendingState != null) {
+          _lastStateEmitTime = DateTime.now();
+          state = _pendingState!;
+          _pendingState = null;
+        }
+        _pendingEmitTimer = null;
       });
     }
   }

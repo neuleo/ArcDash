@@ -198,6 +198,8 @@ class AntBmsService implements BleTransport {
   }
 
   Future<DiscoveredDongle?> _findByScan(String remoteId) async {
+    // Avoid running scan if already scanning or already connected
+    if (FlutterBluePlus.isScanningNow) return null;
     DiscoveredDongle? found;
     try {
       final sub = FlutterBluePlus.scanResults.listen((scanResults) {
@@ -214,8 +216,8 @@ class AntBmsService implements BleTransport {
           }
         }
       });
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 8));
-      await Future.delayed(const Duration(seconds: 8));
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      await Future.delayed(const Duration(seconds: 4));
       await sub.cancel();
       await FlutterBluePlus.stopScan();
     } catch (_) {}
