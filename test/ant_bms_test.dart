@@ -483,6 +483,9 @@ void main() {
       coordinator.start();
       coordinator.start(); // idempotent
 
+      // Allow async sequential execution to run
+      await Future.delayed(const Duration(milliseconds: 900));
+
       expect(spyController.connectByIdCalls, ['CTRL:AA:BB']);
       expect(bms.connectByIdCalls, ['BMS:CC:DD']);
       expect(controller.written, isEmpty);

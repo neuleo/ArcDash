@@ -129,6 +129,11 @@ class AntBmsService implements BleTransport {
       'rssi': dongle.rssi,
     });
     try {
+      // Ensure any active scan is stopped before GATT connect
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
+
       await dongle.device.connect(
         timeout: const Duration(seconds: 15),
         autoConnect: false,

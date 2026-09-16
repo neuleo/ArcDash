@@ -33,19 +33,27 @@ class DualBleAutoConnect {
       }
 
       if (targetBike != null) {
-        if (targetBike.controllerId.isNotEmpty) {
-          unawaited(
-            _controllerService.connectById(
-              targetBike.controllerId,
-              name: targetBike.controllerName,
-            ),
-          );
-        }
-        if (targetBike.bmsId.isNotEmpty) {
+        final bike = targetBike;
+        // Sequentially connect controller first, settle, then connect BMS
+        if (bike.controllerId.isNotEmpty) {
+          unawaited(() async {
+            await _controllerService.connectById(
+              bike.controllerId,
+              name: bike.controllerName,
+            );
+            await Future.delayed(const Duration(milliseconds: 800));
+            if (bike.bmsId.isNotEmpty) {
+              await _bmsService.connectById(
+                bike.bmsId,
+                name: bike.bmsName,
+              );
+            }
+          }());
+        } else if (bike.bmsId.isNotEmpty) {
           unawaited(
             _bmsService.connectById(
-              targetBike.bmsId,
-              name: targetBike.bmsName,
+              bike.bmsId,
+              name: bike.bmsName,
             ),
           );
         }
@@ -55,18 +63,17 @@ class DualBleAutoConnect {
 
     // Fallback: Legacy remembered devices if no explicit bike auto-connect was set
     final controllerId = _storage.loadLastControllerId();
-    if (controllerId != null && controllerId.isNotEmpty) {
-      unawaited(
-        _controllerService.connectById(controllerId,
-            name: 'Controller (gemerkt)'),
-      );
-    }
-
     final bmsId = _storage.loadLastBmsId();
-    if (bmsId != null && bmsId.isNotEmpty) {
-      unawaited(
-        _bmsService.connectById(bmsId, name: 'ANT BMS (gemerkt)'),
-      );
-    }
+
+    unawaited(() async {
+      if (controllerId != null && controllerId.isNotEmpty) {
+        await _controllerService.connectById(controllerId,
+            name: 'Controller (gemerkt)');
+        await Future.delayed(const Duration(milliseconds: 800));
+      }
+      if (bmsId != null && bmsId.isNotEmpty) {
+        await _bmsService.connectById(bmsId, name: 'ANT BMS (gemerkt)');
+      }
+    }());
   }
 }

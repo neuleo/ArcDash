@@ -162,7 +162,9 @@ class BikeSelectorNotifier extends StateNotifier<BikeSelectorState> {
     );
   }
 
-  /// Connects both Controller and BMS assigned to [bike] simultaneously in the background.
+  /// Connects both Controller and BMS assigned to [bike] sequentially.
+  /// Sequential connection with a settling delay prevents Android GATT 133 / busy
+  /// collisions where simultaneous connection requests knock each other out.
   Future<bool> connectBike(BikeProfile bike) async {
     if (state.isConnecting) return false;
     state = state.copyWith(
@@ -179,28 +181,37 @@ class BikeSelectorNotifier extends StateNotifier<BikeSelectorState> {
     await storage.saveSelectedBikeId(bike.id);
 
     try {
-      final futures = <Future<bool>>[];
+      bool controllerSuccess = true;
+      bool bmsSuccess = true;
 
-      // 1. Controller connect
+      // 1. Controller connect first (primary priority for drive telemetrie)
       if (bike.controllerId.isNotEmpty) {
-        futures.add(controllerService.connectById(
+        state =
+            state.copyWith(statusMessage: 'Verbinde FarDriver Controller...');
+        controllerSuccess = await controllerService.connectById(
           bike.controllerId,
           name: bike.controllerName.isNotEmpty
               ? bike.controllerName
               : 'Controller',
-        ));
+        );
+
+        // Crucial settling delay for Android BLE adapter to finish GATT service discovery
+        await Future.delayed(const Duration(milliseconds: 600));
       }
 
-      // 2. BMS connect (parallel)
+      // 2. BMS connect sequentially
       if (bike.bmsId.isNotEmpty) {
-        futures.add(bmsService.connectById(
+        state = state.copyWith(statusMessage: 'Verbinde ANT BMS...');
+        bmsSuccess = await bmsService.connectById(
           bike.bmsId,
           name: bike.bmsName.isNotEmpty ? bike.bmsName : 'ANT BMS',
-        ));
+        );
       }
 
-      final results = await Future.wait(futures);
-      final allSuccess = results.isNotEmpty && results.every((r) => r);
+      final hasAnyDevice =
+          bike.controllerId.isNotEmpty || bike.bmsId.isNotEmpty;
+      final allSuccess = hasAnyDevice && controllerSuccess && bmsSuccess;
+      final anySuccess = controllerSuccess || bmsSuccess;
 
       state = state.copyWith(
         isConnecting: false,
@@ -208,7 +219,9 @@ class BikeSelectorNotifier extends StateNotifier<BikeSelectorState> {
         selectedBikeId: bike.id,
         statusMessage: allSuccess
             ? '${bike.name} erfolgreich gekoppelt (Controller & BMS aktiv)!'
-            : 'Verbindung zu ${bike.name} hergestellt.',
+            : (anySuccess
+                ? 'Teilweise verbunden (${controllerSuccess ? "Controller OK" : "BMS OK"}).'
+                : 'Verbindung zu ${bike.name} fehlgeschlagen.'),
         lastError:
             allSuccess ? null : 'Ein Gerät konnte nicht verbunden werden.',
       );
