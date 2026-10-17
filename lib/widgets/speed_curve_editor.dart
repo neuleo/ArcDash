@@ -6,12 +6,14 @@ class SpeedCurveEditor extends StatefulWidget {
   final List<int> ratios; // 18 points: 500..9000 RPM (in 500 RPM steps)
   final ValueChanged<List<int>> onChanged;
   final bool enabled;
+  final double? maxPowerKw;
 
   const SpeedCurveEditor({
     super.key,
     required this.ratios,
     required this.onChanged,
     this.enabled = true,
+    this.maxPowerKw,
   });
 
   static const List<int> rpmSteps = [
@@ -77,7 +79,7 @@ class _SpeedCurveEditorState extends State<SpeedCurveEditor> {
                     color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
               ),
               child: Text(
-                '${SpeedCurveEditor.rpmSteps[_selectedPointIndex]} RPM: ${values[_selectedPointIndex]}%',
+                '${SpeedCurveEditor.rpmSteps[_selectedPointIndex]} RPM: ${values[_selectedPointIndex]}%${widget.maxPowerKw != null ? ' (~${(widget.maxPowerKw! * values[_selectedPointIndex] / 100.0).toStringAsFixed(1)} kW)' : ''}',
                 style: const TextStyle(
                   color: Color(0xFF00E5FF),
                   fontSize: 11,
@@ -292,9 +294,9 @@ class _SpeedCurveEditorState extends State<SpeedCurveEditor> {
               ),
             ),
             SizedBox(
-              width: 50,
+              width: widget.maxPowerKw != null ? 105 : 50,
               child: Text(
-                '${values[_selectedPointIndex]}%',
+                '${values[_selectedPointIndex]}%${widget.maxPowerKw != null ? ' (${(widget.maxPowerKw! * values[_selectedPointIndex] / 100.0).toStringAsFixed(1)} kW)' : ''}',
                 style: const TextStyle(
                   color: Color(0xFF00E5FF),
                   fontSize: 13,

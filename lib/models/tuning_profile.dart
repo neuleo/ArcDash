@@ -134,40 +134,161 @@ class TuningProfile {
     this.isStock = false,
   });
 
-  // Factory Preset: Arctic Leopard L1E Stock Street Legal (45 km/h, 80A line, 200A phase, StVO-konform, 0 verändert)
+  // Factory Preset: Arctic Leopard L1E Stock Street Legal (45 km/h, 117A line, 258A phase, StVO-konform, 100% Werks-Setup)
   static TuningProfile stockStreetLegal() => TuningProfile(
         name: 'Stock Street Legal',
         description:
-            'Original Werks-Setup Arctic Leopard L1E (45 km/h, 80A/200A, StVO-konform, 0 verändert)',
+            'Original Werks-Setup Arctic Leopard L1E (45 km/h, 117A/258A, StVO)',
         maxSpeedKph: 45.0,
-        maxLineCurrA: 80.0,
-        maxPhaseCurrA: 200.0,
-        regenStrength: 0.35,
-        throttleResponse: 2, // ECO
-        lowSpeedLineCurrPct: 40.0,
-        midSpeedLineCurrPct: 60.0,
-        powerCurve: PowerPoint.smoothCurve(),
+        maxLineCurrA: 117.0,
+        maxPhaseCurrA: 258.0,
+        regenStrength: 0.30,
+        throttleResponse: 0, // Line (laut Werks-Snapshot)
+        lowSpeedLineCurrPct: 27.0,
+        midSpeedLineCurrPct: 35.0,
+        boostTimeSeconds: 45,
+        lowVoltCutoffV: 60.0,
+        overVoltCutoffV: 90.7,
+        motorTempLimitC: 130.0,
+        controllerTempLimitC: 100.0,
+        powerCurve: PowerPoint.defaultCurve(),
+        speedRatios: const [
+          75,
+          75,
+          75,
+          75,
+          75,
+          75,
+          75,
+          75,
+          75,
+          73,
+          71,
+          69,
+          67,
+          65,
+          63,
+          61,
+          61,
+          15
+        ],
+        pinMappings: const {
+          'pausePin': 6, // PIN14 (P-Function / Brake)
+          'sideStandPin': 13,
+          'cruisePin': 13,
+          'boostPin': 13,
+          'lowSpeedPin': 1, // PIN2 (Stufe 1 Low)
+          'highSpeedPin': 2, // PIN3 (Stufe 3 High)
+          'reversePin': 4, // PIN8 (Rückwärts)
+          'forwardPin': 13,
+        },
         createdAt: DateTime.now(),
         isStock: true,
       );
 
-  // Default Tuned Open Map:
-  static TuningProfile defaultTuned() => TuningProfile(
-        name: 'Tuned (Offen)',
-        description: 'Offenes Fahrprofil (85 km/h, 150A/350A, Sport-Kurve)',
-        maxSpeedKph: 85.0,
+  // L1E Preset: 45 km/h mit mehr Leistung (StVO-Begrenzer bei 45 km/h aktiv, aber 100% Drehmomentkurve & mehr Strom)
+  static TuningProfile l1ePower45() => TuningProfile(
+        name: '45 km/h (Mehr Leistung)',
+        description:
+            'StVO 45 km/h Limit mit vollem Drehmoment & Anzug (150A/350A, 100% Ratios)',
+        maxSpeedKph: 45.0,
         maxLineCurrA: 150.0,
         maxPhaseCurrA: 350.0,
-        regenStrength: 0.25,
-        throttleResponse: 1, // Sport
-        powerCurve: PowerPoint.defaultCurve(),
+        regenStrength: 0.30,
+        throttleResponse: 0,
+        lowSpeedLineCurrPct: 40.0,
+        midSpeedLineCurrPct: 70.0,
+        powerCurve: PowerPoint.aggressiveCurve(),
+        speedRatios: const [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        pinMappings: const {
+          'pausePin': 6,
+          'sideStandPin': 13,
+          'cruisePin': 13,
+          'boostPin': 13,
+          'lowSpeedPin': 1,
+          'highSpeedPin': 2,
+          'reversePin': 4,
+          'forwardPin': 13,
+        },
         createdAt: DateTime.now(),
         isStock: false,
       );
 
-  /// L1E baseline presets: only Stock Street Legal is the factory baseline
+  // L1E Preset: Komplett offen / volle Leistung (ohne Begrenzer, bis zu 23 kW Peak, alle Ratios auf 100%, 140+ km/h bergab)
+  static TuningProfile offenFullPower() => TuningProfile(
+        name: 'Offen (Volle Leistung)',
+        description:
+            'Komplett ungedrosselt ohne Begrenzer (140+ km/h, 280A/550A ~23 kW Peak, alle Ratios 100%)',
+        maxSpeedKph: 140.0,
+        maxLineCurrA: 280.0,
+        maxPhaseCurrA: 550.0,
+        regenStrength: 0.25,
+        throttleResponse: 0, // Line (direktester Gasgriff)
+        lowSpeedLineCurrPct: 60.0,
+        midSpeedLineCurrPct: 85.0,
+        boostTimeSeconds: 45,
+        powerCurve: PowerPoint.aggressiveCurve(),
+        speedRatios: const [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        pinMappings: const {
+          'pausePin': 6,
+          'sideStandPin': 13,
+          'cruisePin': 13,
+          'boostPin': 13,
+          'lowSpeedPin': 1,
+          'highSpeedPin': 2,
+          'reversePin': 4,
+          'forwardPin': 13,
+        },
+        createdAt: DateTime.now(),
+        isStock: false,
+      );
+
+  // Default Tuned Open Map:
+  static TuningProfile defaultTuned() => offenFullPower();
+
+  /// L1E baseline presets (die 3 essentiellen Profile laut Benutzeranforderung):
   static List<TuningProfile> l1ePresets() => [
         stockStreetLegal(),
+        l1ePower45(),
+        offenFullPower(),
       ];
 
   // Factory Preset: Stock Offroad (Arctic Leopard Xe Pro S baseline)

@@ -20,12 +20,10 @@ class RideModeCard extends StatelessWidget {
     switch (mode) {
       case RideMode.eco:
         return const Color(0xFF39FF14);
-      case RideMode.trail:
+      case RideMode.standard:
         return const Color(0xFF00E5FF);
       case RideMode.sport:
         return const Color(0xFFFF9800);
-      case RideMode.race:
-        return const Color(0xFFFF1744);
     }
   }
 
@@ -33,12 +31,10 @@ class RideModeCard extends StatelessWidget {
     switch (mode) {
       case RideMode.eco:
         return Icons.eco_outlined;
-      case RideMode.trail:
-        return Icons.terrain_outlined;
+      case RideMode.standard:
+        return Icons.electric_bike_outlined;
       case RideMode.sport:
         return Icons.flash_on_outlined;
-      case RideMode.race:
-        return Icons.whatshot_outlined;
     }
   }
 

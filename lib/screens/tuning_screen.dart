@@ -42,6 +42,18 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
         TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA);
     final applied = tuningState.appliedSuccessfully;
 
+    final effectiveVoltage =
+        controllerState.voltageV > 50 ? controllerState.voltageV : 82.0;
+    final peakPowerKw = (profile.maxLineCurrA * effectiveVoltage) / 1000.0;
+    final lowSpeedKw = (profile.maxLineCurrA *
+            (profile.lowSpeedLineCurrPct / 100.0) *
+            effectiveVoltage) /
+        1000.0;
+    final midSpeedKw = (profile.maxLineCurrA *
+            (profile.midSpeedLineCurrPct / 100.0) *
+            effectiveVoltage) /
+        1000.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFF080B0E),
       appBar: AppBar(
@@ -267,7 +279,7 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                 max: 300,
                 unit: 'A',
                 displayValue:
-                    '${profile.maxLineCurrA.toStringAsFixed(0)} A (${(profile.maxLineCurrA * 72 / 1000).toStringAsFixed(1)} kW)',
+                    '${profile.maxLineCurrA.toStringAsFixed(0)} A (${peakPowerKw.toStringAsFixed(1)} kW)',
                 onChanged:
                     editorEnabled ? (a) => notifier.updateMaxLineCurr(a) : null,
                 accentColor: const Color(0xFFFF9800),
@@ -315,7 +327,7 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                 max: 100,
                 unit: '%',
                 displayValue:
-                    '${profile.lowSpeedLineCurrPct.toStringAsFixed(0)}%',
+                    '${profile.lowSpeedLineCurrPct.toStringAsFixed(0)}% (${lowSpeedKw.toStringAsFixed(1)} kW)',
                 onChanged:
                     editorEnabled ? notifier.updateLowSpeedLineCurr : null,
                 accentColor: const Color(0xFF54E39E),
@@ -330,7 +342,7 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                 max: 100,
                 unit: '%',
                 displayValue:
-                    '${profile.midSpeedLineCurrPct.toStringAsFixed(0)}%',
+                    '${profile.midSpeedLineCurrPct.toStringAsFixed(0)}% (${midSpeedKw.toStringAsFixed(1)} kW)',
                 onChanged:
                     editorEnabled ? notifier.updateMidSpeedLineCurr : null,
                 accentColor: const Color(0xFF00E5FF),
@@ -346,6 +358,7 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                   ratios: profile.speedRatios,
                   onChanged: (ratios) => notifier.updateSpeedRatios(ratios),
                   enabled: editorEnabled,
+                  maxPowerKw: peakPowerKw,
                 ),
               ),
               const SizedBox(height: 14),
@@ -790,7 +803,7 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
         title: const Text('WERKSEINSTELLUNGEN WIEDERHERSTELLEN?',
             style: TextStyle(color: Colors.white, fontSize: 16)),
         content: const Text(
-          'Alle 156 Register werden atomar aus der "unmodified_basemap.heb" zurückgeschrieben.',
+          'Alle 156 Register werden atomar aus der "l1e_unmodified_basemap.heb" zurückgeschrieben.',
           style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
         ),
         actions: [

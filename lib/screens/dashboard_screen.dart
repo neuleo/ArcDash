@@ -370,6 +370,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     now: _now,
                     editing: _editing,
                     batteryTemperatureC: effectiveBatteryTempC,
+                    bmsSocPercent: bmsState?.socPercent,
                     onRemove: _removeTile,
                     onMove: _moveTile,
                     onResize: _resizeTile,
@@ -540,6 +541,9 @@ class DashboardRenderer extends StatelessWidget {
 
   /// Live battery temperature from the BMS (NTC average), null without BMS.
   final double? batteryTemperatureC;
+
+  /// Live SOC percentage from the BMS, or null when no BMS is connected.
+  final int? bmsSocPercent;
   final ValueChanged<DashboardTile>? onRemove;
   final void Function(DashboardTile, int, int)? onMove;
   final void Function(DashboardTile, int, int)? onResize;
@@ -554,6 +558,7 @@ class DashboardRenderer extends StatelessWidget {
     required this.now,
     this.editing = false,
     this.batteryTemperatureC,
+    this.bmsSocPercent,
     this.onRemove,
     this.onMove,
     this.onResize,
@@ -603,6 +608,7 @@ class DashboardRenderer extends StatelessWidget {
                       connected: connected,
                       now: now,
                       batteryTemperatureC: batteryTemperatureC,
+                      bmsSocPercent: bmsSocPercent,
                     ),
                   ),
                 ),
@@ -822,12 +828,16 @@ class _MetricView extends StatelessWidget {
   /// BMS is attached. Injected by the dashboard screen.
   final double? batteryTemperatureC;
 
+  /// Live battery SOC percentage from the BMS, or null when no BMS is attached.
+  final int? bmsSocPercent;
+
   const _MetricView({
     required this.tile,
     required this.state,
     required this.connected,
     required this.now,
     this.batteryTemperatureC,
+    this.bmsSocPercent,
   });
 
   @override
@@ -923,6 +933,9 @@ class _MetricView extends StatelessWidget {
           ? (connected ? null : TelemetryFreshness.disconnected)
           : TelemetryFreshness.fresh;
     }
+    if (metric == DashboardMetric.soc && bmsSocPercent != null) {
+      return TelemetryFreshness.fresh;
+    }
     final field = switch (metric) {
       DashboardMetric.speed => ControllerTelemetry.speed,
       DashboardMetric.power ||
@@ -978,8 +991,15 @@ class _MetricView extends StatelessWidget {
         '${math.max(-state.powerKw, 0).toStringAsFixed(1)} kW',
       DashboardMetric.voltage => '${state.voltageV.toStringAsFixed(1)} V',
       DashboardMetric.current => '${state.currentA.toStringAsFixed(1)} A',
-      DashboardMetric.soc =>
-        state.battCapPercent > 0 ? '${state.battCapPercent} %' : '90 %',
+      DashboardMetric.soc => () {
+          if (bmsSocPercent != null && bmsSocPercent! >= 0) {
+            return '$bmsSocPercent %';
+          }
+          if (state.battCapPercent >= 0) {
+            return '${state.battCapPercent} %';
+          }
+          return '-- %';
+        }(),
       DashboardMetric.range => state.rangeKm == 0
           ? '65 ± 8 km'
           : '${state.rangeKm.toStringAsFixed(0)} ± ${state.rangeUncertaintyKm.toStringAsFixed(0)} km',
@@ -988,15 +1008,15 @@ class _MetricView extends StatelessWidget {
           ? 'N'
           : !state.isForward
               ? 'R'
-              : state.gear == 1
+              : state.gear == 0
                   ? 'N'
-                  : state.gear == 2
+                  : state.gear == 1
                       ? 'D1'
-                      : state.gear == 3
+                      : state.gear == 2
                           ? 'D2'
-                          : state.gear == 4
+                          : state.gear == 3
                               ? 'D3'
-                              : 'N',
+                              : 'D',
       DashboardMetric.motorTemperature =>
         '${state.motorTempC.toStringAsFixed(0)} °C',
       DashboardMetric.controllerTemperature =>

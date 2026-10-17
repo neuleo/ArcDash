@@ -183,6 +183,90 @@ void main() {
     }
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+      'gear metric correctly decodes D1, D2, D3, N and R for L1E 3-speed setup',
+      (tester) async {
+    final gears = [
+      (0, true, 'N'),
+      (1, true, 'D1'),
+      (2, true, 'D2'),
+      (3, true, 'D3'),
+      (1, false, 'R'),
+    ];
+
+    for (final (gearValue, forward, expectedLabel) in gears) {
+      final state = ControllerState(
+        lastUpdate: now,
+        gear: gearValue,
+        isForward: forward,
+        telemetrySamples: {
+          ControllerTelemetry.gear: TelemetrySample(
+            value: gearValue.toDouble(),
+            source: TelemetrySource.controller,
+            capturedAt: now,
+          ),
+        },
+      );
+      await tester.pumpWidget(_app(
+        metric: DashboardMetric.gear,
+        state: state,
+        now: now,
+      ));
+      expect(find.text(expectedLabel), findsOneWidget);
+    }
+  });
+
+  testWidgets(
+      'SOC renders 0 % when battCapPercent is 0 and does not jump to 90 %',
+      (tester) async {
+    final state = ControllerState(
+      lastUpdate: now,
+      battCapPercent: 0,
+      telemetrySamples: {
+        ControllerTelemetry.soc: TelemetrySample(
+          value: 0.0,
+          source: TelemetrySource.derived,
+          capturedAt: now,
+        ),
+      },
+    );
+
+    await tester.pumpWidget(_app(
+      metric: DashboardMetric.soc,
+      state: state,
+      now: now,
+    ));
+
+    expect(find.text('0 %'), findsOneWidget);
+    expect(find.text('90 %'), findsNothing);
+  });
+
+  testWidgets('SOC prioritizes BMS SOC over controller battCapPercent',
+      (tester) async {
+    final state = ControllerState(
+      lastUpdate: now,
+      battCapPercent: 60,
+      telemetrySamples: {
+        ControllerTelemetry.soc: TelemetrySample(
+          value: 60.0,
+          source: TelemetrySource.derived,
+          capturedAt: now,
+        ),
+      },
+    );
+
+    // BMS reports 78% while controller has 60%
+    await tester.pumpWidget(_app(
+      metric: DashboardMetric.soc,
+      state: state,
+      now: now,
+      bmsSocPercent: 78,
+    ));
+
+    expect(find.text('78 %'), findsOneWidget);
+    expect(find.text('60 %'), findsNothing);
+  });
 }
 
 Widget _app({
@@ -190,6 +274,7 @@ Widget _app({
   required ControllerState state,
   required DateTime now,
   bool connected = true,
+  int? bmsSocPercent,
 }) {
   final definition = dashboardMeasurementCatalog[metric]!;
   final layout = DashboardOrientationLayout(
@@ -223,6 +308,7 @@ Widget _app({
           state: state,
           connected: connected,
           now: now,
+          bmsSocPercent: bmsSocPercent,
         ),
       ),
     ),

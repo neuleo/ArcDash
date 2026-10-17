@@ -16,19 +16,24 @@ enum ControllerTelemetry {
   trip,
 }
 
-enum RideMode { eco, trail, sport, race }
+enum RideMode {
+  eco,
+  standard,
+  sport;
+
+  static const RideMode trail = standard;
+  static const RideMode race = sport;
+}
 
 extension RideModeName on RideMode {
   String get displayName {
     switch (this) {
       case RideMode.eco:
         return 'ECO';
-      case RideMode.trail:
-        return 'TRAIL';
+      case RideMode.standard:
+        return 'STD';
       case RideMode.sport:
         return 'SPORT';
-      case RideMode.race:
-        return 'RACE';
     }
   }
 
@@ -38,11 +43,9 @@ extension RideModeName on RideMode {
     switch (this) {
       case RideMode.eco:
         return 2;
-      case RideMode.trail:
+      case RideMode.standard:
         return 1;
       case RideMode.sport:
-        return 1;
-      case RideMode.race:
         return 0;
     }
   }
@@ -122,7 +125,7 @@ class ControllerState {
     this.rangeKm = 0.0,
     this.rangeUncertaintyKm = 0.0,
     this.tripDistanceKm,
-    this.rideMode = RideMode.trail,
+    this.rideMode = RideMode.standard,
     this.telemetrySamples = const {},
     required this.lastUpdate,
   });

@@ -158,8 +158,9 @@ class FastMapNotifier extends StateNotifier<FastMapState> {
       }
     }
 
-    // Fallback: first non-stock custom profile, or first available
+    // Fallback: first non-stock custom profile, or first non-stock factory preset, or first available
     profile ??= tuningState.savedProfiles.firstOrNull ??
+        TuningProfile.l1ePresets().where((p) => !p.isStock).firstOrNull ??
         TuningProfile.l1ePresets().first;
 
     tuningNotifier.loadPreset(profile);

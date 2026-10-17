@@ -13,11 +13,22 @@ void main() {
   group('Fast Map & RAM vs Flash Tuning Tests', () {
     test('L1E baseline preset is Stock Street Legal', () {
       final l1e = TuningProfile.l1ePresets();
-      expect(l1e, hasLength(1));
-      expect(l1e.first.name, 'Stock Street Legal');
-      expect(l1e.first.maxSpeedKph, 45.0);
-      expect(l1e.first.maxLineCurrA, 80.0);
-      expect(l1e.first.isStock, isTrue);
+      expect(l1e, hasLength(3));
+      expect(l1e[0].name, 'Stock Street Legal');
+      expect(l1e[0].maxSpeedKph, 45.0);
+      expect(l1e[0].maxLineCurrA, 117.0);
+      expect(l1e[0].isStock, isTrue);
+
+      expect(l1e[1].name, '45 km/h (Mehr Leistung)');
+      expect(l1e[1].maxSpeedKph, 45.0);
+      expect(l1e[1].maxLineCurrA, 150.0);
+      expect(l1e[1].speedRatios.every((r) => r == 100), isTrue);
+
+      expect(l1e[2].name, 'Offen (Volle Leistung)');
+      expect(l1e[2].maxSpeedKph, 140.0);
+      expect(l1e[2].maxLineCurrA, 280.0);
+      expect(l1e[2].maxPhaseCurrA, 550.0);
+      expect(l1e[2].speedRatios.every((r) => r == 100), isTrue);
     });
 
     test('TuningNotifier writes to RAM without saving to Flash by default',
@@ -44,7 +55,7 @@ void main() {
       final state = container.read(tuningProvider);
       expect(state.appliedSuccessfully, isTrue);
       expect(state.lastAppliedWasFlash, isFalse);
-      expect(state.activeRamMap, 'Tuned (Offen)');
+      expect(state.activeRamMap, tuned.name);
     });
 
     test('TuningNotifier writes to Flash when explicitly commanded', () async {

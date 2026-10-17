@@ -39,7 +39,10 @@ class FastMapScreen extends ConsumerWidget {
         ? fastMapState.tunedProfileName!
         : (tuningState.savedProfiles.isNotEmpty
             ? tuningState.savedProfiles.first.name
-            : availableProfiles.first.name);
+            : (availableProfiles
+                .firstWhere((p) => !p.isStock,
+                    orElse: () => availableProfiles.first)
+                .name));
 
     return Scaffold(
       backgroundColor: const Color(0xFF080B0E),

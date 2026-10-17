@@ -97,7 +97,7 @@ ProviderContainer _container({
 }
 
 List<int> _readHebBytes() {
-  final file = File('assets/basemaps/unmodified_basemap.heb');
+  final file = File('assets/basemaps/l1e_unmodified_basemap.heb');
   if (!file.existsSync()) {
     throw StateError('missing asset ${file.path}');
   }
@@ -276,8 +276,8 @@ void main() {
       expect(plan.writes, hasLength(HebFile.blockAddresses.length * 6));
       final maxSpeed = plan.writes.firstWhere((w) => w.address == 0x15);
       final lineCurr = plan.writes.firstWhere((w) => w.address == 0x19);
-      expect(maxSpeed.value, 9000);
-      expect(lineCurr.value, 720);
+      expect(maxSpeed.value, 3480);
+      expect(lineCurr.value, 470);
 
       for (final write in plan.writes) {
         final packet = write.toPacket();

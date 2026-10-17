@@ -2,8 +2,9 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:arcdash/services/heb_file_parser.dart';
 import 'package:arcdash/services/protocol_service.dart';
 
-/// Asset path of the verified factory baseline (Phase 15, T092).
-const String stockBasemapAssetPath = 'assets/basemaps/unmodified_basemap.heb';
+/// Asset path of the verified factory baseline (Arctic Leopard XE Pro S L1E).
+const String stockBasemapAssetPath =
+    'assets/basemaps/l1e_unmodified_basemap.heb';
 
 /// A single 16-bit factory register value to be written back to the controller.
 class HebRestoreWrite {
@@ -28,7 +29,7 @@ class StockRestorePlan {
   bool get isEmpty => writes.isEmpty;
 }
 
-/// Turns `unmodified_basemap.heb` into the atomic write sequence that restores
+/// Turns `l1e_unmodified_basemap.heb` into the atomic write sequence that restores
 /// the factory baseline. Every 12-byte block is expanded into six 16-bit
 /// register writes (register address = block address + word index), matching
 /// how the controller maps the parameter memory (maxSpeed at 0x15 in the 0x12

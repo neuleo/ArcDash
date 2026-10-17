@@ -16,6 +16,7 @@ import 'package:arcdash/utils/packet_framer.dart';
 import 'package:arcdash/services/diagnostic_log.dart';
 import 'package:arcdash/models/range_prediction_state.dart';
 import 'package:arcdash/services/range_prediction_repository.dart';
+import 'package:arcdash/utils/battery_soc_calculator.dart';
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   throw UnimplementedError('Override in ProviderScope');
@@ -141,6 +142,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
   // Smoothed range estimation (EMA low-pass filter to eliminate voltage-sag fluctuations during acceleration)
   double _smoothedRangeKm = 0.0;
   double _smoothedUncertaintyKm = 5.0;
+  double? _smoothedSocPercent;
 
   List<String> get debugPackets => List.unmodifiable(_debugPackets);
   double get packetRate => _packetRate;
@@ -179,6 +181,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       _pendingEmitTimer = null;
       _pendingState = null;
       _smoothedRangeKm = 0.0;
+      _smoothedSocPercent = null;
     }
   }
 
@@ -187,6 +190,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     _packetCount = 0;
     _lastPacketTime = DateTime.now();
     _smoothedRangeKm = 0.0;
+    _smoothedSocPercent = null;
 
     // Send start-status-stream command periodically until packets arrive
     _streamInitTimer?.cancel();
@@ -288,22 +292,56 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       record(ControllerTelemetry.errors, next.hasAnyFault ? 1 : 0);
     }
 
+    if (update.currentA != null) {
+      next = next.copyWith(currentA: update.currentA);
+      record(ControllerTelemetry.current, update.currentA!);
+    }
+
     if (update.voltageV != null) {
       next = next.copyWith(voltageV: update.voltageV);
       record(ControllerTelemetry.voltage, update.voltageV!);
-      _rangePrediction?.learnVoltage(update.voltageV!);
+
+      final currentAmps = update.currentA ?? next.currentA;
+
+      // Only learn voltage into calibration range during idle/rest (< 3A)
+      // to avoid learning artificial voltage drops caused by load sag
+      if (currentAmps.abs() < 3.0) {
+        _rangePrediction?.learnVoltage(update.voltageV!);
+      }
 
       // Calculate dynamic range prediction based on learned profile and active session
       final learned = _rangePrediction?.state;
 
       // Dynamically calculate SOC from learned voltage calibration bounds if available
-      final maxV = learned?.maxVoltageV ?? 87.9;
-      final minV = learned?.minVoltageV ?? 62.0;
-      final calcSoc = (update.voltageV != null && maxV > minV)
-          ? ((100.0 * (update.voltageV! - minV) / (maxV - minV)).round())
-              .clamp(0, 100)
-          : next.battCapPercent;
+      final maxV = learned?.effectiveMaxVoltageV ??
+          BatterySocCalculator.defaultMaxVoltageV;
+      final minV = learned?.effectiveMinVoltageV ??
+          BatterySocCalculator.defaultMinVoltageV;
 
+      // 1. Compensate for load sag using pack internal resistance (~35 mOhm)
+      final ocvVoltage = BatterySocCalculator.estimateOcv(
+        terminalVoltageV: update.voltageV!,
+        currentA: currentAmps,
+      );
+
+      // 2. Map OCV to non-linear 20S Li-Ion discharge curve
+      final rawSoc = BatterySocCalculator.calculateSoc(
+        ocvVoltageV: ocvVoltage,
+        minVoltageV: minV,
+        maxVoltageV: maxV,
+      );
+
+      // 3. Smooth SOC changes with low-pass exponential moving average (EMA)
+      if (_smoothedSocPercent == null) {
+        _smoothedSocPercent = rawSoc;
+      } else {
+        final isHeavyLoad = currentAmps.abs() > 15.0;
+        final socAlpha = isHeavyLoad ? 0.015 : 0.06;
+        _smoothedSocPercent =
+            _smoothedSocPercent! * (1.0 - socAlpha) + rawSoc * socAlpha;
+      }
+
+      final calcSoc = _smoothedSocPercent!.round().clamp(0, 100);
       next = next.copyWith(battCapPercent: calcSoc);
       record(ControllerTelemetry.soc, calcSoc);
 
@@ -326,9 +364,7 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
         _smoothedRangeKm = rawRangeKm;
         _smoothedUncertaintyKm = rawUncertainty;
       } else {
-        final isUnderLoad =
-            (update.currentA != null && update.currentA! > 10.0) ||
-                (next.currentA > 10.0);
+        final isUnderLoad = currentAmps.abs() > 10.0;
         final alpha = isUnderLoad ? 0.015 : 0.06;
         _smoothedRangeKm =
             _smoothedRangeKm * (1.0 - alpha) + rawRangeKm * alpha;
@@ -351,10 +387,6 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
       );
       samples[ControllerTelemetry.range] = rangeEst;
     }
-    if (update.currentA != null) {
-      next = next.copyWith(currentA: update.currentA);
-      record(ControllerTelemetry.current, update.currentA!);
-    }
     if (update.phaseACurrA != null)
       next = next.copyWith(phaseACurrA: update.phaseACurrA);
     if (update.phaseCCurrA != null)
@@ -365,7 +397,8 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     }
     if (update.battCapPercent != null) {
       // Direct FarDriver packet reported SOC (0..100)
-      if (update.battCapPercent! > 0) {
+      // Only fall back to FarDriver raw packet SOC if no voltage-derived SOC has been established yet
+      if (_smoothedSocPercent == null && update.battCapPercent! > 0) {
         next = next.copyWith(battCapPercent: update.battCapPercent);
         record(ControllerTelemetry.soc, update.battCapPercent!);
       }

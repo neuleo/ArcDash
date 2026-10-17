@@ -7,6 +7,21 @@ class RangePredictionState {
   final double? maxVoltageV;
   final double? minVoltageV;
 
+  static const double defaultMinVoltageV = 62.0;
+  static const double defaultMaxVoltageV = 84.0;
+  static const double minValidVoltageSpanV = 15.0;
+
+  bool get hasValidCalibration =>
+      maxVoltageV != null &&
+      minVoltageV != null &&
+      (maxVoltageV! - minVoltageV!) >= minValidVoltageSpanV;
+
+  double get effectiveMinVoltageV =>
+      hasValidCalibration ? minVoltageV! : defaultMinVoltageV;
+
+  double get effectiveMaxVoltageV =>
+      hasValidCalibration ? maxVoltageV! : defaultMaxVoltageV;
+
   const RangePredictionState({
     this.schemaVersion = 1,
     required this.controllerId,
@@ -16,6 +31,18 @@ class RangePredictionState {
     this.maxVoltageV,
     this.minVoltageV,
   });
+
+  RangePredictionState sanitized() {
+    if (maxVoltageV != null &&
+        minVoltageV != null &&
+        (maxVoltageV! - minVoltageV!) < minValidVoltageSpanV) {
+      return copyWith(
+        minVoltageV: defaultMinVoltageV,
+        maxVoltageV: defaultMaxVoltageV,
+      );
+    }
+    return this;
+  }
 
   RangePredictionState copyWith({
     int? schemaVersion,

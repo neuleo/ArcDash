@@ -1,9 +1,9 @@
 /// SI-unit ↔ FarDriver raw-value conversions for tunable parameters.
 ///
 /// Factors are fixed by the hardware bounds confirmed from
-/// `reference/basemaps/unmodified_basemap.json`: factory maxSpeed raw
-/// 0x2328 = 9000 = 125 km/h → 72 raw/km/h; factory maxLineCurrent raw 720 =
-/// 180 A → 4 raw per ampere. ThrottleResponse mode lives in bits 2-3 of
+/// `reference/basemaps/l1e_unmodified_basemap.json`: factory maxSpeed raw
+/// 3480 = 45-48 km/h on L1E (or 9000 = 125 km/h on unrestricted); factory maxLineCurrent
+/// raw 470 = 117.5 A → 4 raw per ampere. ThrottleResponse mode lives in bits 2-3 of
 /// address 0x1A.
 class TuningConversions {
   static const int maxSpeedRawPerKph = 72;

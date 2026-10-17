@@ -436,8 +436,8 @@ class TuningNotifier extends StateNotifier<TuningState> {
     return true;
   }
 
-  /// Restores the factory baseline from `unmodified_basemap.heb` (Phase 15,
-  /// T092). Every 16-bit register of the HEB is written back serially.
+  /// Restores the factory baseline from `l1e_unmodified_basemap.heb`.
+  /// Every 16-bit register of the HEB is written back serially.
   Future<bool> restoreStock({List<int>? basemapBytes}) async {
     if (state.isRestoring || state.isApplying) return false;
     final decision = _ref.read(writeSafetyDecisionProvider);
