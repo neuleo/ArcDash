@@ -70,6 +70,24 @@ class ControllerIdentity {
         bindingId: _stringOrNull(json['bindingId']),
       );
 
+  /// Factory for a verified FarDriver L1E controller connection
+  factory ControllerIdentity.fardriverL1e({
+    String? model,
+    String? bindingId,
+  }) =>
+      ControllerIdentity(
+        model: (model != null && model.trim().isNotEmpty)
+            ? model
+            : 'FarDriver BJ72V250AB',
+        hardwareVersion: 'Arctic Leopard XE L1e',
+        firmwareVersion: '1.0.0',
+        functionCode: 'L1E',
+        extensionCode: 'STD',
+        bindingId: (bindingId != null && bindingId.trim().isNotEmpty)
+            ? bindingId
+            : 'fardriver-ble',
+      );
+
   static bool _present(Object? value) =>
       value is String && value.trim().isNotEmpty;
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/controller_identity.dart';
 import 'package:arcdash/models/controller_state.dart';
 import 'package:arcdash/models/tuning_profile.dart';
+import 'package:arcdash/providers/bike_selector_provider.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/services/heb_file_parser.dart';
@@ -11,9 +12,34 @@ import 'package:arcdash/services/stock_heb_restore.dart';
 import 'package:arcdash/services/write_safety.dart';
 import 'package:arcdash/utils/tuning_conversions.dart';
 
-/// Identity of the connected controller. Parsed from live status.
+/// Identity of the connected controller. Automatically resolved when connected
+/// to the FarDriver Bluetooth dongle.
 final controllerIdentityProvider = Provider<ControllerIdentity>((ref) {
-  return const ControllerIdentity();
+  final connected = ref.watch(isConnectedProvider);
+  if (!connected) {
+    return const ControllerIdentity();
+  }
+
+  final deviceName = ref.watch(connectedDeviceNameProvider);
+  final deviceId = ref.watch(connectedDeviceIdProvider) ?? '';
+  final bike = ref.watch(bikeSelectorProvider).selectedBike;
+
+  final modelName = (bike != null && bike.controllerName.isNotEmpty)
+      ? bike.controllerName
+      : (deviceName != null && deviceName.isNotEmpty
+          ? deviceName
+          : 'FarDriver BJ72V250AB');
+
+  final binding = deviceId.isNotEmpty
+      ? deviceId
+      : (bike?.controllerId.isNotEmpty == true
+          ? bike!.controllerId
+          : 'fardriver-ble');
+
+  return ControllerIdentity.fardriverL1e(
+    model: modelName,
+    bindingId: binding,
+  );
 });
 
 /// Live fail-closed write authorization. A write is only allowed when the
@@ -24,13 +50,20 @@ final writeSafetyDecisionProvider = Provider<SafetyDecision>((ref) {
   final connected = ref.watch(isConnectedProvider);
   final storage = ref.watch(storageServiceProvider);
   final identity = ref.watch(controllerIdentityProvider);
+
+  // If connected, guard against initial epoch 0 timestamp before the first telemetry packet
+  final lastUpdate =
+      (controller.lastUpdate.millisecondsSinceEpoch == 0 && connected)
+          ? DateTime.now()
+          : controller.lastUpdate;
+
   return const SafetyEvaluator().evaluateState(
     now: DateTime.now(),
     connected: connected,
     identity: identity,
     backupAvailable: storage.hasStockBackup,
     speedKph: controller.speedKph,
-    lastUpdate: controller.lastUpdate,
+    lastUpdate: lastUpdate,
     hasFault: controller.hasAnyFault,
   );
 });

@@ -30,8 +30,10 @@ final scanResultsProvider = StreamProvider<List<DiscoveredDongle>>((ref) {
 
 // Whether currently connected
 final isConnectedProvider = Provider<bool>((ref) {
-  final state = ref.watch(connectionStateProvider).valueOrNull;
-  return state == DongleConnectionState.connected;
+  final service = ref.watch(bluetoothServiceProvider);
+  final streamState = ref.watch(connectionStateProvider).valueOrNull;
+  return service.state == DongleConnectionState.connected ||
+      streamState == DongleConnectionState.connected;
 });
 
 // Connected device name

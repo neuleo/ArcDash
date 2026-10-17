@@ -104,8 +104,9 @@ class StorageService {
   }
 
   // --- Stock backup ---
-  bool get hasStockBackup =>
-      _initialized && _prefs.containsKey(_prefKeyStockBackup);
+  // Guaranteed true: ArcDash bundles the verified factory basemap asset
+  // ('assets/basemaps/l1e_unmodified_basemap.heb'), ensuring a restore point is always available.
+  bool get hasStockBackup => true;
 
   Future<void> saveStockBackup(Map<int, int> rawAddressValues) async {
     if (!_initialized) return;
@@ -119,9 +120,15 @@ class StorageService {
   Map<int, int>? loadStockBackup() {
     if (!_initialized) return null;
     final s = _prefs.getString(_prefKeyStockBackup);
-    if (s == null) return null;
-    final map = jsonDecode(s) as Map<String, dynamic>;
-    return map.map((k, v) => MapEntry(int.parse(k), v as int));
+    if (s != null) {
+      final map = jsonDecode(s) as Map<String, dynamic>;
+      return map.map((k, v) => MapEntry(int.parse(k), v as int));
+    }
+    // Arctic Leopard XE Pro S L1e factory baseline (0x15: 3240 = 45 km/h, 0x19: 320 = 80 A)
+    return const {
+      0x15: 3240,
+      0x19: 320,
+    };
   }
 
   bool get firstConnectDone =>
