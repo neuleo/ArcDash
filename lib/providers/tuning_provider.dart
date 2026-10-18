@@ -134,7 +134,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
   /// user has not manually modified the sliders, or if [force] is true.
   void syncFromController(ControllerState controllerState,
       {bool force = false}) {
-    if (!force && _hasUserModified) return;
+    if (!force && (_hasUserModified || state.appliedSuccessfully)) return;
     if (controllerState.maxSpeedRaw <= 0 &&
         controllerState.maxLineCurrRaw <= 0) {
       return;
@@ -381,18 +381,24 @@ class TuningNotifier extends StateNotifier<TuningState> {
     }
 
     final profile = state.pendingProfile;
+    final speedRaw = TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph);
+    final lineCurrRaw =
+        TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA);
+    final throttleRaw =
+        TuningConversions.throttleResponseToRaw(profile.throttleResponse);
+
     final writes = <(int, int)>[
       (
         FardriverAddr.maxSpeed,
-        TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph),
+        speedRaw,
       ),
       (
         FardriverAddr.maxLineCurr,
-        TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA),
+        lineCurrRaw,
       ),
       (
         FardriverAddr.throttleResponse,
-        TuningConversions.throttleResponseToRaw(profile.throttleResponse),
+        throttleRaw,
       ),
     ];
 
@@ -416,12 +422,34 @@ class TuningNotifier extends StateNotifier<TuningState> {
         );
         return false;
       }
+      // Give FarDriver MCU UART & memory buffer time to receive and commit each register
+      await Future.delayed(const Duration(milliseconds: 80));
     }
 
     if (saveToFlash) {
+      // Pause before flash commit command
+      await Future.delayed(const Duration(milliseconds: 100));
       // Commit parameters to persistent Flash memory
-      await transport.write(ProtocolService.saveParametersToFlashPacket());
+      final written =
+          await transport.write(ProtocolService.saveParametersToFlashPacket());
+      if (!written) {
+        state = state.copyWith(
+          isApplying: false,
+          isSavingToFlash: false,
+          appliedSuccessfully: false,
+          lastError: 'Flash-Speichern fehlgeschlagen.',
+        );
+        return false;
+      }
+      // Allow MCU EEPROM erase/write cycle to complete safely
+      await Future.delayed(const Duration(milliseconds: 300));
     }
+
+    // Immediately update controller state so active telemetry and limits match
+    _ref.read(controllerProvider.notifier).updateAppliedParameters(
+          maxSpeedRaw: speedRaw,
+          maxLineCurrRaw: lineCurrRaw,
+        );
 
     _hasUserModified = false;
     state = state.copyWith(

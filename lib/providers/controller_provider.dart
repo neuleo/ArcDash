@@ -195,6 +195,11 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     // Send start-status-stream command periodically until packets arrive
     _streamInitTimer?.cancel();
     _streamInitTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (!mounted) {
+        _streamInitTimer?.cancel();
+        _streamInitTimer = null;
+        return;
+      }
       if (state.telemetrySamples.isEmpty) {
         await _bluetooth.write(ProtocolService.startStatusStreamPacket());
         _diagnostics.add(DiagnosticEventType.command, details: {
@@ -475,6 +480,19 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
     );
   }
 
+  void updateAppliedParameters({
+    required int maxSpeedRaw,
+    required int maxLineCurrRaw,
+    RideMode? rideMode,
+  }) {
+    state = state.copyWith(
+      maxSpeedRaw: maxSpeedRaw,
+      maxLineCurrRaw: maxLineCurrRaw,
+      rideMode: rideMode ?? state.rideMode,
+      lastUpdate: DateTime.now(),
+    );
+  }
+
   void _saveStockBackup() {
     final backup = <int, int>{
       0x15: state.maxSpeedRaw,
@@ -507,6 +525,10 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
   @override
   void dispose() {
+    _streamInitTimer?.cancel();
+    _streamInitTimer = null;
+    _pendingEmitTimer?.cancel();
+    _pendingEmitTimer = null;
     _dataSub?.cancel();
     _connSub?.cancel();
     super.dispose();
