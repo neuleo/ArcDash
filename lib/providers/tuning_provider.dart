@@ -11,6 +11,7 @@ import 'package:arcdash/services/protocol_service.dart';
 import 'package:arcdash/services/stock_heb_restore.dart';
 import 'package:arcdash/services/write_safety.dart';
 import 'package:arcdash/utils/tuning_conversions.dart';
+import 'package:arcdash/utils/unit_converter.dart';
 
 /// Identity of the connected controller. Automatically resolved when connected
 /// to the FarDriver Bluetooth dongle.
@@ -140,7 +141,17 @@ class TuningNotifier extends StateNotifier<TuningState> {
       return;
     }
 
-    final kph = TuningConversions.maxSpeedRawToKph(controllerState.maxSpeedRaw);
+    final kph = (controllerState.rateRatio > 0 &&
+            controllerState.wheelRadius > 0 &&
+            controllerState.rateRatio != 1000)
+        ? UnitConverter.measureSpeedToKph(
+            measureSpeed: controllerState.maxSpeedRaw,
+            wheelRadius: controllerState.wheelRadius,
+            wheelWidth: controllerState.wheelWidth,
+            wheelRatio: controllerState.wheelRatio,
+            rateRatio: controllerState.rateRatio,
+          )
+        : TuningConversions.maxSpeedRawToKph(controllerState.maxSpeedRaw);
     final lineAmps = controllerState.maxLineCurrA;
     final throttleMode = controllerState.rideMode.throttleResponseValue;
 
@@ -381,7 +392,22 @@ class TuningNotifier extends StateNotifier<TuningState> {
     }
 
     final profile = state.pendingProfile;
-    final speedRaw = TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph);
+    final controllerState = _ref.read(controllerProvider);
+
+    // Compute raw max speed: if wheel geometry and rateRatio are calibrated (> 0), calculate RPM;
+    // otherwise use the established linear conversion factor
+    final speedRaw = (controllerState.rateRatio > 0 &&
+            controllerState.wheelRadius > 0 &&
+            controllerState.rateRatio != 1000)
+        ? ProtocolService.kphToMaxSpeedRaw(
+            kph: profile.maxSpeedKph,
+            wheelRadius: controllerState.wheelRadius,
+            wheelWidth: controllerState.wheelWidth,
+            wheelRatio: controllerState.wheelRatio,
+            rateRatio: controllerState.rateRatio,
+          )
+        : TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph);
+
     final lineCurrRaw =
         TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA);
     final throttleRaw =
@@ -423,7 +449,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
         return false;
       }
       // Give FarDriver MCU UART & memory buffer time to receive and commit each register
-      await Future.delayed(const Duration(milliseconds: 80));
+      await Future.delayed(const Duration(milliseconds: 60));
     }
 
     if (saveToFlash) {
@@ -442,7 +468,7 @@ class TuningNotifier extends StateNotifier<TuningState> {
         return false;
       }
       // Allow MCU EEPROM erase/write cycle to complete safely
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 400));
     }
 
     // Immediately update controller state so active telemetry and limits match
