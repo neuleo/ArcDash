@@ -11,6 +11,7 @@ import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/ant_bms_provider.dart';
 import 'package:arcdash/providers/dual_ble_auto_connect_provider.dart';
 import 'package:arcdash/providers/stats_provider.dart';
+import 'package:arcdash/services/ride_log_recorder.dart';
 import 'package:arcdash/services/street_legal_trigger_service.dart';
 import 'package:arcdash/l10n/app_strings.dart';
 
@@ -24,6 +25,7 @@ class ArcDashApp extends ConsumerWidget {
     // Keep telemetry, session recording, and MacroDroid background trigger active globally
     // without triggering root MaterialApp rebuilds at 10 Hz.
     ref.listen(statsProvider, (_, __) {});
+    ref.listen(rideLogRecorderProvider, (_, __) {});
     ref.listen(controllerProvider, (_, __) {});
     ref.listen(streetLegalTriggerServiceProvider, (_, __) {});
     // Dual-BLE Auto-Remember: reconnects controller + ANT BMS at app start

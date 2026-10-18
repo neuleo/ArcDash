@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/ride_stats.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
-import 'package:arcdash/services/bluetooth_service.dart'
-    show DongleConnectionState;
 import 'package:arcdash/providers/controller_provider.dart';
+import 'package:arcdash/services/bluetooth_service.dart';
+import 'package:arcdash/services/ride_log_recorder.dart';
+import 'package:arcdash/services/storage_service.dart';
 
 class StatsState {
   final RideSession? currentSession;
@@ -79,6 +80,8 @@ class StatsNotifier extends StateNotifier<StatsState> {
       startTime: now,
     );
     state = state.copyWith(currentSession: session, isTracking: true);
+    // Automatically trigger comprehensive 1 Hz second-by-second recorder
+    _ref.read(rideLogRecorderProvider.notifier).start();
   }
 
   void _takeSample() {
@@ -159,6 +162,10 @@ class StatsNotifier extends StateNotifier<StatsState> {
     final session = state.currentSession;
     if (session == null) return;
     session.end();
+
+    // Stop 1 Hz second-by-second recorder and persist
+    final logRecorder = _ref.read(rideLogRecorderProvider.notifier);
+    logRecorder.stop();
 
     if (session.distanceKm >= 0.5 && session.totalWhUsed > 10) {
       _ref.read(rangePredictionStateProvider.notifier).learnFromSession(

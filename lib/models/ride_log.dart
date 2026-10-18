@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:ui' show Color;
+
 /// One recorded telemetry sample of a ride (1 Hz default).
 ///
 /// All values nullable: a channel that was unavailable at that second is
@@ -90,23 +93,24 @@ class RideLogSample {
 
 /// Recordable channels shown in the analysis UI.
 enum RideChannel {
-  speed('Geschwindigkeit', 'km/h'),
-  power('Leistung', 'kW'),
-  voltage('Spannung (Ctrl)', 'V'),
-  current('Strom (Ctrl)', 'A'),
-  motorTemp('Motortemp', '°C'),
-  controllerTemp('Controllertemp', '°C'),
-  soc('Ladestand', '%'),
-  packVoltage('Packspannung (BMS)', 'V'),
-  bmsCurrent('BMS-Strom', 'A'),
-  bmsTemp('Akku-Temp (NTC)', '°C'),
-  cellDelta('Zell-Delta', 'mV'),
-  gpsSpeed('GPS-Geschwindigkeit', 'km/h'),
-  gpsAltitude('GPS-Höhe', 'm');
+  speed('Geschwindigkeit', 'km/h', Color(0xFF00E5FF)),
+  power('Leistung', 'kW', Color(0xFFFF9800)),
+  voltage('Spannung (Ctrl)', 'V', Color(0xFFFFD600)),
+  current('Strom (Ctrl)', 'A', Color(0xFFB388FF)),
+  motorTemp('Motortemp', '°C', Color(0xFFFF5252)),
+  controllerTemp('Controllertemp', '°C', Color(0xFFFF7043)),
+  soc('Ladestand', '%', Color(0xFF54E39E)),
+  packVoltage('Packspannung (BMS)', 'V', Color(0xFFFFEE58)),
+  bmsCurrent('BMS-Strom', 'A', Color(0xFF7C4DFF)),
+  bmsTemp('Akku-Temp (NTC)', '°C', Color(0xFFFFAB40)),
+  cellDelta('Zell-Delta', 'mV', Color(0xFF69F0AE)),
+  gpsSpeed('GPS-Geschwindigkeit', 'km/h', Color(0xFF40C4FF)),
+  gpsAltitude('GPS-Höhe', 'm', Color(0xFF26A69A));
 
   final String label;
   final String unit;
-  const RideChannel(this.label, this.unit);
+  final Color color;
+  const RideChannel(this.label, this.unit, this.color);
 }
 
 /// Min/Max/Average triple of one channel over a ride.

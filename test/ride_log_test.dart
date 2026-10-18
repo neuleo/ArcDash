@@ -242,10 +242,11 @@ void main() {
   });
 
   group('Channel catalog', () {
-    test('all 13 channels have label and unit', () {
+    test('all 13 channels have label and unit and color', () {
       for (final c in RideChannel.values) {
         expect(c.label, isNotEmpty, reason: '${c.name} missing label');
         expect(c.unit, isNotEmpty, reason: '${c.name} missing unit');
+        expect(c.color, isNotNull, reason: '${c.name} missing color');
       }
       expect(RideChannel.values, hasLength(13));
     });

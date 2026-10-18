@@ -378,15 +378,60 @@ class _PastSessionCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       onTap: () {
         // Deep-dive: open the second-by-second ride log when available.
-        final id = json['id'] as String?;
+        final id = json['id']?.toString();
         RideLog? rideLog;
+        final container = ProviderScope.containerOf(context);
+        final recorder = container.read(rideLogRecorderProvider.notifier);
+
         if (id != null) {
           try {
-            final container = ProviderScope.containerOf(context);
-            rideLog =
-                container.read(rideLogRecorderProvider.notifier).loadById(id);
+            rideLog = recorder.loadById(id);
           } catch (_) {}
         }
+
+        // If not found in separate storage, synthesize RideLog from speedHistory or telemetry_blob
+        if (rideLog == null) {
+          try {
+            final rawBlob = json['telemetry_blob'];
+            if (rawBlob is String && rawBlob.isNotEmpty) {
+              final parsed = jsonDecode(rawBlob);
+              if (parsed is Map<String, dynamic> && parsed['samples'] is List) {
+                rideLog = RideLog.fromJson(parsed);
+              }
+            }
+          } catch (_) {}
+        }
+
+        // Fallback: Synthesize RideLog from speedHistory if available
+        if (rideLog == null &&
+            json['speedHistory'] is List &&
+            (json['speedHistory'] as List).isNotEmpty) {
+          try {
+            final startTime =
+                DateTime.tryParse(json['startTime'] as String? ?? '') ??
+                    DateTime.now();
+            final speedList = json['speedHistory'] as List;
+            final samples = <RideLogSample>[];
+            for (var i = 0; i < speedList.length; i++) {
+              final item = speedList[i];
+              final spd = item is Map && item['speedKph'] != null
+                  ? (item['speedKph'] as num).toDouble()
+                  : (item is num ? item.toDouble() : 0.0);
+              samples.add(RideLogSample(
+                t: i,
+                speedKph: spd,
+                powerKw: (wh / (durSec > 0 ? durSec : 1) * 3.6) / 1000.0,
+              ));
+            }
+            rideLog = RideLog(
+              id: id ?? 'synthetic_${startTime.millisecondsSinceEpoch}',
+              startedAt: startTime,
+              endedAt: startTime.add(Duration(seconds: durSec)),
+              samples: samples,
+            );
+          } catch (_) {}
+        }
+
         if (rideLog != null && context.mounted) {
           Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => RideAnalysisScreen(log: rideLog!),

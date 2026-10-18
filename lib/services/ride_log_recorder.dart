@@ -140,7 +140,16 @@ class RideLogRecorder extends StateNotifier<RideLog?> {
   RideLog? loadById(String id) {
     try {
       final storage = _ref.read(storageServiceProvider).rangePredictionStorage;
-      final raw = storage.read('ride_log_$id');
+      var raw = storage.read('ride_log_$id');
+      if ((raw == null || raw.isEmpty) && !id.startsWith('log_')) {
+        raw = storage.read('ride_log_log_$id');
+      }
+      if (raw == null || raw.isEmpty) {
+        // Also check if id has log_ prefix and key was stored without it
+        if (id.startsWith('log_')) {
+          raw = storage.read('ride_log_${id.substring(4)}');
+        }
+      }
       if (raw == null || raw.isEmpty) return null;
       return RideLog.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
