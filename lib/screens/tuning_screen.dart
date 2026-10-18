@@ -35,15 +35,22 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
     });
     final editorEnabled = editorValidation.valid;
 
-    final controllerState = ref.watch(controllerProvider);
+    final effectiveVoltage = ref.watch(controllerProvider.select(
+      (s) => s.voltageV > 50 ? (s.voltageV * 2).round() / 2.0 : 82.0,
+    ));
     final expectedSpeedRaw =
         TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph);
     final expectedLineCurrRaw =
         TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA);
     final applied = tuningState.appliedSuccessfully;
 
-    final effectiveVoltage =
-        controllerState.voltageV > 50 ? controllerState.voltageV : 82.0;
+    final isSpeedVerified = ref.watch(controllerProvider.select(
+      (s) => applied && s.maxSpeedRaw == expectedSpeedRaw,
+    ));
+    final isLineCurrVerified = ref.watch(controllerProvider.select(
+      (s) => applied && s.maxLineCurrRaw == expectedLineCurrRaw,
+    ));
+
     final peakPowerKw = (profile.maxLineCurrA * effectiveVoltage) / 1000.0;
     final lowSpeedKw = (profile.maxLineCurrA *
             (profile.lowSpeedLineCurrPct / 100.0) *
@@ -135,7 +142,8 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
-                      notifier.syncFromController(controllerState, force: true);
+                      notifier.syncFromController(ref.read(controllerProvider),
+                          force: true);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content:
@@ -250,8 +258,7 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                     ? (kph) => notifier.updateMaxSpeed(kph)
                     : null,
                 accentColor: const Color(0xFF00E5FF),
-                verified:
-                    applied && controllerState.maxSpeedRaw == expectedSpeedRaw,
+                verified: isSpeedVerified,
               ),
               const SizedBox(height: 14),
 
@@ -284,8 +291,7 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                     editorEnabled ? (a) => notifier.updateMaxLineCurr(a) : null,
                 accentColor: const Color(0xFFFF9800),
                 warningThreshold: 250,
-                verified: applied &&
-                    controllerState.maxLineCurrRaw == expectedLineCurrRaw,
+                verified: isLineCurrVerified,
               ),
               const SizedBox(height: 14),
 

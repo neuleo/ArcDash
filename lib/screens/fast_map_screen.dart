@@ -16,7 +16,6 @@ class FastMapScreen extends ConsumerWidget {
     final fastMapState = ref.watch(fastMapProvider);
     final fastMapNotifier = ref.read(fastMapProvider.notifier);
     final tuningState = ref.watch(tuningProvider);
-    final controllerState = ref.watch(effectiveControllerProvider);
     final isConnected = ref.watch(isConnectedProvider);
 
     final orientation = MediaQuery.of(context).orientation;

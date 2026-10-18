@@ -22,12 +22,13 @@ class ArcDashApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Keep telemetry, session recording, and MacroDroid background trigger active globally
-    ref.watch(statsProvider);
-    ref.watch(controllerProvider);
-    ref.watch(streetLegalTriggerServiceProvider);
+    // without triggering root MaterialApp rebuilds at 10 Hz.
+    ref.listen(statsProvider, (_, __) {});
+    ref.listen(controllerProvider, (_, __) {});
+    ref.listen(streetLegalTriggerServiceProvider, (_, __) {});
     // Dual-BLE Auto-Remember: reconnects controller + ANT BMS at app start
-    ref.watch(dualBleAutoConnectProvider);
-    ref.watch(antBmsStateProvider);
+    ref.listen(dualBleAutoConnectProvider, (_, __) {});
+    ref.listen(antBmsStateProvider, (_, __) {});
     // Force dark status bar icons on light backgrounds (none here, but good practice)
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

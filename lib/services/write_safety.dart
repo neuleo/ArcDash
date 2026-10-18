@@ -787,6 +787,23 @@ class SafetyDecision {
   final Set<SafetyRejection> rejections;
 
   const SafetyDecision({required this.allowed, required this.rejections});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SafetyDecision &&
+          runtimeType == other.runtimeType &&
+          allowed == other.allowed &&
+          _setEquals(rejections, other.rejections);
+
+  @override
+  int get hashCode => Object.hash(allowed, Object.hashAll(rejections));
+
+  static bool _setEquals<T>(Set<T> a, Set<T> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    return a.containsAll(b);
+  }
 }
 
 /// Fail-closed safety evaluator. A write is only allowed when every checked
