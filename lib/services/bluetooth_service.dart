@@ -22,6 +22,7 @@ const _altCharNotifyUuid = '49535343-1e4d-4bd9-ba61-23c647249616';
 const List<String> bikeHardwareKeywords = [
   'CONTROL',
   'DMC',
+  'CONTROLDM',
   'CONTROLDMC',
   'FARDRIVER',
   'YUANQ',

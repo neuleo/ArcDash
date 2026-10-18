@@ -58,7 +58,11 @@ class AntBmsNotifier extends StateNotifier<AntBmsState?> {
     if (_service.state == DongleConnectionState.connected) {
       _onConnected();
     }
-    _autoReconnectRemembered();
+    // Only auto-reconnect if no BikeProfile auto-connect is taking care of coordination
+    final autoBikeId = _storage.loadAutoConnectBikeId();
+    if (autoBikeId == null || autoBikeId.isEmpty) {
+      _autoReconnectRemembered();
+    }
   }
 
   /// Dual-BLE auto-remember: silently reconnects the last known BMS when the

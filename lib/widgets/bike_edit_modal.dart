@@ -54,14 +54,18 @@ class _BikeEditModalState extends ConsumerState<BikeEditModal> {
       final isBms = isAntBmsName(d.name, d.device.remoteId.str);
       final choice = _DeviceChoice(
         id: d.device.remoteId.str,
-        name: d.name.isNotEmpty ? d.name : (isBms ? 'ANT BMS' : 'FarDriver'),
+        name: d.name.isNotEmpty
+            ? d.name
+            : (isBms ? 'ANT BMS' : 'FarDriver (${d.device.remoteId.str})'),
       );
       if (isBms) {
-        if (!bmsCandidates.any((c) => c.id == choice.id))
+        if (!bmsCandidates.any((c) => c.id == choice.id)) {
           bmsCandidates.add(choice);
+        }
       } else {
-        if (!controllerCandidates.any((c) => c.id == choice.id))
+        if (!controllerCandidates.any((c) => c.id == choice.id)) {
           controllerCandidates.add(choice);
+        }
       }
     }
 

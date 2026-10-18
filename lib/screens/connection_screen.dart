@@ -376,37 +376,25 @@ class _DongleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBmsHint = isAntBmsName(dongle.name, dongle.device.remoteId.str);
-    return PopupMenuButton<String>(
-      onSelected: (choice) {
-        if (choice == 'controller') {
-          onConnectAsController();
-        } else if (choice == 'bms') {
-          onConnectAsBms();
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'controller',
-          child: Row(
-            children: const [
-              Icon(Icons.speed, color: Color(0xFF00E5FF), size: 18),
-              SizedBox(width: 10),
-              Text('Als FarDriver Controller verbinden'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'bms',
-          child: Row(
-            children: const [
-              Icon(Icons.battery_charging_full,
-                  color: Color(0xFF54E39E), size: 18),
-              SizedBox(width: 10),
-              Text('Als ANT BMS verbinden'),
-            ],
-          ),
-        ),
-      ],
+
+    // 1-Tap Connect: Directly connects as controller or BMS according to device type.
+    // Long-press opens menu for manual override if desired.
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: isConnecting
+          ? null
+          : () {
+              if (isBmsHint) {
+                onConnectAsBms();
+              } else {
+                onConnectAsController();
+              }
+            },
+      onLongPress: isConnecting
+          ? null
+          : () {
+              _showManualSelectionMenu(context);
+            },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -415,7 +403,7 @@ class _DongleCard extends StatelessWidget {
           border: Border.all(
               color: isBmsHint
                   ? const Color(0xFF54E39E).withOpacity(0.4)
-                  : const Color(0xFF2A3548)),
+                  : const Color(0xFF00E5FF).withOpacity(0.3)),
         ),
         child: Row(
           children: [
@@ -455,24 +443,31 @@ class _DongleCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (isBmsHint) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF54E39E).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text('BMS',
-                              style: TextStyle(
-                                  color: Color(0xFF54E39E),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (isBmsHint
+                                  ? const Color(0xFF54E39E)
+                                  : const Color(0xFF00E5FF))
+                              .withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                      ],
+                        child: Text(
+                          isBmsHint ? 'BMS' : 'FARDRIVER',
+                          style: TextStyle(
+                            color: isBmsHint
+                                ? const Color(0xFF54E39E)
+                                : const Color(0xFF00E5FF),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     dongle.device.remoteId.str,
                     style: TextStyle(
@@ -503,13 +498,83 @@ class _DongleCard extends StatelessWidget {
                           color: Color(0xFF00E5FF),
                         ),
                       )
-                    : const Icon(
-                        Icons.chevron_right,
-                        color: Color(0xFF4A5568),
+                    : Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: (isBmsHint
+                                  ? const Color(0xFF54E39E)
+                                  : const Color(0xFF00E5FF))
+                              .withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: (isBmsHint
+                                    ? const Color(0xFF54E39E)
+                                    : const Color(0xFF00E5FF))
+                                .withOpacity(0.4),
+                          ),
+                        ),
+                        child: Text(
+                          'VERBINDEN',
+                          style: TextStyle(
+                            color: isBmsHint
+                                ? const Color(0xFF54E39E)
+                                : const Color(0xFF00E5FF),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showManualSelectionMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${dongle.name} (${dongle.device.remoteId.str})',
+                style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.speed, color: Color(0xFF00E5FF)),
+                title: const Text('Als FarDriver Controller verbinden',
+                    style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onConnectAsController();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.battery_charging_full,
+                    color: Color(0xFF54E39E)),
+                title: const Text('Als ANT BMS verbinden',
+                    style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onConnectAsBms();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
