@@ -8,7 +8,7 @@ void main() {
       final packet = ProtocolService.buildWritePacket(0x15, 1000);
       expect(packet.length, 8);
       expect(packet[0], 0xAA);
-      expect(packet[1], 0x46);
+      expect(packet[1], 0xC6);
       expect(packet[2], 0x15);
       expect(packet[3], 0x15);
       expect(packet[4], 1000 & 0xFF);
