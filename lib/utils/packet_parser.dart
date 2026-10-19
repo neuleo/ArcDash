@@ -294,10 +294,10 @@ class PacketParser {
           mosTempC: mosTemp.toDouble(),
         );
 
-      case 0xD0: // AddrD0 — wheel geometry (matching fardriver.hpp / fardriver.bt)
-        final wheelRatio = d[4]; // WheelRatio at byte 4
-        final wheelRadius = d[5]; // WheelRadius at byte 5 (inches, e.g. 18)
-        final wheelWidth = d[7]; // WheelWidth at byte 7 (mm, e.g. 90)
+      case 0xD0: // AddrD0 — wheel geometry
+        final wheelRadius = d[4]; // WheelRadius at byte 4
+        final wheelRatio = d[5]; // WheelRatio at byte 5
+        final wheelWidth = d[6]; // WheelWidth at byte 6
         final rateRatio =
             readUint16LE(d, 8); // RateRatio at bytes 8-9 (e.g. 4700)
         return TelemetryUpdate(
