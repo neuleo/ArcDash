@@ -214,10 +214,28 @@ void main() {
       expect(ok, isTrue);
       expect(container.read(tuningProvider).appliedSuccessfully, isTrue);
       expect(container.read(tuningProvider).lastError, isNull);
+      final custom = TuningProfile.custom();
+      final ctrl = container.read(controllerProvider);
+      int rpmFor(double kph) => ProtocolService.kphToMaxSpeedRaw(
+            kph: kph,
+            wheelRadius: ctrl.wheelRadius,
+            wheelWidth: ctrl.wheelWidth,
+            wheelRatio: ctrl.wheelRatio,
+            rateRatio: ctrl.rateRatio,
+          );
+
       expect(dongle.written, [
         ProtocolService.buildWritePacket(
           0x15,
-          TuningConversions.maxSpeedKphToRaw(65),
+          rpmFor(custom.maxSpeedKph),
+        ),
+        ProtocolService.buildWritePacket(
+          0x2A,
+          rpmFor(custom.effectiveMidSpeedKph),
+        ),
+        ProtocolService.buildWritePacket(
+          0x29,
+          rpmFor(custom.effectiveLowSpeedKph),
         ),
         ProtocolService.buildWritePacket(
           0x19,

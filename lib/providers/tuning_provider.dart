@@ -142,18 +142,28 @@ class TuningNotifier extends StateNotifier<TuningState> {
       return false;
     }
 
-    // Convert raw speed to km/h using geometry if valid (>0), otherwise linear conversion
-    final kph = (controllerState.rateRatio > 0 &&
-            controllerState.wheelRadius > 0 &&
-            controllerState.rateRatio != 1000)
-        ? UnitConverter.measureSpeedToKph(
-            measureSpeed: controllerState.maxSpeedRaw,
-            wheelRadius: controllerState.wheelRadius,
-            wheelWidth: controllerState.wheelWidth,
-            wheelRatio: controllerState.wheelRatio,
-            rateRatio: controllerState.rateRatio,
-          )
-        : TuningConversions.maxSpeedRawToKph(controllerState.maxSpeedRaw);
+    double kphFromRpm(int raw) {
+      if (controllerState.rateRatio > 0 &&
+          controllerState.wheelRadius > 0 &&
+          controllerState.rateRatio != 1000) {
+        return UnitConverter.measureSpeedToKph(
+          measureSpeed: raw,
+          wheelRadius: controllerState.wheelRadius,
+          wheelWidth: controllerState.wheelWidth,
+          wheelRatio: controllerState.wheelRatio,
+          rateRatio: controllerState.rateRatio,
+        );
+      }
+      return TuningConversions.maxSpeedRawToKph(raw);
+    }
+
+    final kph = kphFromRpm(controllerState.maxSpeedRaw);
+    final midKph = controllerState.midSpeedRaw > 0
+        ? kphFromRpm(controllerState.midSpeedRaw)
+        : null;
+    final lowKph = controllerState.lowSpeedRaw > 0
+        ? kphFromRpm(controllerState.lowSpeedRaw)
+        : null;
     final lineAmps = controllerState.maxLineCurrA;
     final throttleMode = controllerState.rideMode.throttleResponseValue;
 
@@ -162,6 +172,18 @@ class TuningNotifier extends StateNotifier<TuningState> {
 
     if (kph > 0 && (currentProfile.maxSpeedKph - kph).abs() > 0.5) {
       currentProfile = currentProfile.copyWith(maxSpeedKph: kph);
+      changed = true;
+    }
+    if (midKph != null &&
+        midKph > 0 &&
+        (currentProfile.effectiveMidSpeedKph - midKph).abs() > 0.5) {
+      currentProfile = currentProfile.copyWith(midSpeedKph: midKph);
+      changed = true;
+    }
+    if (lowKph != null &&
+        lowKph > 0 &&
+        (currentProfile.effectiveLowSpeedKph - lowKph).abs() > 0.5) {
+      currentProfile = currentProfile.copyWith(lowSpeedKph: lowKph);
       changed = true;
     }
     if (lineAmps > 0 && (currentProfile.maxLineCurrA - lineAmps).abs() > 0.5) {
@@ -204,6 +226,22 @@ class TuningNotifier extends StateNotifier<TuningState> {
     _hasUserModified = true;
     state = state.copyWith(
       pendingProfile: state.pendingProfile.copyWith(maxSpeedKph: kph),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateMidSpeed(double kph) {
+    _hasUserModified = true;
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(midSpeedKph: kph),
+      appliedSuccessfully: false,
+    );
+  }
+
+  void updateLowSpeed(double kph) {
+    _hasUserModified = true;
+    state = state.copyWith(
+      pendingProfile: state.pendingProfile.copyWith(lowSpeedKph: kph),
       appliedSuccessfully: false,
     );
   }
@@ -398,29 +436,40 @@ class TuningNotifier extends StateNotifier<TuningState> {
     final profile = state.pendingProfile;
     final controllerState = _ref.read(controllerProvider);
 
-    // Compute raw max speed: if wheel geometry and rateRatio are calibrated (> 0), calculate RPM;
-    // otherwise use the established linear conversion factor
-    final speedRaw = (controllerState.rateRatio > 0 &&
-            controllerState.wheelRadius > 0 &&
-            controllerState.rateRatio != 1000)
-        ? ProtocolService.kphToMaxSpeedRaw(
-            kph: profile.maxSpeedKph,
-            wheelRadius: controllerState.wheelRadius,
-            wheelWidth: controllerState.wheelWidth,
-            wheelRatio: controllerState.wheelRatio,
-            rateRatio: controllerState.rateRatio,
-          )
-        : TuningConversions.maxSpeedKphToRaw(profile.maxSpeedKph);
+    int rpmFor(double kph) {
+      if (controllerState.rateRatio > 0 &&
+          controllerState.wheelRadius > 0 &&
+          controllerState.rateRatio != 1000) {
+        return ProtocolService.kphToMaxSpeedRaw(
+          kph: kph,
+          wheelRadius: controllerState.wheelRadius,
+          wheelWidth: controllerState.wheelWidth,
+          wheelRatio: controllerState.wheelRatio,
+          rateRatio: controllerState.rateRatio,
+        );
+      }
+      return TuningConversions.maxSpeedKphToRaw(kph);
+    }
+
+    final speedRaw = rpmFor(profile.maxSpeedKph);
+    final midSpeedRaw = rpmFor(profile.effectiveMidSpeedKph);
+    final lowSpeedRaw = rpmFor(profile.effectiveLowSpeedKph);
 
     final lineCurrRaw =
         TuningConversions.maxLineCurrAToRaw(profile.maxLineCurrA);
-    final throttleRaw =
-        TuningConversions.throttleResponseToRaw(profile.throttleResponse);
 
     final writes = <(int, int)>[
       (
         FardriverAddr.maxSpeed,
         speedRaw,
+      ),
+      (
+        FardriverAddr.midSpeed,
+        midSpeedRaw,
+      ),
+      (
+        FardriverAddr.lowSpeed,
+        lowSpeedRaw,
       ),
       (
         FardriverAddr.maxLineCurr,
@@ -474,6 +523,8 @@ class TuningNotifier extends StateNotifier<TuningState> {
     // Immediately update controller state so active telemetry and limits match
     _ref.read(controllerProvider.notifier).updateAppliedParameters(
           maxSpeedRaw: speedRaw,
+          midSpeedRaw: midSpeedRaw,
+          lowSpeedRaw: lowSpeedRaw,
           maxLineCurrRaw: lineCurrRaw,
         );
 

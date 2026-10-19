@@ -119,6 +119,12 @@ class TelemetryUpdate {
   // From 0x12 (Addr12)
   final int? maxSpeed;
 
+  // From 0x24 (Addr24) — Mode 1 Low Speed
+  final int? lowSpeedRaw;
+
+  // From 0x2A (Addr2A) — Mode 2 Mid Speed
+  final int? midSpeedRaw;
+
   // From 0x18 (Addr18)
   final int? maxLineCurrRaw; // / 4 = amps
 
@@ -150,6 +156,8 @@ class TelemetryUpdate {
     this.wheelRatio,
     this.rateRatio,
     this.maxSpeed,
+    this.lowSpeedRaw,
+    this.midSpeedRaw,
     this.maxLineCurrRaw,
     this.zeroBattCoeff,
     this.fullBattCoeff,
@@ -286,11 +294,12 @@ class PacketParser {
           mosTempC: mosTemp.toDouble(),
         );
 
-      case 0xD0: // AddrD0 — wheel geometry
-        final wheelRatio = d[5]; // WheelRatio at byte 5 of data
-        final wheelRadius = d[4]; // WheelRadius at byte 4
-        final rateRatio = readUint16LE(d, 8); // RateRatio
-        final wheelWidth = d[6]; // WheelWidth
+      case 0xD0: // AddrD0 — wheel geometry (matching fardriver.hpp / fardriver.bt)
+        final wheelRatio = d[4]; // WheelRatio at byte 4
+        final wheelRadius = d[5]; // WheelRadius at byte 5 (inches, e.g. 18)
+        final wheelWidth = d[7]; // WheelWidth at byte 7 (mm, e.g. 90)
+        final rateRatio =
+            readUint16LE(d, 8); // RateRatio at bytes 8-9 (e.g. 4700)
         return TelemetryUpdate(
           capturedAt: capturedAt,
           wheelRadius: wheelRadius,
@@ -299,10 +308,18 @@ class PacketParser {
           rateRatio: rateRatio,
         );
 
-      case 0x12: // Addr12 — MaxSpeed
+      case 0x12: // Addr12 — MaxSpeed (Mode 3 / High Speed)
         final maxSpeed =
             readUint16LE(d, 6); // bytes 8-9 of packet = 6-7 in rawData
         return TelemetryUpdate(capturedAt: capturedAt, maxSpeed: maxSpeed);
+
+      case 0x24: // Addr24 — LowSpeed (Mode 1 / Low Speed)
+        final lowSpeed = readUint16LE(d, 10); // bytes 10-11 in rawData
+        return TelemetryUpdate(capturedAt: capturedAt, lowSpeedRaw: lowSpeed);
+
+      case 0x2A: // Addr2A — MidSpeed (Mode 2 / Medium Speed)
+        final midSpeed = readUint16LE(d, 0); // bytes 0-1 in rawData
+        return TelemetryUpdate(capturedAt: capturedAt, midSpeedRaw: midSpeed);
 
       case 0x18: // Addr18 — MaxLineCurr
         final maxLineCurr = readUint16LE(d, 2); // bytes 4-5 of packet

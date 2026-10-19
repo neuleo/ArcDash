@@ -18,6 +18,8 @@ class FardriverAddr {
   static const int boostLineCurr = 0x26;
   static const int boostPhaseCurr = 0x27;
   static const int backSpeed = 0x28;
+  static const int lowSpeed = 0x29;
+  static const int midSpeed = 0x2A;
   static const int lowSpeedLinePhase = 0x32;
   static const int midSpeedLinePhase = 0x33;
   static const int stopBackCurr = 0x30;

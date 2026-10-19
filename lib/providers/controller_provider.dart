@@ -424,6 +424,10 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
     if (update.maxSpeed != null)
       next = next.copyWith(maxSpeedRaw: update.maxSpeed);
+    if (update.midSpeedRaw != null)
+      next = next.copyWith(midSpeedRaw: update.midSpeedRaw);
+    if (update.lowSpeedRaw != null)
+      next = next.copyWith(lowSpeedRaw: update.lowSpeedRaw);
     if (update.maxLineCurrRaw != null)
       next = next.copyWith(maxLineCurrRaw: update.maxLineCurrRaw);
     if (update.zeroBattCoeff != null)
@@ -482,11 +486,15 @@ class ControllerNotifier extends StateNotifier<ControllerState> {
 
   void updateAppliedParameters({
     required int maxSpeedRaw,
+    int? midSpeedRaw,
+    int? lowSpeedRaw,
     required int maxLineCurrRaw,
     RideMode? rideMode,
   }) {
     state = state.copyWith(
       maxSpeedRaw: maxSpeedRaw,
+      midSpeedRaw: midSpeedRaw ?? state.midSpeedRaw,
+      lowSpeedRaw: lowSpeedRaw ?? state.lowSpeedRaw,
       maxLineCurrRaw: maxLineCurrRaw,
       rideMode: rideMode ?? state.rideMode,
       lastUpdate: DateTime.now(),

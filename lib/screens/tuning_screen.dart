@@ -356,6 +356,53 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
               const SizedBox(height: 14),
 
               _TuningSlider(
+                label: 'Modus 2 (MEDIUM / DM) Max. Speed',
+                icon: Icons.alt_route,
+                value: profile.effectiveMidSpeedKph,
+                min: 15,
+                max: 160,
+                unit: 'km/h',
+                displayValue:
+                    '${profile.effectiveMidSpeedKph.toStringAsFixed(0)} km/h',
+                onChanged: editorEnabled
+                    ? (kph) => notifier.updateMidSpeed(kph)
+                    : null,
+                accentColor: const Color(0xFF00E5FF),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Modus 2 (MEDIUM / DM) Stromstärke',
+                icon: Icons.electric_bolt,
+                value: profile.midSpeedLineCurrPct,
+                min: 10,
+                max: 100,
+                unit: '%',
+                displayValue:
+                    '${profile.midSpeedLineCurrPct.toStringAsFixed(0)}% (${midSpeedKw.toStringAsFixed(1)} kW)',
+                onChanged:
+                    editorEnabled ? notifier.updateMidSpeedLineCurr : null,
+                accentColor: const Color(0xFF00E5FF),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
+                label: 'Modus 1 (LOW / DL) Max. Speed',
+                icon: Icons.eco,
+                value: profile.effectiveLowSpeedKph,
+                min: 10,
+                max: 100,
+                unit: 'km/h',
+                displayValue:
+                    '${profile.effectiveLowSpeedKph.toStringAsFixed(0)} km/h',
+                onChanged: editorEnabled
+                    ? (kph) => notifier.updateLowSpeed(kph)
+                    : null,
+                accentColor: const Color(0xFF54E39E),
+              ),
+              const SizedBox(height: 14),
+
+              _TuningSlider(
                 label: 'Modus 1 (LOW / DL) Stromstärke',
                 icon: Icons.eco_outlined,
                 value: profile.lowSpeedLineCurrPct,
@@ -367,21 +414,6 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                 onChanged:
                     editorEnabled ? notifier.updateLowSpeedLineCurr : null,
                 accentColor: const Color(0xFF54E39E),
-              ),
-              const SizedBox(height: 14),
-
-              _TuningSlider(
-                label: 'Modus 2 (MEDIUM / DM) Stromstärke',
-                icon: Icons.alt_route,
-                value: profile.midSpeedLineCurrPct,
-                min: 10,
-                max: 100,
-                unit: '%',
-                displayValue:
-                    '${profile.midSpeedLineCurrPct.toStringAsFixed(0)}% (${midSpeedKw.toStringAsFixed(1)} kW)',
-                onChanged:
-                    editorEnabled ? notifier.updateMidSpeedLineCurr : null,
-                accentColor: const Color(0xFF00E5FF),
               ),
               const SizedBox(height: 24),
 

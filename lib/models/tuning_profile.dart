@@ -5,8 +5,19 @@ class TuningProfile {
   final String name;
   final String description;
 
-  /// Max speed in km/h (converted to raw RPM when writing).
+  /// Max speed in km/h (converted to raw RPM when writing, Mode 3 / High Speed).
   final double maxSpeedKph;
+
+  /// Low speed (DL / Mode 1) speed limit in km/h. If null, scales proportionally from maxSpeedKph.
+  final double? lowSpeedKph;
+
+  /// Medium speed (DM / Mode 2) speed limit in km/h. If null, scales proportionally from maxSpeedKph.
+  final double? midSpeedKph;
+
+  double get effectiveLowSpeedKph =>
+      lowSpeedKph ?? (maxSpeedKph * (1000.0 / 3480.0)).clamp(10.0, maxSpeedKph);
+  double get effectiveMidSpeedKph =>
+      midSpeedKph ?? (maxSpeedKph * (3000.0 / 3480.0)).clamp(15.0, maxSpeedKph);
 
   /// Max line current in amps (battery limit).
   final double maxLineCurrA;
@@ -66,6 +77,8 @@ class TuningProfile {
     required this.name,
     required this.description,
     required this.maxSpeedKph,
+    this.lowSpeedKph,
+    this.midSpeedKph,
     required this.maxLineCurrA,
     required this.maxPhaseCurrA,
     required this.regenStrength,
@@ -394,6 +407,8 @@ class TuningProfile {
     String? name,
     String? description,
     double? maxSpeedKph,
+    double? lowSpeedKph,
+    double? midSpeedKph,
     double? maxLineCurrA,
     double? maxPhaseCurrA,
     double? regenStrength,
@@ -418,6 +433,8 @@ class TuningProfile {
       name: name ?? this.name,
       description: description ?? this.description,
       maxSpeedKph: maxSpeedKph ?? this.maxSpeedKph,
+      lowSpeedKph: lowSpeedKph ?? this.lowSpeedKph,
+      midSpeedKph: midSpeedKph ?? this.midSpeedKph,
       maxLineCurrA: maxLineCurrA ?? this.maxLineCurrA,
       maxPhaseCurrA: maxPhaseCurrA ?? this.maxPhaseCurrA,
       regenStrength: regenStrength ?? this.regenStrength,
@@ -444,6 +461,8 @@ class TuningProfile {
         'name': name,
         'description': description,
         'maxSpeedKph': maxSpeedKph,
+        'lowSpeedKph': lowSpeedKph,
+        'midSpeedKph': midSpeedKph,
         'maxLineCurrA': maxLineCurrA,
         'maxPhaseCurrA': maxPhaseCurrA,
         'regenStrength': regenStrength,
@@ -469,6 +488,8 @@ class TuningProfile {
         name: json['name'] as String,
         description: json['description'] as String,
         maxSpeedKph: (json['maxSpeedKph'] as num).toDouble(),
+        lowSpeedKph: (json['lowSpeedKph'] as num?)?.toDouble(),
+        midSpeedKph: (json['midSpeedKph'] as num?)?.toDouble(),
         maxLineCurrA: (json['maxLineCurrA'] as num).toDouble(),
         maxPhaseCurrA: (json['maxPhaseCurrA'] as num).toDouble(),
         regenStrength: (json['regenStrength'] as num).toDouble(),

@@ -79,7 +79,9 @@ class ControllerState {
   final int rateRatio;
 
   // Tunable parameters (read from controller)
-  final int maxSpeedRaw; // raw RPM value
+  final int maxSpeedRaw; // raw RPM value (Mode 3 / High Speed)
+  final int midSpeedRaw; // raw RPM value (Mode 2 / Medium Speed)
+  final int lowSpeedRaw; // raw RPM value (Mode 1 / Low Speed)
   final int maxLineCurrRaw; // raw, divide by 4 for amps
   final int zeroBattCoeff;
   final int fullBattCoeff;
@@ -112,12 +114,14 @@ class ControllerState {
     this.throttleError = false,
     this.motorTempProtect = false,
     this.controllerTempProtect = false,
-    this.wheelRadius = 10,
-    this.wheelWidth = 3,
-    this.wheelRatio = 1,
-    this.rateRatio = 1000,
-    this.maxSpeedRaw = 0,
-    this.maxLineCurrRaw = 0,
+    this.wheelRadius = 18,
+    this.wheelWidth = 90,
+    this.wheelRatio = 100,
+    this.rateRatio = 4700,
+    this.maxSpeedRaw = 3480,
+    this.midSpeedRaw = 3000,
+    this.lowSpeedRaw = 1000,
+    this.maxLineCurrRaw = 470,
     this.zeroBattCoeff = 420,
     this.fullBattCoeff = 590,
     this.powerKw = 0.0,
@@ -162,6 +166,8 @@ class ControllerState {
     int? wheelRatio,
     int? rateRatio,
     int? maxSpeedRaw,
+    int? midSpeedRaw,
+    int? lowSpeedRaw,
     int? maxLineCurrRaw,
     int? zeroBattCoeff,
     int? fullBattCoeff,
@@ -196,6 +202,8 @@ class ControllerState {
       wheelRatio: wheelRatio ?? this.wheelRatio,
       rateRatio: rateRatio ?? this.rateRatio,
       maxSpeedRaw: maxSpeedRaw ?? this.maxSpeedRaw,
+      midSpeedRaw: midSpeedRaw ?? this.midSpeedRaw,
+      lowSpeedRaw: lowSpeedRaw ?? this.lowSpeedRaw,
       maxLineCurrRaw: maxLineCurrRaw ?? this.maxLineCurrRaw,
       zeroBattCoeff: zeroBattCoeff ?? this.zeroBattCoeff,
       fullBattCoeff: fullBattCoeff ?? this.fullBattCoeff,
