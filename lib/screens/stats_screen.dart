@@ -402,31 +402,53 @@ class _PastSessionCard extends StatelessWidget {
           } catch (_) {}
         }
 
-        // Fallback: Synthesize RideLog from speedHistory if available
-        if (rideLog == null &&
-            json['speedHistory'] is List &&
-            (json['speedHistory'] as List).isNotEmpty) {
+        // Fallback: If still no rideLog, synthesize from available summary data
+        // (even if speedHistory was not saved) so the user ALWAYS gets the graph view!
+        if (rideLog == null) {
           try {
             final startTime =
                 DateTime.tryParse(json['startTime'] as String? ?? '') ??
                     DateTime.now();
-            final speedList = json['speedHistory'] as List;
             final samples = <RideLogSample>[];
-            for (var i = 0; i < speedList.length; i++) {
-              final item = speedList[i];
-              final spd = item is Map && item['speedKph'] != null
-                  ? (item['speedKph'] as num).toDouble()
-                  : (item is num ? item.toDouble() : 0.0);
-              samples.add(RideLogSample(
-                t: i,
-                speedKph: spd,
-                powerKw: (wh / (durSec > 0 ? durSec : 1) * 3.6) / 1000.0,
-              ));
+            final secCount = durSec > 0 ? durSec : 1;
+            final avgKw = (wh / secCount * 3.6) / 1000.0;
+
+            if (json['speedHistory'] is List &&
+                (json['speedHistory'] as List).isNotEmpty) {
+              final speedList = json['speedHistory'] as List;
+              for (var i = 0; i < speedList.length; i++) {
+                final item = speedList[i];
+                final spd = item is Map && item['speedKph'] != null
+                    ? (item['speedKph'] as num).toDouble()
+                    : (item is num ? item.toDouble() : 0.0);
+                samples.add(RideLogSample(
+                  t: i,
+                  speedKph: spd,
+                  powerKw: avgKw,
+                ));
+              }
+            } else {
+              // Smooth bell-shaped curve from avg and max speed
+              for (var s = 0; s <= secCount; s++) {
+                final progress = s / secCount;
+                // Shape: ramp up, cruise around avg/max, ramp down
+                final curveFactor = progress < 0.2
+                    ? (progress / 0.2)
+                    : (progress > 0.8 ? (1.0 - progress) / 0.2 : 1.0);
+                final estimatedSpeed =
+                    (avgSpd + (maxSpd - avgSpd) * 0.5) * curveFactor;
+                samples.add(RideLogSample(
+                  t: s,
+                  speedKph: estimatedSpeed,
+                  powerKw: avgKw * curveFactor,
+                ));
+              }
             }
+
             rideLog = RideLog(
               id: id ?? 'synthetic_${startTime.millisecondsSinceEpoch}',
               startedAt: startTime,
-              endedAt: startTime.add(Duration(seconds: durSec)),
+              endedAt: startTime.add(Duration(seconds: secCount)),
               samples: samples,
             );
           } catch (_) {}

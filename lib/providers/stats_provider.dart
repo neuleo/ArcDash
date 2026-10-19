@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/ride_stats.dart';
 import 'package:arcdash/providers/bluetooth_provider.dart';
@@ -75,13 +76,14 @@ class StatsNotifier extends StateNotifier<StatsState> {
   }
 
   void _beginSession(DateTime now) {
+    final sessionId = now.millisecondsSinceEpoch.toString();
     final session = RideSession(
-      id: now.millisecondsSinceEpoch.toString(),
+      id: sessionId,
       startTime: now,
     );
     state = state.copyWith(currentSession: session, isTracking: true);
-    // Automatically trigger comprehensive 1 Hz second-by-second recorder
-    _ref.read(rideLogRecorderProvider.notifier).start();
+    // Automatically trigger comprehensive 1 Hz second-by-second recorder with matching sessionId
+    _ref.read(rideLogRecorderProvider.notifier).start(customId: sessionId);
   }
 
   void _takeSample() {
@@ -165,6 +167,7 @@ class StatsNotifier extends StateNotifier<StatsState> {
 
     // Stop 1 Hz second-by-second recorder and persist
     final logRecorder = _ref.read(rideLogRecorderProvider.notifier);
+    final log = _ref.read(rideLogRecorderProvider);
     logRecorder.stop();
 
     if (session.distanceKm >= 0.5 && session.totalWhUsed > 10) {
@@ -175,7 +178,20 @@ class StatsNotifier extends StateNotifier<StatsState> {
           );
     }
 
-    await _saveSession(session);
+    final sessionPayload = session.toJson();
+    if (log != null && log.samples.isNotEmpty) {
+      sessionPayload['telemetry_blob'] = jsonEncode(log.toJson());
+    }
+
+    final storage = _ref.read(storageServiceProvider);
+    final sessions = storage.loadRideSessions();
+    sessions.add(sessionPayload);
+    // Keep last 50 sessions
+    final trimmed = sessions.length > 50
+        ? sessions.sublist(sessions.length - 50)
+        : sessions;
+    await storage.saveRawSessionList(trimmed);
+
     state = state.copyWith(clearCurrentSession: true, isTracking: false);
     _loadPastSessions();
   }

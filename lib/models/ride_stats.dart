@@ -72,6 +72,12 @@ class RideSession {
         'avgSpeedKph': avgSpeedKph,
         'totalWhUsed': totalWhUsed,
         'durationSeconds': duration.inSeconds,
+        'speedHistory': speedHistory
+            .map((s) => {
+                  'timestamp': s.timestamp.toIso8601String(),
+                  'speedKph': s.speedKph,
+                })
+            .toList(),
       };
 
   List<List<String>> toCsvRows() => [

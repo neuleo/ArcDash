@@ -38,11 +38,12 @@ class RideLogRecorder extends StateNotifier<RideLog?> {
   bool _recording = false;
   DateTime? _startedAt;
 
-  void start() {
+  void start({String? customId}) {
     if (_recording) return;
     _startedAt = DateTime.now();
+    final id = customId ?? 'log_${_startedAt!.millisecondsSinceEpoch}';
     state = RideLog(
-      id: 'log_${_startedAt!.millisecondsSinceEpoch}',
+      id: id,
       startedAt: _startedAt!,
       endedAt: _startedAt!,
       samples: [],
