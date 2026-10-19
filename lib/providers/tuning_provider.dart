@@ -426,10 +426,6 @@ class TuningNotifier extends StateNotifier<TuningState> {
         FardriverAddr.maxLineCurr,
         lineCurrRaw,
       ),
-      (
-        FardriverAddr.throttleResponse,
-        throttleRaw,
-      ),
     ];
 
     state = state.copyWith(

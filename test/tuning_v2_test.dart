@@ -223,10 +223,6 @@ void main() {
           0x19,
           TuningConversions.maxLineCurrAToRaw(100),
         ),
-        ProtocolService.buildWritePacket(
-          0x1A,
-          TuningConversions.throttleResponseToRaw(1),
-        ),
       ]);
     });
 
