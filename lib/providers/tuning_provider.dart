@@ -133,14 +133,16 @@ class TuningNotifier extends StateNotifier<TuningState> {
 
   /// Synchronizes the pending profile values from live [controllerState] if the
   /// user has not manually modified the sliders, or if [force] is true.
-  void syncFromController(ControllerState controllerState,
+  /// Returns whether values were successfully synced from controller.
+  bool syncFromController(ControllerState controllerState,
       {bool force = false}) {
-    if (!force && (_hasUserModified || state.appliedSuccessfully)) return;
+    if (!force && (_hasUserModified || state.appliedSuccessfully)) return false;
     if (controllerState.maxSpeedRaw <= 0 &&
         controllerState.maxLineCurrRaw <= 0) {
-      return;
+      return false;
     }
 
+    // Convert raw speed to km/h using geometry if valid (>0), otherwise linear conversion
     final kph = (controllerState.rateRatio > 0 &&
             controllerState.wheelRadius > 0 &&
             controllerState.rateRatio != 1000)
@@ -177,7 +179,9 @@ class TuningNotifier extends StateNotifier<TuningState> {
         pendingProfile: currentProfile,
         appliedSuccessfully: false,
       );
+      return true;
     }
+    return false;
   }
 
   void refreshFromStorage() {

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:arcdash/models/tuning_profile.dart';
+import 'package:arcdash/providers/bluetooth_provider.dart';
 import 'package:arcdash/providers/controller_provider.dart';
 import 'package:arcdash/providers/tuning_provider.dart';
+import 'package:arcdash/services/protocol_service.dart';
 import 'package:arcdash/services/profile_tools.dart';
 import 'package:arcdash/services/write_safety.dart';
 import 'package:arcdash/utils/tuning_conversions.dart';
@@ -142,15 +144,43 @@ class _TuningScreenState extends ConsumerState<TuningScreen> {
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
-                      notifier.syncFromController(ref.read(controllerProvider),
-                          force: true);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('Aktuelle Werte vom Controller eingelesen!'),
-                          backgroundColor: Color(0xFF123328),
-                        ),
-                      );
+                      final ctrl = ref.read(controllerProvider);
+                      final isConnected = ref.read(isConnectedProvider);
+                      if (!isConnected) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Controller nicht verbunden! Bitte zuerst verbinden.'),
+                            backgroundColor: Color(0xFFC53030),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Request fresh status stream from controller to trigger parameter blocks
+                      ref
+                          .read(bluetoothServiceProvider)
+                          .write(ProtocolService.startStatusStreamPacket());
+
+                      final synced =
+                          notifier.syncFromController(ctrl, force: true);
+                      if (synced) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                'Aktuelle Werte vom Controller eingelesen! (${ctrl.maxSpeedRaw} RPM / ${ctrl.maxLineCurrA.toStringAsFixed(0)} A)'),
+                            backgroundColor: const Color(0xFF123328),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Controller-Parameter werden abgefragt... Bitte in 1-2 Sekunden erneut tippen.'),
+                            backgroundColor: Color(0xFFD97706),
+                          ),
+                        );
+                      }
                     },
                     icon: const Icon(Icons.download_for_offline_outlined,
                         size: 16),

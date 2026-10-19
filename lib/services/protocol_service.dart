@@ -45,12 +45,13 @@ class SysCmd {
 class ProtocolService {
   /// Builds the 8-byte write packet used to set a 16-bit value at [addr].
   ///
-  /// Format: [0xAA][0x46][addr][addr][lo][hi][crc0][crc1]
-  /// compute_length = 6 = (8 - 2), flags = 1 (bit 6 set → 0x40), so byte1 = 6 | 0x40 = 0x46
+  /// Format matching FarDriver protocol specification (fardriver_controller.hpp):
+  /// [0xAA][0xC0 + length][addr][addr][lo][hi][crc0][crc1]
+  /// For a 2-byte register write: length = 2 + 4 = 6, so byte1 = 0xC0 + 6 = 0xC6.
   static List<int> buildWritePacket(int addr, int value) {
     final packet = List<int>.filled(8, 0);
     packet[0] = 0xAA;
-    packet[1] = 0x46; // compute_length=6, flags=1 (write)
+    packet[1] = 0xC6; // 0xC0 + 6 = 0xC6 (FarDriver write length & flags)
     packet[2] = addr & 0xFF;
     packet[3] = addr & 0xFF; // addr_confirm = same addr
     packet[4] = value & 0xFF; // data low byte
@@ -63,7 +64,7 @@ class ProtocolService {
   static List<int> buildWritePacket16(int addr, int byte0, int byte1) {
     final packet = List<int>.filled(8, 0);
     packet[0] = 0xAA;
-    packet[1] = 0x46;
+    packet[1] = 0xC6; // 0xC0 + 6 = 0xC6
     packet[2] = addr & 0xFF;
     packet[3] = addr & 0xFF;
     packet[4] = byte0 & 0xFF;
