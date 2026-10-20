@@ -1,0 +1,1212 @@
+{
+  "polePairs": {
+    "spec": {
+      "id": "polePairs",
+      "address": 20,
+      "minimum": 3,
+      "maximum": 48,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird der Steuerung mitgeteilt, wie viele elektrische Zyklen einer mechanischen Motorumdrehung entsprechen. Es wird verwendet, um elektrische Drehung in berechnete mechanische Drehzahl umzuwandeln, sodass eine größere eingegebene Anzahl eine niedrigere berechnete Drehzahl für dasselbe Motorsignal ergibt. Es wirkt sich auch darauf aus, wie GDriver die Geschwindigkeitspunkte des Antriebsstroms und der Regenerationskurve beschriftet, verschiebt diese gespeicherten Haltepunkte jedoch nicht und ändert weder Kommutierung noch Strom oder Drehmoment direkt. Ein falscher Wert kann dazu führen, dass der Motor läuft, während die berechnete Drehzahl und alles, was auf diesem Geschwindigkeitswert basiert, ungenau wird. Geben Sie die tatsächliche Polpaarzahl des Motors ein.",
+    "description_en": "This tells the controller how many electrical cycles correspond to one mechanical motor revolution. It is used to convert electrical rotation into calculated mechanical RPM, so a larger entered count produces a lower calculated RPM for the same motor signal. It also affects how GDriver labels the drive-current and regen curve speed points, but it does not move those stored breakpoints or directly change commutation, current, or torque. A wrong value can leave the motor running while making calculated RPM and anything that relies on that speed value inaccurate. Enter the motor’s actual pole-pair count."
+  },
+  "motorDirection": {
+    "spec": {
+      "id": "motorDirection",
+      "address": 11,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird die Vorwärtsdrehrichtung des Motors des Controllers ausgewählt. Der Wert wird in den Live-Richtungsmodus kopiert; Es legt weder die Rückwärtsgeschwindigkeit noch das Rückwärtsstromverhältnis fest und ist nicht immer gleichbedeutend mit dem physischen Austausch zweier Phasendrähte. Phasenaustausch, Typ des Rotorpositionssensors, erlernte Phasenkalibrierung, Vorwärtseingang, Rückwärtseingang und die Fahrzeugsteuerung müssen alle übereinstimmen. Wechseln Sie nur, wenn das Antriebsrad völlig entlastet ist, und überprüfen Sie dann die tatsächliche Vorwärts- und Rückwärtsrichtung, bevor das Fahrzeug den Boden berührt.",
+    "description_en": "This selects the controller’s forward motor-rotation direction. The value is copied into the live direction mode; it does not set Reverse speed or Reverse-current ratio and is not always equivalent to physically swapping two phase wires. Phase exchange, rotor-position sensor type, learned phase calibration, Forward input, Reverse input, and the vehicle controls must all agree. Change it only with the driven wheel fully unloaded, then verify the actual forward and reverse directions before the vehicle touches the ground."
+  },
+  "ratedVoltage": {
+    "spec": {
+      "id": "ratedVoltage",
+      "address": 23,
+      "minimum": 48,
+      "maximum": 144,
+      "integerOnly": false,
+      "step": 0.1
+    },
+    "description_de": "Dadurch wird die Nennspannungsklasse des Batteriesystems festgelegt, die für die Spannungsberechnungen des Controllers verwendet wird. Es handelt sich um eine aktive Kalibrierung, nicht um eine Beschriftung: Sie trägt dazu bei, den Unterspannungsschutz und andere abgeleitete Batteriezustände zu normalisieren, sodass eine falsche Wahl dazu führen kann, dass der Schutz oder die Batteriemeldung bei der falschen tatsächlichen Spannung erfolgt. Unterspannungsschutz, Batterie-SOC-Modus, Leer-/Vollkalibrierung, Spannungsauswahlkalibrierung, BMS-Grenzwerte und die tatsächliche Anzahl der Packserien müssen alle übereinstimmen. Wählen Sie die tatsächliche Nennspannung des Akkus und nicht die Vollladungsspannung.",
+    "description_en": "This sets the battery system’s nominal-voltage class used by the controller’s voltage calculations. It is active calibration, not a label: it helps normalize low-voltage protection and other derived battery state, so the wrong choice can make protection or battery reporting occur at the wrong real voltage. Low-voltage protection, Battery SOC mode, empty/full calibration, Voltage-selection calibration, BMS limits, and actual pack series count must all agree. Select the pack’s true nominal voltage rather than the fully charged voltage."
+  },
+  "ratedPower": {
+    "spec": {
+      "id": "ratedPower",
+      "address": 22,
+      "minimum": 0,
+      "maximum": 32767,
+      "integerOnly": true
+    },
+    "description_de": "Verwende die vom Motorhersteller angegebene Nennleistung, nicht die Spitzenleistung oder die Leistung des Controllers. Dieser Wert kann die vom Controller berechnete Motortemperatur beeinflussen. Ein zu hoher Wert kann dazu führen, dass die Erwärmung unterschätzt wird. Er legt nicht die maximale Ausgangsleistung fest.",
+    "description_en": "Use the motor manufacturer’s rated power, not peak power or the controller’s rating. This value can affect controller-calculated motor temperature. Setting it too high can make that estimate understate heating. It does not set maximum output power."
+  },
+  "ratedSpeedRpm": {
+    "spec": {
+      "id": "ratedSpeedRpm",
+      "address": 24,
+      "minimum": 0,
+      "maximum": 12000,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die Nenngeschwindigkeitskalibrierung des Motors gespeichert und zu einem spannungsgekoppelten Wert beigetragen, der verwendet wird, wenn der Controller seine Hochgeschwindigkeitsstromkurve vorbereitet. Dabei handelt es sich nicht um die normale Geschwindigkeitseinstellung für den hohen Gang und sollte nicht erhöht werden, nur um die Höchstgeschwindigkeit zu erreichen. Polpaare, Nennspannung, Motorstromkurve, Motorgegen-EMK, Feldschwächung und die mechanische Drehzahlbegrenzung des Motors liefern den Kontext. Geben Sie die tatsächliche Nenndrehzahl des Motors ein. Ein absichtlich falscher Wert kann die Kurvenformung bei hoher Geschwindigkeit verschieben oder unterdrücken und die Abstimmung weniger effizient oder weniger sicher machen.",
+    "description_en": "This stores the motor’s rated-speed calibration and contributes to a voltage-coupled value used when the controller prepares its high-speed current curve. It is not the normal High gear speed setting and should not be raised simply to chase top speed. Pole pairs, Rated voltage, the motor-current curve, motor back-EMF, field weakening, and the motor’s mechanical RPM limit all provide context. Enter the motor’s actual rated speed; an intentionally false value can move or suppress high-speed curve shaping and make the tune less efficient or less safe."
+  },
+  "maxLineCurrent": {
+    "spec": {
+      "id": "maxLineCurrent",
+      "address": 25,
+      "minimum": 0,
+      "maximum": 16383,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist die Hauptanforderung an den Batteriestrom im hohen Gang und die Basis, die von den Prozentsätzen des Leitungsstroms im niedrigeren Gang verwendet wird. Es wirkt sich stark auf die verfügbare elektrische Leistung aus, wenn die Geschwindigkeit steigt, aber es entspricht nicht direkt dem Motordrehmoment und der gemessene Batteriestrom kann unter dem eingegebenen Wert bleiben. Phasenstrom, Batteriespannung und -Spannungseinbruch, BMS-Entladegrenze, Controller-Hardware, Temperatur, Motorgeschwindigkeit, Leistungskurve und aktive Schutzfunktionen konkurrieren alle um die Festlegung des endgültigen Stroms. Stellen Sie es niemals höher ein, als das Paket, die Verkabelung, die Anschlüsse und der Controller sicher aushalten können.",
+    "description_en": "This is the main high-gear battery-current request and the base used by the lower-gear line-current percentages. It strongly affects electrical power available as speed rises, but it does not directly equal motor torque and measured battery current may remain below the entered value. Phase current, battery voltage and sag, BMS discharge limit, controller hardware, temperature, motor speed, power curve, and active protections all compete to set the final current. Never set it above what the pack, wiring, connectors, and controller can safely sustain."
+  },
+  "maxPhaseCurrent": {
+    "spec": {
+      "id": "maxPhaseCurrent",
+      "address": 45,
+      "minimum": 0,
+      "maximum": 16383,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist die Hauptanforderung an den drehmomenterzeugenden Phasenstrom im hohen Gang und die Basis, die von den Prozentsätzen des Phasenstroms im niedrigeren Gang und der Motorstromkurve verwendet wird. Normalerweise macht es sich am deutlichsten bei niedrigen und mittleren Motorgeschwindigkeiten bemerkbar, die Zahl ist jedoch eine geforderte Obergrenze – kein Versprechen, dass die Telemetrie jemals den vollen Wert anzeigen wird. Netzstrom, Batteriespannung, Motorgeschwindigkeit und Gegen-EMK, die Leistungskurve, die Skalierung der Controller-Hardware, Temperatur und Schutzgrenzen können den tatsächlichen Phasenstrom reduzieren. Halten Sie es innerhalb der Motor- und Controller-Nennwerte und stimmen Sie es parallel zum Netzstrom und nicht allein ab.",
+    "description_en": "This is the main high-gear torque-producing phase-current request and the base used by the lower-gear phase-current percentages and motor-current curve. It is usually most noticeable at low and middle motor speeds, but the number is a requested ceiling—not a promise that telemetry will ever show the full value. Line current, battery voltage, motor speed and back-EMF, the power curve, controller hardware scaling, temperature, and protection limits can all reduce actual phase current. Keep it within the motor and controller ratings and tune it alongside line current rather than alone."
+  },
+  "customMaxLineCurrent": {
+    "spec": {
+      "id": "customMaxLineCurrent",
+      "address": 38,
+      "minimum": 0,
+      "maximum": 16383,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist die Strombegrenzung der Boost-Batterie. Wenn der passende Boost-Modus des Controllers aktiv ist, stellt er eine zweite Netzstromobergrenze über oder neben der normalen Hochgang-Leitungsstromeinstellung bereit. Der Controller kann die beiden Werte verknüpfen und grenzt die Anforderung dennoch an seine Hardwarefähigkeiten ab. Batteriespannung, BMS-Entladegrenzen, Temperatur, Ladezustand und Phasenstrombedarf können alle den gemessenen Leitungsstrom unter dem eingegebenen Wert halten. Stellen Sie ihn nur innerhalb der sicheren Dauer- und Kurzzeitgrenzwerte der Batterie, der Verkabelung und des Controllers ein.",
+    "description_en": "This is the Boost battery-current limit. When the controller’s matching Boost mode is active, it provides a second line-current ceiling above or alongside the normal High-gear line-current setting. The controller can link the two values and will still clamp the request to its hardware capability. Battery voltage, BMS discharge limits, temperature, state of charge, and phase-current demand can all keep measured line current below the entered value. Set it only within the battery, wiring, and controller’s safe continuous and short-term limits."
+  },
+  "customMaxPhaseCurrent": {
+    "spec": {
+      "id": "customMaxPhaseCurrent",
+      "address": 39,
+      "minimum": 0,
+      "maximum": 16383,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist die Phasenstromgrenze des Boost-Motors. Es stellt die sekundäre drehmomenterzeugende Stromobergrenze bereit, die von Controller-Profilen verwendet wird, die den passenden Boost-Pfad unterstützen. Die akzeptierte Anfrage ist immer noch durch die wichtigsten aktuellen Richtlinien, Steuerungsfähigkeiten, Batterieleistung, Temperatur, Motorgeschwindigkeit und Schutzzustände begrenzt, sodass es sich nicht um eine garantierte Drehmomenterhöhung handelt. Stellen Sie ihn nur innerhalb der sicheren Kurzzeit-Phasenstromgrenzen des Motors und der Steuerung ein und stimmen Sie ihn zusammen mit dem Boost-Leitungsstrom und der Dauer ab.",
+    "description_en": "This is the Boost motor phase-current limit. It provides the secondary torque-producing current ceiling used by controller profiles that support the matching Boost path. The accepted request is still bounded by the main current policy, controller capability, battery power, temperature, motor speed, and protection states, so it is not a guaranteed torque increase. Set it only within the motor and controller’s safe short-term phase-current limits and tune it together with Boost line current and duration."
+  },
+  "lowSpeedLineCurrentRatio": {
+    "spec": {
+      "id": "lowSpeedLineCurrentRatio",
+      "address": 50,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die Batteriestromobergrenze im niedrigen Gang als Prozentsatz des Leitungsstroms im hohen Gang festgelegt. Bei 100 Prozent kann der niedrige Gang die gleiche Obergrenze für den Netzstrom anfordern wie der hohe Gang; Ein niedrigerer Wert verringert die im niedrigen Gang verfügbare Batterieleistung, insbesondere wenn die Motordrehzahl steigt. Phasenstrom bei niedrigem Gang, Batteriespannung, BMS-Grenzwerte, Controllerfähigkeit, Temperatur und die Leistungskurve können den gemessenen Strom dennoch reduzieren. Verwenden Sie es mit den Einstellungen für niedrige Ganggeschwindigkeit und Phasenstrom, um einen kohärenten Energiesparmodus zu schaffen, anstatt ihn als Drehmomentprozentsatz zu behandeln.",
+    "description_en": "This sets low gear’s battery-current ceiling as a percentage of High-gear line current. At 100 percent, low gear can request the same line-current ceiling as high gear; a lower value reduces battery power available in low gear, especially as motor speed rises. Low-gear phase current, battery voltage, BMS limits, controller capability, temperature, and the power curve can still reduce measured current. Use it with the low-gear speed and phase-current settings to create a coherent low-power mode rather than treating it as a torque percentage."
+  },
+  "midSpeedLineCurrentRatio": {
+    "spec": {
+      "id": "midSpeedLineCurrentRatio",
+      "address": 50,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die Obergrenze des Batteriestroms im mittleren Gang als Prozentsatz des Leitungsstroms im hohen Gang festgelegt. Bei 100 Prozent kann der mittlere Gang die gleiche Obergrenze für den Netzstrom anfordern wie der hohe Gang; Niedrigere Werte verringern die verfügbare Batterieleistung im mittleren Gang, insbesondere bei höherer Motordrehzahl. Der Phasenstrom im mittleren Gang, die Batterie- und BMS-Grenzwerte, die Controllerfähigkeit, die Temperatur und die Leistungskurve können alle das Messergebnis verschlechtern. Verwenden Sie es mit mittlerer Geschwindigkeit und Phasenstrom, um einen ausgewogenen mittleren Fahrmodus zu gestalten.",
+    "description_en": "This sets mid gear’s battery-current ceiling as a percentage of High-gear line current. At 100 percent, mid gear can request the same line-current ceiling as high gear; lower values reduce the battery power available in mid gear, especially at higher motor speed. Mid-gear phase current, battery and BMS limits, controller capability, temperature, and the power curve can all lower the measured result. Use it with mid-gear speed and phase current to shape a balanced intermediate riding mode."
+  },
+  "lowSpeedPhaseCurrentRatio": {
+    "spec": {
+      "id": "lowSpeedPhaseCurrentRatio",
+      "address": 51,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die Obergrenze des Motorphasenstroms im niedrigen Gang als Prozentsatz des Phasenstroms im hohen Gang festgelegt. Normalerweise macht es sich am stärksten beim Anfahren und beim Drehmoment bei niedriger bis mittlerer Geschwindigkeit im niedrigen Gang bemerkbar, aber 100 Prozent fordern nur die Obergrenze im hohen Gang und garantieren nicht, dass der Strom erreicht wird. Der Netzstrom im niedrigen Gang, die Motorstromkurve, die Batterieleistung, die Steuerungsfähigkeit, die Motorgeschwindigkeit und die Schutzvorrichtungen können das Ergebnis beeinträchtigen. Passen Sie es zusammen mit dem Leitungsstrom und der Geschwindigkeit im niedrigen Gang an, sodass der niedrige Gang kontrollierbar bleibt.",
+    "description_en": "This sets low gear’s motor phase-current ceiling as a percentage of High-gear phase current. It is usually most noticeable as launch and low-to-mid-speed torque in low gear, but 100 percent only requests the high-gear ceiling and does not guarantee that current will be reached. Low-gear line current, the motor-current curve, battery power, controller capability, motor speed, and protections can all cap the result. Tune it together with low-gear line current and speed so low gear remains controllable."
+  },
+  "midSpeedPhaseCurrentRatio": {
+    "spec": {
+      "id": "midSpeedPhaseCurrentRatio",
+      "address": 51,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die Obergrenze des Motorphasenstroms im mittleren Gang als Prozentsatz des Phasenstroms im hohen Gang festgelegt. Es kann den Start und das Drehmoment bei niedriger bis mittlerer Geschwindigkeit im mittleren Gang mildern oder verstärken, erfordert jedoch zu 100 Prozent nur die Obergrenze für hohe Gänge und garantiert nicht, dass die Telemetrie diese erreicht. Der Netzstrom im mittleren Gang, die Motorstromkurve, die Batterieleistung, die Motorgeschwindigkeit, die Steuerungsfähigkeit und die Schutzvorrichtungen begrenzen den Endstrom. Passen Sie es zusammen mit dem Leitungsstrom und der Geschwindigkeit im mittleren Gang an, damit der Modus vorhersehbar bleibt.",
+    "description_en": "This sets mid gear’s motor phase-current ceiling as a percentage of High-gear phase current. It can soften or strengthen launch and low-to-mid-speed torque in mid gear, but 100 percent only requests the high-gear ceiling and does not guarantee that telemetry will reach it. Mid-gear line current, motor-current curve, battery power, motor speed, controller capability, and protections all cap the final current. Tune it together with mid-gear line current and speed so the mode remains predictable."
+  },
+  "stopBackCurrent": {
+    "spec": {
+      "id": "stopBackCurrent",
+      "address": 48,
+      "minimum": 0,
+      "maximum": 65535,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird eine der normalen vorzeichenbehafteten Rückstromanforderungen des Controllers aus dem Live-Bremsbefehl skaliert. Ein größerer Wert kann für denselben Bremsbefehl einen stärkeren regenerativen Strom erfordern, ist aber immer noch nur ein Teil des endgültigen Bremswegs. Der maximale Regenerationsstrom, die Regenerationskurve, der Bremseingangsmodus, die Motorgeschwindigkeit, die Batteriespannung und der Ladezustand, die BMS-Ladeakzeptanz und die Schutzzustände können ihn reduzieren oder blockieren. Erhöhen Sie vorsichtig, überprüfen Sie die Ladestromgrenzen und behalten Sie die volle mechanische Bremsfähigkeit bei.",
+    "description_en": "This scales one of the controller’s normal signed back-current requests from the live braking command. A larger value can request stronger regenerative current for the same brake command, but it is still only one part of the final braking path. Maximum regen current, the regen curve, brake-input mode, motor speed, battery voltage and state of charge, BMS charge acceptance, and protection states can all reduce or block it. Increase cautiously, verify charge-current limits, and retain full mechanical braking capability."
+  },
+  "maxBackCurrent": {
+    "spec": {
+      "id": "maxBackCurrent",
+      "address": 49,
+      "minimum": 0,
+      "maximum": 65535,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die stärkste Stromanforderung für das regenerative Bremsen eingestellt. Der Rückwärtsfahrstrom wird nicht gesteuert und es handelt sich eher um eine Anforderungsobergrenze als um einen garantierten Batterieladestrom oder ein garantiertes Bremsmoment. Die Rekuperationskurve, der normale Regenerationsstrom, der Bremseingang, die Motorgeschwindigkeit, die Batteriespannung und der Ladezustand, die BMS-Ladeakzeptanz, die Traktion und die Schutzzustände können alle das Ergebnis verringern oder blockieren. Ein höherer angeforderter Strom kann die Bremswirkung, den Ladestrom und die Hitze erhöhen. Erhöhen Sie ihn daher vorsichtig und behalten Sie ausreichend mechanische Bremskraft bei, um sicher anzuhalten.",
+    "description_en": "This sets the strongest regenerative-braking current request. It does not control reverse-drive current and is a request ceiling rather than guaranteed battery charge current or braking torque. The regen curve, Normal regen current, brake input, motor speed, battery voltage and state of charge, BMS charge acceptance, traction, and protection states can all reduce or block the result. More requested current can increase braking, charge current, and heat, so raise it cautiously and retain enough mechanical braking to stop safely."
+  },
+  "highGearSpeedRpm": {
+    "spec": {
+      "id": "highGearSpeedRpm",
+      "address": 21,
+      "minimum": 0,
+      "maximum": 12000,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die erforderliche Motorgeschwindigkeitsgrenze festgelegt, während der hohe Gang aktiv ist. Dabei handelt es sich um eine Obergrenze und nicht um eine Garantie für die Fahrgeschwindigkeit: Batteriespannung, Gegen-EMK des Motors, Feldschwächung, Stromgrenzen, Last, Übersetzung, Radgröße und Schutzzustände können das Fahrzeug unterhalb dieser Grenze stoppen. Der Controller verwendet auch den Wert für den hohen Gang, wenn er auf einigen Steuerpfaden das verknüpfte Verhalten im unteren Gang und im Rückwärtsgang berechnet. Behandeln Sie die hohe, mittlere, niedrige und Rückwärtsgeschwindigkeit als koordinierten Satz und erhöhen Sie diese niemals über die sichere mechanische Geschwindigkeit des Motors hinaus.",
+    "description_en": "This sets the motor-speed limit requested while high gear is active. It is a ceiling, not a guarantee of road speed: battery voltage, motor back-EMF, field weakening, current limits, load, gearing, wheel size, and protection states can all stop the vehicle below it. The controller also uses the high-gear value when working out linked lower-gear and reverse behavior on some control paths. Treat High, Mid, Low, and Reverse speed as a coordinated set and never raise this beyond the motor’s safe mechanical speed."
+  },
+  "midSpeed": {
+    "spec": {
+      "id": "midSpeed",
+      "address": 42,
+      "minimum": 0,
+      "maximum": 12000,
+      "integerOnly": true
+    },
+    "description_de": "Dies legt die Motorgeschwindigkeitsbegrenzung fest, die im mittleren Gang verwendet wird. Der Controller kombiniert in seiner internen Gangskalierung auch mittlere Geschwindigkeit mit Rückwärtsgeschwindigkeit und hoher Ganggeschwindigkeit, sodass diese Werte verknüpft sind und nicht vier völlig unabhängige Obergrenzen. Netz- und Phasenstrom im mittleren Gang steuern separat die verfügbare Batterieleistung und das Motordrehmoment, während die tatsächliche Fahrgeschwindigkeit immer noch von der Spannung, der Motorleistung, der Last, dem Getriebe und der Radgröße abhängt. Passen Sie alle Ganggeschwindigkeitseinstellungen als koordinierten Satz an und überprüfen Sie die resultierende mittlere Ganggeschwindigkeit.",
+    "description_en": "This sets the motor-speed limit used in Mid gear. The controller also combines Mid speed with Reverse speed and High gear speed in its internal gear scaling, so these values are linked rather than four completely independent caps. Mid-gear line and phase current separately control the available battery power and motor torque, while actual road speed still depends on voltage, motor capability, load, gearing, and wheel size. Adjust all gear-speed settings as a coordinated set and verify the resulting Mid-gear speed."
+  },
+  "lowSpeed": {
+    "spec": {
+      "id": "lowSpeed",
+      "address": 40,
+      "minimum": 0,
+      "maximum": 12000,
+      "integerOnly": true
+    },
+    "description_de": "Damit wird die Motorgeschwindigkeitsgrenze festgelegt, die im niedrigen Gang verwendet wird. Der Controller kombiniert in seiner internen Gangskalierung außerdem niedrige Geschwindigkeit mit Rückwärtsgeschwindigkeit und hoher Ganggeschwindigkeit, sodass diese Werte verknüpft sind und nicht vier völlig unabhängige Obergrenzen. Netz- und Phasenstrom im niedrigen Gang steuern separat die verfügbare Batterieleistung und das Motordrehmoment, während die tatsächliche Fahrgeschwindigkeit immer noch von der Spannung, der Motorleistung, der Last, dem Getriebe und der Radgröße abhängt. Passen Sie alle Ganggeschwindigkeitseinstellungen als koordinierten Satz an und überprüfen Sie die resultierende niedrige Ganggeschwindigkeit.",
+    "description_en": "This sets the motor-speed limit used in Low gear. The controller also combines Low speed with Reverse speed and High gear speed in its internal gear scaling, so these values are linked rather than four completely independent caps. Low-gear line and phase current separately control the available battery power and motor torque, while actual road speed still depends on voltage, motor capability, load, gearing, and wheel size. Adjust all gear-speed settings as a coordinated set and verify the resulting Low-gear speed."
+  },
+  "reverseSpeedRpm": {
+    "spec": {
+      "id": "reverseSpeedRpm",
+      "address": 41,
+      "minimum": 0,
+      "maximum": 12000,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die Motorgeschwindigkeitsreferenz für den Rückwärtsgang festgelegt, sie kann jedoch auch an den vom Controller abgeleiteten Geschwindigkeitsberechnungen für den mittleren und niedrigen Gang beteiligt sein. In diesen Pfaden wird der Referenzwert für den unteren Gang mit der Rückwärtsgeschwindigkeit multipliziert und durch die Geschwindigkeit für den hohen Gang dividiert, so dass eine Änderung des Rückwärtsgangs das Vorwärtsverhalten im unteren Gang ändern kann, ohne dass die gespeicherten Werte neu geschrieben werden müssen. Die tatsächliche Fahrgeschwindigkeit hängt immer noch von Strom, Spannung, Last, Übersetzung und Radgröße ab. Behandeln Sie alle vier Ganggeschwindigkeitswerte als verknüpften Satz und fahren Sie den Rückwärtsgang bewusst langsam.",
+    "description_en": "This sets the motor-speed reference used for reverse, but it can also participate in the controller’s derived Mid- and Low-gear speed calculations. In those paths, the lower-gear reference is multiplied by Reverse speed and divided by High gear speed, so changing reverse can alter forward lower-gear behavior without rewriting their stored values. Actual road speed still depends on current, voltage, load, gearing, and wheel size. Treat all four gear-speed values as a linked set and keep reverse deliberately slow."
+  },
+  "limitSpeedRpm": {
+    "spec": {
+      "id": "limitSpeedRpm",
+      "address": 108,
+      "minimum": 0,
+      "maximum": 12000,
+      "integerOnly": true
+    },
+    "description_de": "Dies ersetzt das aktive Motorgeschwindigkeitsziel nur, wenn sowohl das konfigurierte Begrenzer-Flag als auch der Schalterzustand aktiv sind. Der Controller bewegt sich in begrenzten Schritten auf das begrenzte Ziel zu, anstatt unbedingt die gesamte Änderung in einem Update anzuwenden. Die gespeicherten Ziele „Hoch“, „Mittel“, „Niedrig“ oder „Rückwärts“ ändern sich nicht, und die Fahrgeschwindigkeit hängt weiterhin von den Polpaaren, der Übersetzung, der Radgröße, der Last, der Motorleistung und der Feldschwächung ab. Testen Sie beide Schaltzustände und halten Sie das Ziel innerhalb des sicheren Drehzahlbereichs des Motors.",
+    "description_en": "This replaces the active motor-speed target only while the configured limiter flag and switch state are both active. The controller moves toward the limited target in bounded steps rather than necessarily applying the entire change in one update. It does not alter the stored High, Mid, Low, or Reverse targets, and road speed still depends on Pole pairs, gearing, wheel size, load, motor capability, and field weakening. Test both switch states and keep the target within the motor’s safe RPM range."
+  },
+  "maxAcceleration": {
+    "spec": {
+      "id": "maxAcceleration",
+      "address": 47,
+      "minimum": 2,
+      "maximum": 224,
+      "integerOnly": true
+    },
+    "description_de": "Steuert, wie schnell sich der Controller beim Gasgeben einer höheren Antriebsleistungsanforderung nähert. Höhere Werte fühlen sich meist direkter und niedrigere sanfter an, erhöhen aber weder die Leitungsstrom- noch die Phasenstromgrenze. Beschleunigungs- und Loslassreaktion, Beschleunigungs-Anpassungsschwelle, Gasprofil, Stromgrenzen, Traktion und Motordrehzahl können das Ergebnis beeinflussen. Ändere den Wert schrittweise und beurteile die Kontrolle bei niedriger Geschwindigkeit, die Traktion und den Leistungsaufbau bei Vollgas – nicht nur den ersten Schub.",
+    "description_en": "This controls how quickly the controller moves toward a larger drive-power request when the rider opens the throttle. Higher values generally feel sharper and lower values smoother, but it does not raise the line-current or phase-current ceilings. Acceleration and release response, Acceleration adaptation threshold, throttle profile, current limits, traction, and motor speed can all reshape the result. Change it gradually and judge low-speed control, traction, and full-throttle buildup—not just the first hit."
+  },
+  "maxDeceleration": {
+    "spec": {
+      "id": "maxDeceleration",
+      "address": 43,
+      "minimum": 4,
+      "maximum": 224,
+      "integerOnly": true
+    },
+    "description_de": "Dies steuert, wie schnell die Antriebsleistung abgeschaltet wird, wenn der Fahrer vom Gas geht. Höhere Werte führen normalerweise dazu, dass der Antriebsstrom schneller abnimmt, aber die Motorgeschwindigkeit und der aktive Reaktionsmodus können das Gefühl verändern; Der regenerative Bremsstrom wird nicht direkt eingestellt. Die Reaktion beim Loslassen des Gashebels, die Reaktion beim Beschleunigen und Loslassen, die Übergangseinstellung beim Loslassen des Gashebels, das Gasprofil und der Bremszustand interagieren alle damit. Nehmen Sie die Einstellung in kleinen Schritten vor und prüfen Sie das teilweise Abrollen, die vollständige Freigabe, das Einfahren in die Kurve und die Laufruhe bei niedriger Geschwindigkeit.",
+    "description_en": "This controls how quickly drive power is removed when the rider rolls off the throttle. Higher values usually make the drive-current fade faster, but motor speed and the active response mode can change the feel; it does not directly set regenerative-braking current. Throttle-release response, Acceleration and release response, Release-throttle transition setting, throttle profile, and braking state all interact with it. Adjust in small steps and check partial roll-off, full release, corner entry, and low-speed smoothness."
+  },
+  "freeThrottle": {
+    "spec": {
+      "id": "freeThrottle",
+      "address": 44,
+      "minimum": 0,
+      "maximum": 192,
+      "integerOnly": true
+    },
+    "description_de": "Dieser erweiterte Wert wird beim Übergang zwischen Ausrollen und elektronischem Bremsen nach dem Loslassen des Gasgriffs verwendet. Der Controller verarbeitet ihn über unterschiedliche, bedingt aktivierte und skalierte Pfade. Höhere oder niedrigere Werte bedeuten daher nicht einfach stärker, schwächer, schneller oder langsamer. Der Wert legt allein keine Rekuperationsstromgrenzen fest. Beschleunigungs- und Verzögerungsverhalten des Gasgriffs, seine Endpunkte, der Reaktionsmodus, die Motordrehzahl, die Bremseinstellungen und die Rekuperationskurve beeinflussen das Ergebnis. Ändere ihn nur im Rahmen einer Abstimmung des gesamten Verhaltens beim Loslassen des Gasgriffs.",
+    "description_en": "This is an advanced value used when the controller transitions between released-throttle coasting and release-throttle electronic braking. The controller processes it through different gated and scaled paths, so higher and lower numbers do not produce a simple stronger, weaker, faster, or slower change. It does not set regenerative-current limits by itself. Throttle acceleration, deceleration, endpoints, response mode, motor speed, brake settings, and the regen curve all affect the result. Change it only while tuning the complete release-throttle behavior."
+  },
+  "lowVoltageProtect": {
+    "spec": {
+      "id": "lowVoltageProtect",
+      "address": 31,
+      "minimum": 0,
+      "maximum": 6553.5,
+      "integerOnly": false
+    },
+    "description_de": "Dadurch wird der Unterspannungsschutzschwellenwert des Controllers gespeichert und zusammen mit der Nennspannung neu berechnet. Der vollständige Pfad von diesem normalisierten Schwellenwert bis zu einem bestimmten Betrag der Stromreduzierung oder Antriebsabschaltung ist nicht bei jedem Controller festgelegt, daher sollte das Feld nicht als eine universelle Auslösespannung beschrieben werden. Es muss weiterhin das Batterie-BMS ergänzen und die Packungschemie, die Reihenanzahl, den Spannungsabfall, den Verdrahtungswiderstand, die Temperatur und die Last berücksichtigen. Verwenden Sie den angepassten Packungswert und untersuchen Sie einen übermäßigen Spannungseinbruch, anstatt den Schutz zu verringern, um ein Symptom zu unterdrücken.",
+    "description_en": "This stores the controller’s low-voltage protection threshold and is recalculated together with Rated voltage. The complete path from that normalized threshold to a particular amount of current reduction or drive cutoff is not established on every controller, so the field should not be described as one universal trip voltage. It must still complement the battery BMS and account for pack chemistry, series count, voltage sag, wiring resistance, temperature, and load. Use the matched pack value and investigate excessive sag instead of lowering protection to suppress a symptom."
+  },
+  "highVoltageProtect": {
+    "spec": {
+      "id": "highVoltageProtect",
+      "address": 37,
+      "minimum": 0,
+      "maximum": 6553.5,
+      "integerOnly": false
+    },
+    "description_de": "Dadurch wird der Hochspannungsschutzschwellenwert des Controllers festgelegt. Der Controller vergleicht seine kalibrierte Live-Spannung mit diesem Wert und ändert den Schutz- oder Begrenzungspfad, wenn der Schwellenwert überschritten wird. Die Nennspannung und die Spannungskalibrierung bestimmen, was die gespeicherte Zahl bedeutet, während das Batterie-BMS, das Ladegerät, die Packchemie und die regenerative Bremsspannung separate Sicherheitsgrenzen bleiben. Die Erhöhung ist keine sichere Möglichkeit, einen Überspannungsfehler zu beheben; Verwenden Sie den angepassten Controller-Wert und diagnostizieren Sie zunächst die tatsächliche Packspannung.",
+    "description_en": "This sets the controller’s high-voltage protection threshold. The controller compares its calibrated live voltage with this value and changes the protection or limiting path when the threshold is exceeded. Rated voltage and voltage calibration determine what the stored number means, while the battery BMS, charger, pack chemistry, and regenerative-braking voltage remain separate safety boundaries. Raising it is not a safe way to clear an overvoltage fault; use the matched controller value and diagnose the actual pack voltage first."
+  },
+  "batteryCapacityAh": {
+    "spec": {
+      "id": "batteryCapacityAh",
+      "address": 28,
+      "minimum": 20,
+      "maximum": 250,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird die Nennkapazität des Akkus in Amperestunden zur Identifizierung und für ausgehende Fahrzeug- oder Anzeigedaten aufgezeichnet. Dadurch werden die aktuellen Grenzwerte des Controllers nicht geändert, es wird nicht mehr Energie freigesetzt, das BMS wird außer Kraft gesetzt und die Berechnung des Batterieprozentsatzes des Controllers wird nicht direkt gesteuert. Der Batterie-SOC-Modus und die Leer-/Voll-Kalibrierung bestimmen das Verhalten der Controller-Anzeige, während die tatsächliche Reichweite von Spannung, Last, Effizienz und Batteriezustand abhängt. Geben Sie die Nennkapazität des Packungsherstellers ein und nicht die gewünschte Reichweite.",
+    "description_en": "This records the battery pack’s rated amp-hour capacity for identification and outgoing vehicle or display data. It does not change the controller’s current limits, unlock more energy, override the BMS, or directly drive the controller’s own battery-percentage calculation. Battery SOC mode and empty/full calibration determine controller gauge behavior, while actual range depends on voltage, load, efficiency, and battery condition. Enter the pack manufacturer’s rated capacity rather than a desired range figure."
+  },
+  "internalResistance": {
+    "spec": {
+      "id": "internalResistance",
+      "address": 29,
+      "minimum": 0,
+      "maximum": 65535,
+      "integerOnly": true
+    },
+    "description_de": "Dieses Feld kombiniert Reaktionsoptionen des Stromregelkreises mit weiteren controllerspezifischen Daten in einer Zahl. Diese Optionen verändern, wie der Motorstromregler Korrekturen aufsummiert. Das Ersetzen des Gesamtwerts kann daher die Antriebsreaktion oder Stabilität verändern. Eine direkte Bedeutung als Batteriewiderstand ist für das gesamte Feld nicht belegt. Die Belegung hängt von der Controller-Version ab. Behalten Sie beim Ändern einer bekannten Einstellung den zum Motor und Controller passenden Wert und die übrigen Optionen bei.",
+    "description_en": "This field combines current-loop response options with other controller-specific data in one number. Its response options change how the motor-current regulator accumulates corrections, so replacing the whole value can change drive response or stability. A direct battery-resistance meaning has not been established for the complete field. The layout depends on the controller version; preserve the matched motor/controller value and unrelated options when changing a known setting."
+  },
+  "blockTimeSeconds": {
+    "spec": {
+      "id": "blockTimeSeconds",
+      "address": 52,
+      "minimum": 0,
+      "maximum": 65535,
+      "integerOnly": true
+    },
+    "description_de": "Der Controller rechnet diesen Wert in einen internen Schwellenwert um. Der Zusammenhang mit der tatsächlichen Auslösezeit bei blockiertem Motor ist nicht bestätigt; die angezeigte Zahl darf daher nicht als Sekundenangabe verstanden werden. Behalte den ursprünglichen Wert bei, statt damit einen wiederkehrenden Blockierfehler zu verdecken.",
+    "description_en": "The controller converts this value into an internal threshold. Its relationship to actual stall-trip time is not confirmed, so the displayed number should not be treated as seconds. Keep the original value rather than changing it to mask a recurring stall fault."
+  },
+  "speedPulseCount": {
+    "spec": {
+      "id": "speedPulseCount",
+      "address": 53,
+      "minimum": 0,
+      "maximum": 65535,
+      "integerOnly": true
+    },
+    "description_de": "Passt das Geschwindigkeitssignal an, das an ein externes Display gesendet wird. Verschiedene Ausgabeformate verwenden den Wert unterschiedlich. Dieselbe Änderung kann sich deshalb je nach Displaykonfiguration anders auswirken. Notiere den Ausgangswert und prüfe Änderungen anhand einer gemessenen Referenzgeschwindigkeit. Die Drehzahlgrenze des Motors wird damit nicht eingestellt.",
+    "description_en": "Adjusts the speed signal sent to an external display. Different output formats use the value differently, so the same adjustment can behave differently across display setups. Record the starting value and check changes against a measured speed reference. This does not set the motor’s speed limit."
+  },
+  "phaseOffset": {
+    "spec": {
+      "id": "phaseOffset",
+      "address": 12,
+      "minimum": 0,
+      "maximum": 359,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird der gelernte elektrische Winkel gespeichert, der die Rückmeldung der Rotorposition an die Phasenstrombefehle des Controllers anpasst. Wenn es richtig ist, startet der Motor und läuft reibungslos; Wenn es falsch ist, kann das Fahrzeug ein schwaches Drehmoment, einen rauen oder lauten Betrieb, hohen Strom, Hitze, falsche Kommutierung oder Motorfehler haben. Der Typ des Rotorpositionssensors, der Phasenaustausch, die Motorrichtung, die Motorkalibrierung und das Feldschwächungsverhalten hängen alle von einem kohärenten Aufbau ab. Lassen Sie diesen Wert durch Selbstlernen ermitteln oder verwenden Sie eine bekanntermaßen korrekte Kalibrierung für den genauen Motor und die Verkabelung.",
+    "description_en": "This stores the learned electrical angle that aligns rotor-position feedback with the controller’s phase-current commands. When it is correct, the motor starts and runs smoothly; when it is wrong, the vehicle can have weak torque, rough or noisy operation, high current, heat, incorrect commutation, or motor faults. Rotor-position sensor type, Phase exchange, Motor direction, motor calibration, and field-weakening behavior all depend on a coherent setup. Let self-learning establish this value or use a known correct calibration for the exact motor and wiring."
+  },
+  "zeroBatteryCoeff": {
+    "spec": {
+      "id": "zeroBatteryCoeff",
+      "address": 13,
+      "minimum": 768,
+      "maximum": 1024,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird der untere Endpunkt der normalisierten Batteriestandsberechnung des Controllers festgelegt. An diesem Punkt oder darunter ist der berechnete Ladezustand leer; Wenn Sie den Wert erhöhen, erreicht die Anzeige bei einer höheren Batteriespannung den leeren Zustand und ändert die Spanne zwischen leer und voll. Der Vollbatteriepunkt, die Nennspannung, der Batterie-SOC-Modus, die Spannungsauswahlkalibrierung, BMS-Daten, Spannungsabfall und die Packungschemie wirken sich alle auf die Genauigkeit aus. Kalibrieren Sie beide Endpunkte anhand bekannter Batteriespannungen und verwechseln Sie den Endpunkt des Messgeräts nicht mit der Niederspannungsabschaltung des BMS oder Controllers.",
+    "description_en": "This sets the lower endpoint of the controller’s normalized battery-gauge calculation. At or below that point the calculated charge state is empty; raising it makes the gauge reach empty at a higher pack voltage and changes the span between empty and full. Full-battery point, Rated voltage, Battery SOC mode, Voltage-selection calibration, BMS data, voltage sag, and pack chemistry all affect accuracy. Calibrate both endpoints from known battery voltages and do not confuse the gauge endpoint with the BMS or controller low-voltage cutoff."
+  },
+  "fullBatteryCoeff": {
+    "spec": {
+      "id": "fullBatteryCoeff",
+      "address": 14,
+      "minimum": 1050,
+      "maximum": 1450,
+      "integerOnly": true
+    },
+    "description_de": "Legt fest, wann der Akku als voll angezeigt wird. Oberhalb von etwa 95% Ladestand kann die Rekuperation je nach Bremseinstellungen abnehmen. Die angezeigte Spannung ist ein Schätzwert für einen vollen Akku, keine garantierte Abschaltgrenze für die Rekuperation.",
+    "description_en": "Sets when the battery reads full. Regen may reduce above about 95% charge, depending on braking settings. The voltage shown is an estimate of full charge, not a guaranteed regen cutoff."
+  },
+  "gearRatio": {
+    "spec": {
+      "id": "gearRatio",
+      "address": 212,
+      "minimum": 0,
+      "maximum": 65.535,
+      "integerOnly": false,
+      "step": 0.001
+    },
+    "description_de": "Hiermit wird das Untersetzungsverhältnis des Antriebsstrangs festgelegt, das zusammen mit der Radgröße und den Polpaaren für die Geschwindigkeits- und Distanzkalibrierung verwendet wird. Der gespeicherte Wert stellt das mit 1000 skalierte Verhältnis dar. Geben Sie daher die tatsächliche mechanische Untersetzung und nicht eine gewünschte Leistungszahl ein. Die physischen Kettenräder, die mechanische Drehmomentvervielfachung oder die Höchstgeschwindigkeit des Fahrzeugs werden dadurch nicht verändert. Es ändert sich nur, wie der Controller oder das Display die Drehung interpretiert. Sorgen Sie dafür, dass die Rad- und Antriebsstrang-Kalibrierungswerte übereinstimmen, und überprüfen Sie unabhängig voneinander die angezeigte Fahrgeschwindigkeit.",
+    "description_en": "This sets the drivetrain reduction ratio used with wheel size and Pole pairs for speed and distance calibration. The stored value represents the ratio scaled by 1000, so enter the real mechanical reduction rather than a desired performance number. It does not change the vehicle’s physical sprockets, mechanical torque multiplication, or top speed; it only changes how the controller or display interprets rotation. Keep the wheel and drivetrain calibration values matched and verify indicated road speed independently."
+  },
+  "aspectRatio": {
+    "spec": {
+      "id": "aspectRatio",
+      "address": 210,
+      "minimum": 0,
+      "maximum": 255,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird das Seitenwandverhältnis des Reifens festgelegt, das zusammen mit der Reifenbreite, der Felgengröße, dem Antriebsstrangverhältnis und den Polpaaren für die Geschwindigkeits- und Distanzkalibrierung des Fahrzeugs verwendet wird. Es beschreibt die Radgeometrie; Motorleistung, Drehmoment, Höchstgeschwindigkeit oder die physikalische Übersetzung des Fahrzeugs werden dadurch nicht verändert. Einige Controller speichern und melden den Wert nur, während der Anzeige- oder Einrichtungsprozess die endgültige Berechnung durchführt. Geben Sie das tatsächliche Seitenverhältnis des Reifens ein, ändern Sie gemeinsam den kompletten Radkalibrierungssatz und überprüfen Sie die angezeigte Straßengeschwindigkeit anhand von GPS oder einer anderen gemessenen Referenz.",
+    "description_en": "This sets the tire sidewall ratio used with tire width, rim size, drivetrain ratio, and Pole pairs for the vehicle’s speed and distance calibration. It describes wheel geometry; it does not change motor power, torque, top speed, or the vehicle’s physical gearing. Some controllers only store and report the value while the display or setup process performs the final calculation. Enter the tire’s real aspect ratio, change the complete wheel-calibration set together, and verify indicated road speed against GPS or another measured reference."
+  },
+  "rimDiameter": {
+    "spec": {
+      "id": "rimDiameter",
+      "address": 210,
+      "minimum": 0,
+      "maximum": 255,
+      "integerOnly": true
+    },
+    "description_de": "Hiermit wird der Felgendurchmesser festgelegt, der zusammen mit der Reifenbreite, dem Reifenseitenwandverhältnis, dem Antriebsstrangverhältnis und den Polpaaren für die Geschwindigkeits- und Distanzkalibrierung verwendet wird. Der gespeicherte Radgrößenwert stellt den Felgendurchmesser in Zoll dar. Getriebe, Drehmoment oder Höchstgeschwindigkeit werden physikalisch nicht verändert. Geben Sie den tatsächlichen Durchmesser der Felge ein, ändern Sie gemeinsam den kompletten Radkalibrierungssatz und überprüfen Sie die angezeigte Straßengeschwindigkeit anhand des GPS, anstatt den Wert nach Gefühl anzupassen.",
+    "description_en": "This sets the rim diameter used with Tire width, Tire sidewall ratio, Drivetrain ratio, and Pole pairs for speed and distance calibration. The stored wheel-size value represents the rim diameter in inches. It does not physically change gearing, torque, or top speed. Enter the rim’s real diameter, change the complete wheel-calibration set together, and verify indicated road speed against GPS rather than tuning the value by feel."
+  },
+  "speedPulses": {
+    "spec": {
+      "id": "speedPulses",
+      "address": 26,
+      "minimum": 1,
+      "maximum": 31,
+      "integerOnly": true
+    },
+    "description_de": "Dieser Wert wirkt an der Skalierung von Geschwindigkeitsdaten und der Ausgabekonfiguration mit. In manchen Verarbeitungspfaden multipliziert er einen aus der Geschwindigkeit abgeleiteten Wert; in anderen ist er Bestandteil des Ausgabeprofils. Er ist keine allgemeingültige Radimpulszahl. Stimme ihn auf das Display ab und prüfe die Kalibrierung anhand einer gemessenen Referenzgeschwindigkeit.",
+    "description_en": "This value participates in speed-data scaling and output configuration. In some paths it multiplies a speed-derived value; other paths include it in the output profile. It is not a universal wheel-pulse count. Keep it matched to the display, and verify calibration against a measured speed reference."
+  },
+  "speedometerMode": {
+    "spec": {
+      "id": "speedometerMode",
+      "address": 124,
+      "minimum": 0,
+      "maximum": 2,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der Tachometer-Ausgabemodus des Controllers für die Anzeige des angeschlossenen Fahrzeugs ausgewählt. Es ändert die Art und Weise, wie das Geschwindigkeitssignal erzeugt oder weitergeleitet wird, nicht die tatsächliche Motorgeschwindigkeit. Die verfügbaren Modusnummern hängen vom Controller- und Geräteprofil ab, und dieselbe gepackte Gruppe enthält auch Feldschwächungs-, Schutz-, Umkehr- und Freigabeeinstellungen, die während eines Schreibvorgangs beibehalten werden müssen. Verwenden Sie das bekannte Anzeigeprofil und überprüfen Sie nach jeder Änderung die angezeigte Geschwindigkeit anhand des GPS.",
+    "description_en": "This selects the controller’s speedometer-output mode for the connected vehicle display. It changes how the speed signal is produced or routed, not actual motor speed. The available mode numbers depend on the controller and instrument profile, and the same packed group also contains field-weakening, protection, reverse, and release settings that must be preserved during a write. Use the known display profile and verify the indicated speed against GPS after any change."
+  },
+  "analogSpeedCoefficientRpm": {
+    "spec": {
+      "id": "analogSpeedCoefficientRpm",
+      "address": 46,
+      "minimum": 1,
+      "maximum": 32767,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist eine Kalibrierung für einen analogen Geschwindigkeitsausgang für kompatible Fahrzeuginstrumente. Der Controller verwendet es bei der von der Geschwindigkeit abgeleiteten Skalierung, aber die endgültige Hardwareroute variiert je nach Controller und ist kein Motorgeschwindigkeitsbefehl. Es ändert die gemeldete Leistung und nicht die Motordrehzahl, die Straßengeschwindigkeit oder die Geschwindigkeitsbegrenzungen des Controllers. Geschwindigkeitsimpulskalibrierung, Tachometermodus, Polpaare, Getriebe, Radgröße und das angeschlossene Instrument können den Messwert erneut skalieren. Justieren Sie es nur anhand von GPS oder einer anderen gemessenen Referenz.",
+    "description_en": "This is a calibration for an analog speed output intended for compatible vehicle instruments. The controller uses it in speed-derived scaling, but the final hardware route varies by controller and is not a motor-speed command. It changes the reported output rather than motor RPM, road speed, or the controller’s speed limits. Speed-pulse calibration, speedometer mode, Pole pairs, gearing, wheel size, and the connected instrument can rescale the reading again. Adjust it only against GPS or another measured reference."
+  },
+  "powerRatio500": {
+    "spec": {
+      "id": "powerRatio500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Dieser erste Punkt steuert auch den Bereich unterhalb des ersten Haltepunkts. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. This first point also controls the region below the first breakpoint. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio1000": {
+    "spec": {
+      "id": "powerRatio1000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 1000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 1000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio1500": {
+    "spec": {
+      "id": "powerRatio1500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 1500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 1500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio2000": {
+    "spec": {
+      "id": "powerRatio2000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 2000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 2000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio2500": {
+    "spec": {
+      "id": "powerRatio2500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 2500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 2500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio3000": {
+    "spec": {
+      "id": "powerRatio3000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 3000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 3000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio3500": {
+    "spec": {
+      "id": "powerRatio3500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 3500 U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 3500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio4000": {
+    "spec": {
+      "id": "powerRatio4000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 4000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 4000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio4500": {
+    "spec": {
+      "id": "powerRatio4500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 4500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 4500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio5000": {
+    "spec": {
+      "id": "powerRatio5000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 5000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 5000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio5500": {
+    "spec": {
+      "id": "powerRatio5500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 5500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 5500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio6000": {
+    "spec": {
+      "id": "powerRatio6000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 6000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 6000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio6500": {
+    "spec": {
+      "id": "powerRatio6500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 6500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 6500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio7000": {
+    "spec": {
+      "id": "powerRatio7000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 7000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 7000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio7500": {
+    "spec": {
+      "id": "powerRatio7500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 7500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 7500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio8000": {
+    "spec": {
+      "id": "powerRatio8000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 8000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 8000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio8500": {
+    "spec": {
+      "id": "powerRatio8500",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 8500-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 8500 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "powerRatio9000": {
+    "spec": {
+      "id": "powerRatio9000",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 9000-U/min-Punkt in der Antriebsstromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Eine Einstellung von 100 Prozent ist an dieser Stelle nur der maximal programmierte Kurvenfaktor; Es wird keine bestimmte Amperezahl, ein bestimmtes Drehmoment oder die volle Phasenstromobergrenze garantiert. Das aktive Fahrprofil, Leitungs- und Phasengrenzen, Batteriespannung, Motor-Gegen-EMK, Temperatur und Schutzvorrichtungen können den tatsächlichen Strom reduzieren. Stimmen Sie die gesamte Kurve als glatten Satz ab.",
+    "description_en": "This is the 9000 RPM point in the drive-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. A setting of 100 percent is only the maximum programmed curve factor at this point; it does not guarantee a particular number of amps, torque, or the full phase-current ceiling. The active ride profile, line and phase limits, battery voltage, motor back-EMF, temperature, and protections can all reduce actual current. Tune the complete curve as a smooth set."
+  },
+  "regenRatio500": {
+    "spec": {
+      "id": "regenRatio500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Dieser erste Punkt steuert auch den Bereich unterhalb des ersten Haltepunkts. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. This first point also controls the region below the first breakpoint. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio1000": {
+    "spec": {
+      "id": "regenRatio1000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 1000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 1000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio1500": {
+    "spec": {
+      "id": "regenRatio1500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 1500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 1500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio2000": {
+    "spec": {
+      "id": "regenRatio2000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 2000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 2000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio2500": {
+    "spec": {
+      "id": "regenRatio2500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 2500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 2500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio3000": {
+    "spec": {
+      "id": "regenRatio3000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 3000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 3000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio3500": {
+    "spec": {
+      "id": "regenRatio3500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 3500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 3500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio4000": {
+    "spec": {
+      "id": "regenRatio4000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 4000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 4000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio4500": {
+    "spec": {
+      "id": "regenRatio4500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 4500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 4500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio5000": {
+    "spec": {
+      "id": "regenRatio5000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 5000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 5000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio5500": {
+    "spec": {
+      "id": "regenRatio5500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 5500 U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 5500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio6000": {
+    "spec": {
+      "id": "regenRatio6000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 6000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 6000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio6500": {
+    "spec": {
+      "id": "regenRatio6500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 6500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 6500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio7000": {
+    "spec": {
+      "id": "regenRatio7000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 7000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 7000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio7500": {
+    "spec": {
+      "id": "regenRatio7500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 7500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 7500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio8000": {
+    "spec": {
+      "id": "regenRatio8000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 8000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 8000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio8500": {
+    "spec": {
+      "id": "regenRatio8500",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 8500-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 8500 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "regenRatio9000": {
+    "spec": {
+      "id": "regenRatio9000",
+      "address": 0,
+      "minimum": 4294967196,
+      "maximum": 0,
+      "integerOnly": true
+    },
+    "description_de": "Dies ist der 9000-U/min-Punkt in der regenerativen Stromkurve. Der Controller mischt diesen Wert mit seinen Nachbarpunkten, sodass sich eine starke Änderung auch auf den Übergang auf beiden Seiten auswirkt. Polpaare bestimmen, wie elektrische Rotation als mechanische Drehzahl dargestellt wird. Hierbei handelt es sich um eine frühe Bremsstromanforderung, nicht um eine garantierte Bremskraft: Spätere Strom- und Fahrmoduslogik, Batteriespannung und -ladezustand, BMS-Ladeakzeptanz, Traktionsbedingungen und Schutzvorrichtungen können sie reduzieren oder blockieren. Stimmen Sie die gesamte Kurve auf eine sanfte Reaktion ab und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This is the 9000 RPM point in the regenerative-current curve. The controller blends this value with its neighboring points, so a sharp change also affects the transition on both sides. Pole pairs determines how electrical rotation is presented as mechanical RPM. This is an early braking-current request, not guaranteed braking force: later current and ride-mode logic, battery voltage and state of charge, BMS charge acceptance, traction conditions, and protections can reduce or block it. Tune the complete curve for a smooth response and always retain enough mechanical braking to stop safely."
+  },
+  "boostPin": {
+    "spec": {
+      "id": "boostPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der physische Controller-Eingang zugewiesen, der zum Anfordern von Boost verwendet wird. Es fügt nicht selbst Strom hinzu: Der Eingang muss verdrahtet und aktiv sein und die Sekundärleitungsstrombegrenzung, der Boost-Phasenstrom, die Boost-Dauer und die Boost-Freigabeverzögerung müssen alle konfiguriert sein. Normale Stromobergrenzen, Batterie- und BMS-Grenzwerte, Temperaturschutz und Controllerfähigkeit können das Ergebnis immer noch beeinträchtigen. Überprüfen Sie den Eingangszustand bei unbelastetem Rad, bevor Sie den Test auf der Straße durchführen, da eine falsche Zuordnung dazu führen kann, dass Boost über den falschen Schalter ausgelöst oder dessen Aktivierung verhindert wird.",
+    "description_en": "This assigns the physical controller input used to request Boost. It does not add power by itself: the input must be wired and active, and the secondary line-current limit, Boost phase current, Boost duration, and Boost release delay must all be configured. Normal current ceilings, battery and BMS limits, temperature protection, and controller capability can still reduce the result. Verify the input state with the wheel unloaded before road testing, because an incorrect mapping can trigger Boost from the wrong switch or prevent it from activating."
+  },
+  "cruisePin": {
+    "spec": {
+      "id": "cruisePin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der physische Controller-Eingang zugewiesen, der zum Anfordern der Geschwindigkeitsregelung verwendet wird. Es ermöglicht weder den Reiseflug noch die Auswahl einer Reisegeschwindigkeit selbst; Der Tempomat muss aktiviert sein und das Fahrzeug muss die Gas-, Geschwindigkeits-, Brems- und Sicherheitsbedingungen des Controllers erfüllen. Ein falscher Stift kann das Einrasten verhindern oder den Tempomat an einen nicht zugehörigen Schalter anschließen. Zeichnen Sie die Originalkartierung auf und überprüfen Sie vor der Fahrt auf der Straße sowohl das Einschalten als auch alle Abbrucheingaben.",
+    "description_en": "This assigns the physical controller input used to request cruise control. It does not enable cruise or choose a cruising speed by itself; Cruise control must be enabled and the vehicle must satisfy the controller’s throttle, speed, brake, and safety conditions. A wrong pin can prevent engagement or attach cruise to an unrelated switch. Record the original mapping and verify both engagement and every cancellation input before road use."
+  },
+  "sideStandPin": {
+    "spec": {
+      "id": "sideStandPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Hiermit wird der physische Eingang ausgewählt, der für den Seitenständerschalter verwendet wird. Bei einem passenden Kabelbaum bildet es die Ständersteuerung ab und kann einen Sicherheitsaktivierungszustand einspeisen, aber die Eingangszuordnung wird gemeinsam genutzt und einige Pin-Auswahlmöglichkeiten ändern auch die allgemeine Eingangskonfiguration. Parkmodus, Bremsverhalten, Sitzzustand, Eingangspolarität und der physische Standschalter bestimmen, ob der Antrieb gesperrt ist. Behalten Sie die Originalzuordnung bei und überprüfen Sie vor der Fahrt das Auf- und Abstellverhalten in allen relevanten Gängen und Startzuständen.",
+    "description_en": "This selects the physical input used for the side-stand switch. On a matched harness it maps the stand control and can feed a safety-enable state, but the input mapper is shared and some pin choices also change common input setup. Park mode, brake behavior, seat state, input polarity, and the physical stand switch determine whether drive is inhibited. Keep the original mapping and verify stand-up and stand-down behavior in every relevant gear and startup state before riding."
+  },
+  "pausePin": {
+    "spec": {
+      "id": "pausePin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Hiermit wird der physische Eingang für den Park- oder P-Gang-Schalter zugewiesen. Es bildet den P-Gang-Eingang des Controllers ab, der von der Parkfunktion verwendet wird. Parkmodus, automatische Rückkehrzeit, Bremsverhalten, Sitz- oder Standverriegelung, Live-Geschwindigkeit und die Fahrzeugverkabelung bestimmen die endgültige Aktion. Durch die Wahl eines Pins ändert sich auch die Konfiguration der gemeinsamen Eingangshardware. Notieren Sie daher die Originalzuordnung und überprüfen Sie jede Parkeintritts- und Freigabekombination bei unbelastetem angetriebenen Rad.",
+    "description_en": "This assigns the physical input for the Park or P-gear switch. It maps the controller's P-gear input used by the Park function. Park mode, automatic return timing, brake behavior, seat or stand interlocks, live speed, and the vehicle wiring determine the final action. One pin choice also changes shared input hardware setup, so record the original mapping and verify every Park entry and release combination with the driven wheel unloaded."
+  },
+  "forwardPin": {
+    "spec": {
+      "id": "forwardPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der physische Eingang zugewiesen, der zum Anfordern der Vorwärtsfahrt verwendet wird. Es ordnet nur den Draht zu; Der aktive Gang, der Parkzustand, die Brems- und Standsperren, die Rückwärtslogik und die Richtungswechselregeln entscheiden weiterhin darüber, ob die Steuerung Drehmoment zulässt. Die Wahl des falschen Stifts kann dazu führen, dass der Vorwärtsantrieb an einen nicht zugehörigen Schalter angeschlossen wird oder dass das Fahrzeug nicht in der Lage ist, vorwärts zu schalten. Überprüfen Sie nach jeder Verkabelungsänderung die vollständige Vorwärts-, Neutral- oder Park- und Rückwärtssequenz mit sicher entlastetem Antriebsrad.",
+    "description_en": "This assigns the physical input used to request forward drive. It only maps the wire; the active gear, Park state, brake and stand interlocks, reverse logic, and direction-change rules still decide whether the controller allows torque. Choosing the wrong pin can attach forward drive to an unrelated switch or leave the vehicle unable to select forward. Verify the complete forward, neutral or Park, and reverse sequence with the driven wheel safely unloaded after any wiring change."
+  },
+  "reversePin": {
+    "spec": {
+      "id": "reversePin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Hiermit wird der für die Umkehrung verwendete physische Eingang ausgewählt. Bei einem passenden Kabelbaum wird die Rückwärtssteuerung des Fahrers abgebildet, die Eingabezuordnung ist jedoch gemeinsam genutzt und einige Pin-Auswahlmöglichkeiten können auch die allgemeine Eingabekonfiguration ändern. Der Rückwärtsgang muss aktiviert sein, während Rückwärtsgeschwindigkeit, Rückwärtsstromverhältnis, Rückwärtsreaktion, Rückwärtseingangs-Entprellung, Parkzustand und Richtungswechselregeln bestimmen, ob Rückwärtsdrehmoment tatsächlich zulässig ist. Zeichnen Sie die ursprüngliche Zuordnung auf und überprüfen Sie, ob das Antriebsrad beim Vorwärtsfahren, Parken und Rückwärtsfahren vollständig vom Boden abgehoben ist.",
+    "description_en": "This selects the physical input used for reverse. On a matched harness it maps the rider’s reverse control, but the input mapper is shared and some pin choices can also change common input setup. Reverse gear must be enabled, while Reverse speed, Reverse-current ratio, reverse response, Reverse input debounce, Park state, and direction-change rules determine whether reverse torque is actually allowed. Record the original mapping and verify forward, Park, and reverse with the driven wheel completely off the ground."
+  },
+  "highSpeedPin": {
+    "spec": {
+      "id": "highSpeedPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dies weist den physikalischen Eingang zu, der zum Wählen des hohen Gangs verwendet wird. Es definiert die Leistung im Hochgang nicht allein; Hohe Ganggeschwindigkeit, Hochgang-Leitungsstrom, Hochgang-Phasenstrom, Gangspeicher, Standardgang und der Geschwindigkeitsschaltmodus bestimmen den resultierenden Fahrzustand. Eine falsche Zuordnung kann dazu führen, dass der hohe Gang nicht verfügbar ist oder über den falschen Schalter ausgelöst wird. Bestätigen Sie vor der Probefahrt den gewählten Gang und die aktuellen Grenzwerte in jeder Schaltstellung bei unbelastetem Rad.",
+    "description_en": "This assigns the physical input used to select high gear. It does not define high-gear performance by itself; High gear speed, High-gear line current, High-gear phase current, gear memory, default gear, and the speed-switch mode determine the resulting ride state. A wrong assignment can leave high gear unavailable or trigger it from the wrong switch. Confirm the selected gear and current limits in every switch position with the wheel unloaded before road testing."
+  },
+  "lowSpeedPin": {
+    "spec": {
+      "id": "lowSpeedPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dies weist den physikalischen Eingang zu, der zum Wählen des niedrigen Gangs verwendet wird. Es bildet nur den Schalter ab; Niedrige Ganggeschwindigkeit, niedriger Gang-Leitungsstrom, niedriger Gang-Phasenstrom, Gangspeicher, Standardgang und Geschwindigkeitsschaltmodus bestimmen die tatsächlichen Fahrgrenzen. Eine falsche Zuordnung kann dazu führen, dass das Fahrzeug im falschen Gang bleibt oder der niedrige Gang mit einer nicht zugehörigen Steuerung verbunden wird. Überprüfen Sie vor der Fahrt den angezeigten Gang und die Reaktion in jeder Schaltposition bei unbelastetem Rad.",
+    "description_en": "This assigns the physical input used to select low gear. It only maps the switch; Low gear speed, Low-gear line current, Low-gear phase current, gear memory, default gear, and speed-switch mode determine the actual riding limits. A wrong assignment can leave the vehicle in the wrong gear or connect low gear to an unrelated control. Verify the reported gear and response in every switch position with the wheel unloaded before riding."
+  },
+  "speedLimitPin": {
+    "spec": {
+      "id": "speedLimitPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Hiermit wird der für den Geschwindigkeitsbegrenzer verwendete physikalische Eingang ausgewählt. Bei einem passenden Kabelbaum wird der Begrenzungsschalter zugeordnet, aber unterschiedliche Pin-Auswahlmöglichkeiten können unterschiedliche Hardware-Eingangspfade umfassen und der Mapper wird mit anderen Steuerungen geteilt. Geschwindigkeitsbegrenzerziel, Schalterfreigabeverhalten, Eingangspolarität, Reglermodus, Polpaare und Fahrzeugverkabelung bestimmen, ob die Begrenzung tatsächlich erfolgt. Überprüfen Sie die begrenzten und uneingeschränkten Zustände bei niedriger Geschwindigkeit, bevor Sie sich auf die Funktion verlassen, und halten Sie das Ziel innerhalb des sicheren Drehzahlbereichs des Motors.",
+    "description_en": "This selects the physical input used for the speed limiter. On a matched harness it maps the limiter switch, but different pin choices can enter different hardware-input paths and the mapper is shared with other controls. Speed-limiter target, switch-release behavior, input polarity, controller mode, Pole pairs, and vehicle wiring determine whether limiting actually occurs. Verify limited and unrestricted states at low speed before relying on the feature, and keep the target within the motor’s safe RPM range."
+  },
+  "repairPin": {
+    "spec": {
+      "id": "repairPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der Controller-spezifische Servicefunktions-Eingabesteckplatz ausgewählt. Es bildet einen physikalischen Eingang ab, definiert jedoch keine universelle Reparaturaktion, behebt nicht jeden Fehler oder repariert den Motor selbst; Die Aktion hinter diesem Eingang hängt vom Controller und dem Fahrzeugkabelbaum ab. Einige Pin-Auswahlmöglichkeiten gehen auch in die Konfiguration gemeinsamer Eingaben ein, die von anderen Zuweisungen verwendet wird. Behalten Sie die Originalzuordnung bei, es sei denn, das Fahrzeug verfügt über die entsprechende Servicefunktion. Überprüfen Sie dann die Verkabelung und alle betroffenen Schalter, ohne zu fahren, damit eine unabhängige Steuerung nicht in den Modus wechseln kann.",
+    "description_en": "This selects the controller-specific service-function input slot. It maps a physical input but does not define a universal repair action, clear every fault, or repair the motor by itself; the action behind that input depends on the controller and vehicle harness. Some pin choices also enter shared input setup used by other assignments. Keep the original mapping unless the vehicle has the matching service feature, then verify the wiring and every affected switch without riding so an unrelated control cannot enter the mode."
+  },
+  "chargePin": {
+    "spec": {
+      "id": "chargePin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der physische Eingang zugewiesen, der verwendet wird, um dem Controller mitzuteilen, dass das Fahrzeug aufgeladen wird. Die Einstellung wählt nur den Eingang; Es steuert nicht das Ladegerät, stellt den Ladestrom nicht ein und ändert auch nicht die Batteriespannung. Das angeschlossene Kabel und sein Signalverhalten bestimmen, ob der Controller in den Ladezustand wechselt, wodurch der Antrieb blockiert oder das Anzeigeverhalten verändert werden kann. Verwenden Sie den Original-Verdrahtungsplan und stellen Sie sicher, dass sich der Status durch Anschließen und Entfernen des Ladegeräts korrekt ändert, ohne dass dadurch nicht verbundene Schalter beeinträchtigt werden.",
+    "description_en": "This assigns the physical input used to tell the controller that the vehicle is charging. The setting only chooses the input; it does not control the charger, set charge current, or change battery voltage. The connected wire and its signal behavior determine whether the controller enters its charging state, which may inhibit drive or alter display behavior. Use the original wiring map and verify that connecting and removing the charger changes state correctly without affecting unrelated switches."
+  },
+  "antiTheftPin": {
+    "spec": {
+      "id": "antiTheftPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der physische Controller-Eingang zugewiesen, der das Diebstahl- oder Alarmsignal überträgt. Durch die Auswahl einer PIN wird der Diebstahlschutz nicht automatisch aktiviert; Das Kabel muss dort tatsächlich angeschlossen sein und die Diebstahlsicherung, der Validierungsmodus und die Alarmzeit müssen zum Fahrzeug passen. Eine falsche Zuordnung kann dazu führen, dass der Alarm unwirksam wird, das Fahrzeug verschlossen bleibt oder auf einen nicht relevanten Schalter reagiert. Notieren Sie die Originalzuordnung und überprüfen Sie nach jeder Verkabelungsänderung die Verriegelung, Entriegelung, Gashebelsperre und den normalen Fahrbetrieb.",
+    "description_en": "This assigns the physical controller input that carries the anti-theft or alarm signal. Choosing a pin does not turn anti-theft on by itself; the wire must actually be connected there and the anti-theft enable, validation mode, and alarm timing must match the vehicle. A wrong assignment can make the alarm ineffective, keep the vehicle locked, or react to an unrelated switch. Record the original mapping and verify locking, unlocking, throttle inhibit, and normal riding operation after any wiring change."
+  },
+  "seatPin": {
+    "spec": {
+      "id": "seatPin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Hiermit wird der für den Sitzsicherheitsschalter verwendete physische Eingang ausgewählt. Bei einem passenden Kabelbaum wird die Sitzsteuerung zugeordnet, aber die Eingangszuordnung wird gemeinsam genutzt und einige Pin-Auswahlmöglichkeiten können auch die allgemeine Eingangskonfiguration ändern. Sitzverriegelung, Sitzverriegelungsverzögerung, Parkverhalten, Brems- und Standeingänge sowie Schalterpolarität bestimmen, ob der Antrieb gesperrt ist. Notieren Sie die Originalzuordnung und überprüfen Sie alle Übergangsvorgänge im Sitzen, Abheben, Anfahren und Parken, wobei das angetriebene Rad sicher entlastet ist.",
+    "description_en": "This selects the physical input used for the seat safety switch. On a matched harness it maps the seat control, but the input mapper is shared and some pin choices can also change common input setup. Seat interlock, Seat-interlock delay, Park behavior, brake and stand inputs, and switch polarity determine whether drive is inhibited. Record the original mapping and verify every seated, unseated, startup, and Park transition with the driven wheel safely unloaded."
+  },
+  "switchVoltagePin": {
+    "spec": {
+      "id": "switchVoltagePin",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 13,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Hiermit wird der physikalische Eingang ausgewählt, der für die Spannungsprofilumschaltung verwendet wird. Bei einem angepassten Kabelbaum wird dieser Schalter zugeordnet, aber der Eingabe-Mapper wird gemeinsam genutzt und eine Auswahlmöglichkeit gibt auch einen speziellen Kalibrierungs- oder Entprellpfad ein. Die Spannungsauswahlkalibrierung, die Nennspannung, der Batterie-SOC-Modus, die Leer-/Voll-Punkte und die Schalthardware des Fahrzeugs bestimmen das endgültige Verhalten. Behalten Sie die ursprüngliche Zuordnung bei und überprüfen Sie beide Eingangszustände anhand der gemessenen Akkuspannung, da eine falsche Zuordnung die Batteriemeldung unerwartet ändern oder überhaupt nichts bewirken kann.",
+    "description_en": "This selects the physical input used for voltage-profile switching. On a matched harness it maps that switch, but the input mapper is shared and one selector choice also enters a special calibration or debounce path. Voltage-selection calibration, Rated voltage, Battery SOC mode, empty/full points, and the vehicle’s switching hardware determine the final behavior. Keep the original mapping and verify both input states against measured pack voltage, because a wrong assignment can change battery reporting unexpectedly or do nothing at all."
+  },
+  "brakeControlEnabled": {
+    "spec": {
+      "id": "brakeControlEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird die Seitenständer-Sicherheitsverriegelung aktiviert. Es handelt sich nicht um eine Aktivierung des regenerativen Bremsens oder eine Bremsstärkeregelung. Der physische Standschalter, seine Eingangszuordnung und Polarität, das Parkverhalten, der Sitzzustand und der Fahrzeugkabelbaum bestimmen, wann der Antrieb gesperrt wird. Achten Sie darauf, dass es an die Sicherheitsverkabelung des Fahrzeugs angepasst ist, und überprüfen Sie vor der Fahrt, ob Sie aufstehen, absteigen, anfahren und die Parkübergänge bei entlastetem Antriebsrad durchführen.",
+    "description_en": "This enables the side-stand safety interlock. It is not a regenerative-braking enable or brake-strength control. The physical stand switch, its input assignment and polarity, Park behavior, seat state, and the vehicle harness determine when drive is inhibited. Keep it matched to the vehicle’s safety wiring and verify stand-up, stand-down, startup, and Park transitions with the driven wheel unloaded before riding."
+  },
+  "seatEnabled": {
+    "spec": {
+      "id": "seatEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird die konfigurierte Sitzeingangsbedingung in der kombinierten Sicherheitseingangslogik des Controllers aktiviert. Es wählt weder den physischen Pin noch die Verzögerung aus und definiert nicht, ob der Schalter bei jedem Fahrzeug aktiv-hoch oder aktiv-niedrig ist. Sitzeingabe, Sitzverriegelungsverzögerung, Parkmodus, Brems- und Seitenständerverriegelung, automatisches Rückstellverhalten und Verkabelung bestimmen, ob das Fahren erlaubt ist. Passen Sie es an das Sicherheitssystem des Fahrzeugs an und testen Sie vor der Verwendung jeden besetzten und unbesetzten Zustand.",
+    "description_en": "This enables the configured seat-input condition in the controller’s combined safety-input logic. It does not choose the physical pin or delay and does not define whether the switch is active-high or active-low on every vehicle. Seat input, Seat-interlock delay, Park mode, brake and side-stand interlocks, automatic return behavior, and wiring determine whether drive is allowed. Keep it matched to the vehicle’s safety system and test every occupied and unoccupied state before use."
+  },
+  "parkingGearEnabled": {
+    "spec": {
+      "id": "parkingGearEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird die Parkfunktion des Controllers für Fahrzeuge aktiviert, die dafür ausgelegt sind. Es wird weder der Parkmodus ausgewählt noch die Haltestärke eingestellt; Park-/Pause-Eingabe, Parkkontrollmodus, automatische Rückkehr, Bremsverhalten, Timing, Stand- oder Sitzsperren und Live-Geschwindigkeit bestimmen den gesamten Ablauf. Der Controller kann auch das gleiche gepackte Bit aktualisieren, wenn sich der Parkzustand ändert, es handelt sich also nicht nur um eine permanente Umschaltung durch den Benutzer, und bei Schreibvorgängen muss der Live-Zustand erhalten bleiben. Passen Sie es an die Verkabelung des Fahrzeugs an und bearbeiten Sie es niemals während der Fahrt.",
+    "description_en": "This enables the controller’s Park feature for vehicles designed to use it. It does not choose the Park mode or set holding strength; Park/pause input, Parking-control mode, automatic return, brake behavior, timing, stand or seat interlocks, and live speed determine the full sequence. The controller can also update the same packed bit as Park state changes, so it is not merely a permanent user toggle and writes must preserve the live state. Keep it matched to the vehicle’s wiring and never edit it while riding."
+  },
+  "autoBackProtectionEnabled": {
+    "spec": {
+      "id": "autoBackProtectionEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dies ermöglicht den automatischen Rückkehr-in-Park-Schutzpfad der Steuerung. Wenn die erforderlichen Schalt- und Timing-Bedingungen erfüllt sind, kann das Fahrzeug wieder in einen fahrfreien Parkzustand versetzt werden, ohne dass der Fahrer es manuell auswählen muss. Sein Verhalten hängt vom Parkmodus, dem Park-/Pause-Eingang, der Verzögerung der automatischen Rückkehr in den P-Modus, dem Bremsverhalten und der Schalterverkabelung des Fahrzeugs ab. Eine Nichtübereinstimmung kann zu einem unerwarteten Einparken führen oder verhindern, dass die Sicherheitsfunktion funktioniert. Behalten Sie daher die ursprüngliche Einstellung bei, es sei denn, das gesamte Parksystem wird konfiguriert und getestet.",
+    "description_en": "This enables the controller’s automatic return-to-Park protection path. When the required switch and timing conditions are met, it can put the vehicle back into a non-driving Park state without the rider manually selecting it. Its behavior depends on Park mode, the Park/pause input, Automatic return-to-P delay, brake behavior, and the vehicle’s switch wiring. A mismatch can cause unexpected Park entry or prevent the safety feature from working, so keep the original setting unless the complete Park system is being configured and tested."
+  },
+  "cruiseEnabled": {
+    "spec": {
+      "id": "cruiseEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird ein Tempomat verfügbar. Der Tempomat wird nicht automatisch aktiviert oder eine Zielgeschwindigkeit ausgewählt: Der Tempomat-Eingang muss zugewiesen und verkabelt werden, und der Controller benötigt weiterhin die richtigen Geschwindigkeits-, Gas-, Brems- und Sicherheitsbedingungen. Das Steuerungsprofil des Fahrzeugs kann auch bestimmen, wie der Tempomat eingegeben und abgebrochen wird. Lassen Sie es ausgeschaltet, es sei denn, das Fahrzeug verfügt über die entsprechenden Bedienelemente, und überprüfen Sie die Bremse, den Gashebel und alle anderen Abbruchwege, bevor Sie sich auf die Geschwindigkeitsregelung verlassen.",
+    "description_en": "This makes cruise control available. It does not engage cruise or choose a target speed by itself: the Cruise input must be assigned and wired, and the controller still requires the correct speed, throttle, brake, and safety conditions. The vehicle’s control profile can also determine how cruise is entered and cancelled. Keep it off unless the vehicle has the matching controls, and confirm the brake, throttle, and every other cancellation path before relying on cruise."
+  },
+  "eabsEnabled": {
+    "spec": {
+      "id": "eabsEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird elektronisches Bremsen verfügbar. Es führt keine eigenständige Bremsung durch und stellt die Bremsstärke nicht ein; Der Bremseingangsmodus, das zugewiesene Bremssignal, der normale und maximale Regenerationsstrom, die Regenerationskurve, die Motorgeschwindigkeit, der Batteriezustand und die BMS-Ladeakzeptanz bestimmen, wann und wie viel Bremswirkung erzeugt wird. Passen Sie es an die Bremssteuerung des Fahrzeugs an, überprüfen Sie das Verhalten im gesamten Geschwindigkeitsbereich und sorgen Sie immer für ausreichend mechanische Bremswirkung, um sicher anzuhalten.",
+    "description_en": "This makes electronic braking available. It does not apply braking by itself or set braking strength; Brake-input mode, the assigned brake signal, Normal and Maximum regen current, the regen curve, motor speed, battery state, and BMS charge acceptance determine when and how much braking is produced. Keep it matched to the vehicle’s brake controls, verify the behavior across the speed range, and always retain enough mechanical braking to stop safely."
+  },
+  "pushAssistEnabled": {
+    "spec": {
+      "id": "pushAssistEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird die Schiebeassistenzfunktion des Controllers bei niedriger Geschwindigkeit in Fahrzeugsystemen verfügbar, die dafür ausgelegt sind. Es handelt sich um einen Aktivierungsschalter, nicht um die Unterstützungsgeschwindigkeit, das Drehmoment oder den Stromwert allein. Die dem Fahrer zugewiesene Steuerung, Geschwindigkeits- oder Gangkonfiguration, aktuelle Grenzwerte, Brems- und Sicherheitsverriegelungen sowie der Schiebeunterstützungsstatus des Controllers bestimmen, was passiert, wenn dies angefordert wird. Behalten Sie die angepasste Controller-Konfiguration bei und stellen Sie sicher, dass die Unterstützung nur bei absichtlichem Befehl ausgeführt wird und sofort stoppt, wenn die Eingabe freigegeben wird.",
+    "description_en": "This makes the controller’s low-speed push-assist function available on vehicle systems designed to use it. It is an enable switch, not the assist speed, torque, or current amount by itself. The assigned rider control, speed or gear configuration, current limits, brake and safety interlocks, and the controller’s push-assist state determine what happens when it is requested. Keep the matched controller configuration and verify that assist only runs while intentionally commanded and stops immediately when the input is released."
+  },
+  "forceTheftEnabled": {
+    "spec": {
+      "id": "forceTheftEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der erzwungene Diebstahlschutzmodus des Controllers aktiviert. Es handelt sich hierbei nicht um eine Einstellung der Alarmempfindlichkeit oder der Stärke der Motorsperre; Diebstahlschutzeingang, Validierungsmodus, aktive Diebstahlschutz-Motorsperre, Alarmzustandsverzögerung, das externe Alarmmodul und das Fahrzeugprofil bestimmen, wie das Fahrzeug gesichert wird. Verwenden Sie es nur an einem Fahrzeug mit den passenden Alarmsteuerungen und testen Sie dann alle Verriegelungs-, Entriegelungs- und Normalstartpfade, da eine Nichtübereinstimmung dazu führen kann, dass das Fahrzeug nicht mehr fährt oder keinen Schutz bietet.",
+    "description_en": "This enables the controller’s forced anti-theft mode. It is not an alarm-sensitivity or motor-lock-strength adjustment; Anti-theft input, validation mode, Active anti-theft motor lock, Alarm-state delay, the external alarm module, and the vehicle profile determine how the vehicle is secured. Use it only on a vehicle with the matching alarm controls, then test every lock, unlock, and normal-start path because a mismatch can leave the vehicle unable to drive or provide no protection."
+  },
+  "overSpeedAlarmEnabled": {
+    "spec": {
+      "id": "overSpeedAlarmEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der Übergeschwindigkeitsalarmausgang des Controllers aktiviert. Der Alarmschwellenwert wird nicht festgelegt, die Motorgeschwindigkeitsgrenze wird nicht erhöht und es wird auch nicht verhindert, dass der Motor mechanisch zu schnell läuft. Geschwindigkeitsbegrenzungen, Motornenndrehzahl, Polpaare, Feldschwächung, die Alarm- oder Anzeigehardware und die Fahrzeugverkabelung bestimmen, wann die Warnung erzeugt werden kann und wo sie angezeigt wird. Achten Sie darauf, dass er an das Alarmsystem des Fahrzeugs angepasst ist, und verwenden Sie diesen Schalter niemals als Ersatz für eine sichere Begrenzung der Motordrehzahl.",
+    "description_en": "This enables the controller’s overspeed-alarm output. It does not set the alarm threshold, raise the motor-speed limit, or prevent the motor from mechanically overspeeding. Speed limits, Motor rated speed, Pole pairs, field weakening, the alarm or display hardware, and the vehicle’s wiring determine when the warning can be produced and where it is shown. Keep it matched to the vehicle’s alarm system, and never use this switch as a substitute for a safe motor RPM limit."
+  },
+  "parkDisableBrakeEnabled": {
+    "spec": {
+      "id": "parkDisableBrakeEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dies steuert, ob das Drücken der Bremse die Parkfunktion aktiv hält. Wenn diese Option aktiviert ist, verhindert das Steuerungsverhalten, dass die Bremse gelöst wird. Parken; Wenn die Bremse deaktiviert ist, kann sie durch ein gültiges Bremssignal gelöst werden. Der Controller verwendet das Bit bei mehreren Park- und kontrollierten Abstiegsübergangsprüfungen, während Parkmodus, Bremseingangsmodus, Park-/Pause-Eingang, automatische Rückkehreinstellungen, Signalpolarität und Live-Schalterzustände die vollständige Sequenz bestimmen. Passen Sie es an die Verkabelung des Fahrzeugs an und testen Sie jede Park-Brems-Kombination bei unbelastetem Antriebsrad.",
+    "description_en": "This controls whether pressing the brake keeps Park active. When enabled, the controller behavior keeps the brake from releasing Park; when disabled, a valid brake signal can release it. The controller uses the bit in several Park and controlled-descent transition checks, while Park mode, Brake-input mode, Park/pause input, automatic return settings, signal polarity, and live switch states determine the complete sequence. Match it to the vehicle’s wiring and test every Park-and-brake combination with the driven wheel unloaded."
+  },
+  "gearMemoryEnabled": {
+    "spec": {
+      "id": "gearMemoryEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der Controller angewiesen, den ausgewählten Gang beizubehalten, anstatt immer in den konfigurierten Startgang zurückzukehren. Es werden keine unabhängigen Tuning-Änderungen gespeichert oder die Geschwindigkeits- und Stromgrenzen eines Gangs geändert. Anfahrgang, Geschwindigkeitsschaltmodus, physikalische Gangeingaben, Parkverhalten, Fahrzeugverkabelung und das Controller-Profil bestimmen, welcher Zustand tatsächlich wiederhergestellt werden kann. Überprüfen Sie den gewählten Gang über mehrere Leistungszyklen hinweg, damit das Fahrzeug nie in einem unerwartet aggressiven Modus startet.",
+    "description_en": "This tells the controller to retain the selected gear instead of always returning to its configured startup gear. It does not save unrelated tuning changes or alter any gear’s speed and current limits. Starting gear, speed-switch mode, physical gear inputs, Park behavior, vehicle wiring, and the controller profile determine which state can actually be restored. Verify the selected gear across several power cycles so the vehicle never starts in an unexpectedly aggressive mode."
+  },
+  "reverseEnabled": {
+    "spec": {
+      "id": "reverseEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird der Reverse-Input-Pfad des Controllers aktiviert. Wenn diese Option deaktiviert ist, kann der zugewiesene Reverse-Eingang den Reverse-Status nicht veröffentlichen; Wenn diese Option aktiviert ist, kann der Controller je nach Konfiguration entweder den Direkteingang oder den gefilterten Rückwärtseingangs-Entprellpfad verwenden. Rückwärtseingang, Rückwärtseingangsentprellung, Rückwärtsgeschwindigkeit, Rückwärtsstromverhältnis, Richtungsänderungen nur im stationären Zustand, Parkzustand und Sicherheitsverriegelungen entscheiden weiterhin darüber, ob Rückwärtsdrehmoment zulässig ist. Überprüfen Sie jeden Richtungswechsel bei unbelastetem Antriebsrad.",
+    "description_en": "This enables the controller’s reverse-input path. When disabled, the assigned Reverse input cannot publish the reverse state; when enabled, the controller can use either the direct input or the filtered Reverse input debounce path, depending on configuration. Reverse input, Reverse input debounce, Reverse speed, Reverse-current ratio, Stationary-only direction changes, Park state, and safety interlocks still decide whether reverse torque is allowed. Verify every direction transition with the driven wheel unloaded."
+  },
+  "relayDelayOneSecondEnabled": {
+    "spec": {
+      "id": "relayDelayOneSecondEnabled",
+      "address": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Ein relaisbezogenes Konfigurationsbit. Seine Wirkung hängt vom Controller und der Fahrzeugverkabelung ab; eine feste Verzögerung von einer Sekunde ist nicht bestätigt. Behalte die ursprüngliche Einstellung bei.",
+    "description_en": "A relay-related configuration flag. Its effect depends on the controller and vehicle wiring; a fixed one-second delay is not confirmed. Keep the original setting."
+  },
+  "temperatureSensorType": {
+    "spec": {
+      "id": "temperatureSensorType",
+      "address": 11,
+      "minimum": 0,
+      "maximum": 7,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch wird einer der Sensorumwandlungszweige des Controllers ausgewählt, bevor der Motortemperaturschutz angewendet wird. Die richtige Option muss zum installierten Thermistor- oder Temperatursensorkreis passen; Die Zuordnung der Optionen kann je nach Controller variieren, selbst wenn die verfügbaren Optionsnamen vertraut wirken. Motortemperaturbegrenzung, Motortemperaturwiederherstellung, Reglertemperaturkalibrierung, Verkabelung, Pull-up-Schaltung und Sensorplatzierung interagieren alle. Eine Nichtübereinstimmung kann unplausible Temperaturen melden oder den Schutz außer Kraft setzen. Überprüfen Sie daher den Messwert bei bekannten Temperaturen, bevor Sie den Motor belasten.",
+    "description_en": "This selects one of the controller’s sensor-conversion branches before motor-temperature protection is applied. The correct option must match the installed thermistor or temperature-sensor circuit; option identities can vary by controller even when the available option names look familiar. Motor temperature limit, Motor temperature recovery, controller temperature calibration, wiring, pull-up circuitry, and sensor placement all interact. A mismatch can report implausible temperatures or defeat protection, so verify the reading at known temperatures before loading the motor."
+  },
+  "phaseExchange": {
+    "spec": {
+      "id": "phaseExchange",
+      "address": 11,
+      "minimum": 0,
+      "maximum": 1,
+      "integerOnly": true,
+      "allowedValues": null
+    },
+    "description_de": "Dadurch werden zwei Motorphasenkanäle in der Software vertauscht – das steuerungsseitige Äquivalent zum Ändern der Reihenfolge von zwei der grünen, gelben und blauen Phasenleitungen. Es ändert sich, welcher Stromsensor und Ausgangskanal mit jeder Phase gepaart ist; Es wird nicht einfach die Motorrichtung umgekehrt und nicht jede Hall/Phasen-Kombination korrigiert. Rotorpositionssensortyp, Motorrichtung, erlernte Phasenkalibrierung sowie die physikalische Phase und Hall-Verkabelung müssen alle übereinstimmen. Ändern Sie es nur während der verifizierten Motoreinstellung, wobei das angetriebene Rad vollständig vom Boden abheben muss.",
+    "description_en": "This swaps two motor phase channels in software—the controller-side equivalent of changing the order of two of the green, yellow, and blue phase leads. It changes which current-sensor and output channel is paired with each phase; it does not simply reverse motor direction and does not correct every Hall/phase combination. Rotor-position sensor type, Motor direction, learned phase calibration, and the physical phase and Hall wiring must all agree. Change it only during verified motor setup, with the driven wheel completely off the ground."
+  },
+  "throttleLowVoltage": {
+    "spec": {
+      "id": "throttleLowVoltage",
+      "address": 8,
+      "minimum": 0,
+      "maximum": 2,
+      "integerOnly": false
+    },
+    "description_de": "Throttle Low ist der untere Endpunkt des Gasgriffsignals. Bei ausgeschaltetem Neutral vergrößert ein höherer Low-Wert den Leerweg. Ein niedrigerer Wert lässt den Motor früher reagieren; unterhalb des Ruhesignals kann er Leistung bei losgelassenem Gasgriff anfordern. Low muss mit Abstand über der gemessenen Ruhespannung liegen, um Schwankungen abzufangen. Bei eingeschaltetem Neutral muss das Ruhesignal innerhalb des Bereichs ohne Leistungsanforderung bleiben. Low verändert weiterhin die Kurve, legt diesen Bereich aber nicht fest. Vor beiden Änderungen die Ruhestellung prüfen.",
+    "description_en": "Throttle Low is the lower endpoint of the throttle signal range. With Neutral off, raising Low adds dead travel before the motor responds. Lowering it makes the response start sooner; below the released signal, it can request power with your hand off the throttle. Keep Low above the measured released voltage with room for signal fluctuation. With Neutral on, the released signal must stay inside its no-power band. Low still changes the curve, but it does not set that band. Check the released position before changing either setting."
+  },
+  "throttleHighVoltage": {
+    "spec": {
+      "id": "throttleHighVoltage",
+      "address": 8,
+      "minimum": 2.5,
+      "maximum": 5,
+      "integerOnly": false
+    },
+    "description_de": "Dies ist der obere Endpunkt, mit dem das Signal des Gasgriffs in den internen Eingangsbereich des Controllers umgerechnet wird. Liegt er unter dem tatsächlichen Vollgassignal, kann die volle Anforderung zu früh erreicht werden; ein zu hoher Wert kann verhindern, dass der Fahrer sie überhaupt erreicht. Der Punkt bei losgelassenem Gasgriff, der Schutz bei Ausfall des Gassignals, die Versorgung des Gasgriffs, Eingangsstörungen und das Kalibrierungsverfahren des Controllers spielen dabei eine Rolle. Miss oder kalibriere beide Endpunkte gemeinsam und lasse ausreichend Spielraum für Temperatur- und Fertigungsschwankungen.",
+    "description_en": "This is the upper endpoint used to translate the physical throttle signal into the controller’s internal input range. Setting it below the real full-throttle signal can make full command arrive early; setting it too high can prevent the rider from ever requesting full command. Closed-throttle point, throttle-loss protection, throttle hardware supply, input noise, and the controller’s calibration process all matter. Measure or calibrate both endpoints together and leave enough margin for temperature and manufacturing variation."
+  },
+  "motorTempProtect": {
+    "spec": {
+      "id": "motorTempProtect",
+      "address": 132,
+      "minimum": 100,
+      "maximum": 180,
+      "integerOnly": true
+    },
+    "description_de": "Damit wird der Motortemperaturpunkt eingestellt, bei dem der Wärmeschutz seine stärkste Wirkung erreicht und die Motorleistung gestoppt werden kann. Es handelt sich um das obere Ende einer Schutzreaktion, nicht um eine Zielbetriebstemperatur. Motortemperatursensorprofil, Controller-Temperaturkalibrierung, Wiederherstellung der Motortemperatur, Sensorplatzierung, Kühlung, Strom, Last und Umgebungstemperatur bestimmen, wann der Fahrer eine Leistungsreduzierung oder eine Unterbrechung erkennt. Stellen Sie den Wert innerhalb der Grenzwerte des Motor- und Sensorherstellers ein und erhöhen Sie ihn niemals nur, um eine thermische Reduzierung zu vermeiden.",
+    "description_en": "This sets the motor-temperature point where thermal protection reaches its strongest action and motor output can be stopped. It is the upper end of a protection response, not a target operating temperature. Motor-temperature sensor profile, controller temperature calibration, Motor temperature recovery, sensor placement, cooling, current, load, and ambient temperature determine when the rider sees derating or a cutoff. Set it within the motor and sensor manufacturer limits and never raise it merely to avoid a thermal reduction."
+  },
+  "motorTempRestore": {
+    "spec": {
+      "id": "motorTempRestore",
+      "address": 132,
+      "minimum": 80,
+      "maximum": 160,
+      "integerOnly": true
+    },
+    "description_de": "Dadurch wird der Motortemperaturschwellenwert festgelegt, bei oder unter dem die normale Leistung wiederhergestellt wird, nachdem der thermische Schutz ausgelöst hat. Es handelt sich um einen absoluten Erholungspunkt, nicht um die Gradzahl, die der Motor abkühlen muss. Durch die Trennung von der Motortemperaturbegrenzung wird verhindert, dass der Strom in der Nähe einer Temperatur schnell ein- und ausgeschaltet wird. Sensorprofil, Temperaturkalibrierung, Sensorplatzierung, Luftstrom, Motormasse und der obere Schutzpunkt beeinflussen alle die Erholungszeit. Verwenden Sie einen konservativen Spalt, der eine echte Kühlung ermöglicht, und prüfen Sie wiederholte thermische Auslösungen.",
+    "description_en": "This sets the motor-temperature threshold at or below which normal output is restored after thermal protection has acted. It is an absolute recovery point, not the number of degrees the motor must cool. Its separation from Motor temperature limit prevents power from rapidly cycling on and off near one temperature. Sensor profile, temperature calibration, sensor placement, airflow, motor mass, and the upper protection point all shape the recovery time. Use a conservative gap that allows real cooling and investigate repeated thermal trips."
+  }
+}
